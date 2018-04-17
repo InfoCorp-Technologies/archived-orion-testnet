@@ -1,5 +1,14 @@
-# Sentinel Chain Network
+[parity]
+chain = ""
 
-#### Parameters
+[rpc]
+apis = [""]
 
-#### Configuration
+[mining]
+reseal_on_txs = ""
+
+[misc]
+log_file = ""
+
+[network]
+reserved_peers = ""
