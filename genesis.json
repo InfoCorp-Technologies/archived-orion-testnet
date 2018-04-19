@@ -1,9 +1,9 @@
 {
-  "name": "sentinel-chain",
+  "name": "sentinel",
   "engine": {
     "authorityRound": {
       "params": {
-        "stepDuration": "1",
+        "stepDuration": "5",
         "blockReward": "0xDE0B6B3A7640000",
         "validators" : {
 	  "safeContract": "0x0000000000000000000000000000000000000005"
