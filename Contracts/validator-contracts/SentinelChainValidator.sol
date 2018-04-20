@@ -68,7 +68,7 @@ contract SentinelChainValidator is ValidatorSet {
 		Data benignMisbehaviour;
 	}
 
-    address constant SYSTEM_ADDRESS = 0xfffffffffffffffffffffffffffffffffffffffe;
+	address constant SYSTEM_ADDRESS = 0xfffffffffffffffffffffffffffffffffffffffe;
 	uint public constant MAX_VALIDATORS = 30;
 	uint public constant MAX_INACTIVITY = 6 hours;
 	uint public constant RECENT_BLOCKS = 20;
@@ -91,13 +91,13 @@ contract SentinelChainValidator is ValidatorSet {
 		for (uint i = 0; i < pendingList.length; i++) {
 			address supporter = pendingList[i];
 			insert(initialSupport, supporter);
-            validatorsStatus[supporter].isValidator = true;
-            validatorsStatus[supporter].index = i;
-            for (uint j = 0; j < pendingList.length; j++) {
-                address validator = pendingList[j];
-                insert(validatorsStatus[validator].support, supporter);
-                insert(validatorsStatus[supporter].supported, validator);
-		    }
+			validatorsStatus[supporter].isValidator = true;
+			validatorsStatus[supporter].index = i;
+			for (uint j = 0; j < pendingList.length; j++) {
+				address validator = pendingList[j];
+				insert(validatorsStatus[validator].support, supporter);
+				insert(validatorsStatus[supporter].supported, validator);
+			}
 		}
 		
 		validatorsList = pendingList;
@@ -105,7 +105,7 @@ contract SentinelChainValidator is ValidatorSet {
 	}
 	
 	function getInitialSupport() external view returns (address[]){
-	    return initialSupport.stored;
+		return initialSupport.stored;
 	}
 
 	// Called on every block to update node validator list.
@@ -141,17 +141,17 @@ contract SentinelChainValidator is ValidatorSet {
 	}
 	
 	function supportContained(address validator, address support) public constant returns (bool) {
-	    return contains(validatorsStatus[validator].support, support);
+		return contains(validatorsStatus[validator].support, support);
 	}
 	
 	function supportedContained(address validator, address supported) public constant returns (bool) {
-	    return contains(validatorsStatus[validator].supported, supported);
+		return contains(validatorsStatus[validator].supported, supported);
 	}
 
 	// Vote to include a validator.
 	function addSupport(address validator) public only_validator not_voted(validator) free_validator_slots {
-        insert(validatorsStatus[validator].support, msg.sender);
-        insert(validatorsStatus[msg.sender].supported, validator);
+		insert(validatorsStatus[validator].support, msg.sender);
+		insert(validatorsStatus[msg.sender].supported, validator);
 		addValidator(validator);
 		emit Support(msg.sender, validator, true);
 	}
@@ -159,7 +159,7 @@ contract SentinelChainValidator is ValidatorSet {
 	// Remove support for a validator.
 	function removeSupport(address sender, address validator) private {
 		remove(validatorsStatus[validator].support, sender);
-        remove(validatorsStatus[sender].supported, validator);
+		remove(validatorsStatus[sender].supported, validator);
 		emit Support(sender, validator, false);
 		removeValidator(validator);
 	}
@@ -173,7 +173,7 @@ contract SentinelChainValidator is ValidatorSet {
 	}
 	
 	function reportMaliciousNow(address validator, bytes proof) public {
-	    reportMalicious(validator, block.number, proof);
+		reportMalicious(validator, block.number, proof);
 	}
 
 	// BENIGN MISBEHAVIOUR HANDLING
