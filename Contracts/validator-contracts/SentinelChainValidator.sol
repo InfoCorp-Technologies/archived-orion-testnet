@@ -25,6 +25,7 @@ import "./interfaces/ValidatorSet.sol";
 // Benign misbehaviour can be absolved before being called the second time.
 
 contract SentinelChainValidator is ValidatorSet {
+    
 	// EVENTS
 	event Report(address indexed reporter, address indexed reported, bytes indexed proof);
 	event Support(address indexed supporter, address indexed supported, bool indexed added);
@@ -36,7 +37,7 @@ contract SentinelChainValidator is ValidatorSet {
 	}
 
 	// Did the voter already vote.
-	function contains(Data storage self, address voter) internal returns (bool) {
+	function contains(Data storage self, address voter) internal view returns (bool) {
 		return self.inserted[voter] > 0;
 	}
 
@@ -119,7 +120,7 @@ contract SentinelChainValidator is ValidatorSet {
 	// Log desire to change the current list.
 	function initiateChange() private when_finalized {
 		finalized = false;
-		emit InitiateChange(block.blockhash(block.number - 1), pendingList);
+		emit InitiateChange(blockhash(block.number - 1), pendingList);
 	}
 
 	function finalizeChange() public only_system_and_not_finalized {
