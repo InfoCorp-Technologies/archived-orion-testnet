@@ -1,28 +1,36 @@
 [parity]
 chain = "genesis.json" #Sentinel Chain Genesis file
+base_path = "PATH/io.parity.ethereum"
+db_path = "PATH/io.parity.ethereum/chains"
+keys_path = "PATH/io.parity.ethereum/keys"
 
 [account]
-unlock = "node_addr" #Block sealer
-password = ["./node.pwds"] #Node password needed for sealing blocks
+unlock = ["VALIDATOR_ADDR"]
+password = ["password.file"]
 
 [ui]
+force = false
 disable = true #Nodes does not normally need Wallet UI
+
+[network]
+port = 30303
+bootnodes = []
+discovery = true
 
 [rpc]
 apis = ["web3", "eth", "net", "personal", "parity", "parity_set", "traces", "rpc", "parity_accounts"] #RPC functionality can be restricted
 
 [mining]
-engine_signer = "" #Address responsible to create blocks
-reseal_on_txs = "" #Force nodes to seal blocks on tx?
-usd_per_tx = "" #Price per internal ETH
-
-[misc]
-log_file = "sentinel-node.log" #Log file
+author = "VALIDATOR_ADDR"
+engine_signer = "VALIDATOR_ADDR"
+force_sealing = true
 
 [footprint] # This config is needed for block explorers
 tracing = "on"
 fat_db = "on"
 pruning = "archive"
 
-[network]
-reserved_peers = "nodes.txt" #List of enodes file
+[misc]
+logging = "own_tx=trace"
+log_file = "PATH/parity.log"
+color = true
