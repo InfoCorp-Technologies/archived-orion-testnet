@@ -11,14 +11,19 @@ $ parity --config config.toml
 #### Parameters
 ##### Chain
 
-* **Chain Name**: "Sentinel Chain"
-##### Block confiration
+* **Chain Name:** "Sentinel Chain"
+* **Balances:**
+  * Initial miner 0x574366e84f74f2e913ad9a6782ce6ac8022e16eb starts with 1 ETH.
+##### Block configuration
 
-* **stepDuration:** 60 s/block if no TX found
-* **BlockReward:** 0x16345785D8A0000 -> 0.1 ETH per Block
-* **reseal_on_tx:** yes because of Aura.
-
+* **stepDuration:** 60 seconds per block, if no TX found
+* **blockReward:** 0x16345785D8A0000 --> 0.1 ETH as reword per block sealed
+* **reseal_on_tx:** yes because of Aura consensus.
+##### Network
+* **RPC Port:** 30303
 ##### Mining Configuration
+
+**Multi-set enabled:**
 
 * **From block 0 to 1000:**  Validator List Array
   * **address** 0x574366e84f74f2e913ad9a6782ce6ac8022e16eb
