@@ -1,12 +1,12 @@
 [parity]
 chain = "genesis.json" #Sentinel Chain Genesis file
-base_path = "PATH/io.parity.ethereum"
-db_path = "PATH/io.parity.ethereum/chains"
-keys_path = "PATH/io.parity.ethereum/keys"
+#base_path = "PATH/io.parity.ethereum"
+#db_path = "PATH/io.parity.ethereum/chains"
+#keys_path = "PATH/io.parity.ethereum/keys"
 
 [account]
 unlock = ["VALIDATOR_ADDR"]
-password = ["password.file"]
+password = ["password.txt"]
 
 [ui]
 force = false
@@ -32,5 +32,5 @@ pruning = "archive"
 
 [misc]
 logging = "own_tx=trace"
-log_file = "PATH/parity.log"
+log_file = "parity.log"
 color = true
