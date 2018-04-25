@@ -5,7 +5,7 @@ chain = "genesis.json" #Sentinel Chain Genesis file
 #keys_path = "PATH/io.parity.ethereum/keys"
 
 [account]
-unlock = ["VALIDATOR_ADDR"]
+unlock = ["0x574366e84f74f2e913ad9a6782ce6ac8022e16eb"]
 password = ["password.txt"]
 
 [ui]
@@ -21,8 +21,8 @@ discovery = true
 apis = ["web3", "eth", "net", "personal", "parity", "parity_set", "traces", "rpc", "parity_accounts"] #RPC functionality can be restricted
 
 [mining]
-author = "VALIDATOR_ADDR"
-engine_signer = "VALIDATOR_ADDR"
+author = "0x574366e84f74f2e913ad9a6782ce6ac8022e16eb"
+engine_signer = "0x574366e84f74f2e913ad9a6782ce6ac8022e16eb"
 force_sealing = true
 
 [footprint] # This config is needed for block explorers
