@@ -1,8 +1,5 @@
 [parity]
 chain = "genesis.json" #Sentinel Chain Genesis file
-#base_path = "PATH/io.parity.ethereum"
-#db_path = "PATH/io.parity.ethereum/chains"
-#keys_path = "PATH/io.parity.ethereum/keys"
 
 [account]
 unlock = ["0x574366e84f74f2e913ad9a6782ce6ac8022e16eb"]
@@ -23,7 +20,7 @@ apis = ["web3", "eth", "net", "personal", "parity", "parity_set", "traces", "rpc
 [mining]
 author = "0x574366e84f74f2e913ad9a6782ce6ac8022e16eb"
 engine_signer = "0x574366e84f74f2e913ad9a6782ce6ac8022e16eb"
-force_sealing = true
+reseal_on_txs = "none"
 
 [footprint] # This config is needed for block explorers
 tracing = "on"
