@@ -20,7 +20,7 @@ apis = ["web3", "eth", "net", "personal", "parity", "parity_set", "traces", "rpc
 [mining]
 author = "0x574366e84f74f2e913ad9a6782ce6ac8022e16eb"
 engine_signer = "0x574366e84f74f2e913ad9a6782ce6ac8022e16eb"
-reseal_max_period = "30000"
+reseal_max_period = 30000
 
 [footprint] # This config is needed for block explorers
 tracing = "on"
