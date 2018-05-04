@@ -1,22 +1,11 @@
 [parity]
-chain = "sentinel.json" #Sentinel Chain Genesis file
+chain = "sentinel.json"
 base_path = "./base-path"
-identity = "sentinel-chain-node"
-
-[ui]
-disable = true
+identity = "sentinel-node"
 
 [network]
 discovery = true
 reserved_peers = "nodes.txt"
-
-[rpc]
-apis = ["web3", "eth", "net", "personal", "parity", "parity_set", "traces", "rpc", "parity_accounts"] #RPC functionality can be restricted
-
-[footprint] # This config is needed for block explorers
-tracing = "on"
-fat_db = "on"
-pruning = "archive"
 
 [misc]
 logging = "own_tx=trace"

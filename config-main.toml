@@ -3,7 +3,7 @@ chain = "sentinel.json"
 identity = "sentinel-miner"
 
 [account]
-unlock = ["ETH_MINER_ACCOUNT"]
+unlock = ["0x574366e84f74f2e913ad9a6782ce6ac8022e16eb"]
 password = ["password.txt"]
 
 [ui]
@@ -14,9 +14,14 @@ discovery = true
 reserved_peers = "nodes.txt"
 
 [mining]
-author = "ETH_MINER_ACCOUNT"
-engine_signer = "ETH_MINER_ACCOUNT"
+author = "0x574366e84f74f2e913ad9a6782ce6ac8022e16eb"
+engine_signer = "0x574366e84f74f2e913ad9a6782ce6ac8022e16eb"
 reseal_max_period = 30000
+
+[footprint]
+tracing = "on"
+fat_db = "on"
+pruning = "archive"
 
 [misc]
 logging = "own_tx=trace"
