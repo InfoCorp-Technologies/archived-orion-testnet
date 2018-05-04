@@ -1,6 +1,6 @@
 [parity]
 chain = "sentinel.json" #Sentinel Chain Genesis file
-base_path = "./base"
+base_path = "./base-path"
 identity = "sentinel-chain-node"
 
 [ui]
