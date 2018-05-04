@@ -1,6 +1,6 @@
 [parity]
 chain = "sentinel.json"
-identity = "sentinel-miner"
+identity = "sentinel-main"
 
 [account]
 unlock = ["0x574366e84f74f2e913ad9a6782ce6ac8022e16eb"]
@@ -16,7 +16,7 @@ reserved_peers = "nodes.txt"
 [mining]
 author = "0x574366e84f74f2e913ad9a6782ce6ac8022e16eb"
 engine_signer = "0x574366e84f74f2e913ad9a6782ce6ac8022e16eb"
-reseal_max_period = 30000
+reseal_max_period = 60000
 
 [footprint]
 tracing = "on"
