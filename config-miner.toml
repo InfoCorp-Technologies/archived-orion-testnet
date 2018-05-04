@@ -4,15 +4,13 @@ base_path = "./base"
 identity = "sentinel-chain-node"
 
 [account]
-unlock = ["ETH_MINER_ACCOUNT"]
+unlock = ["0x574366e84f74f2e913ad9a6782ce6ac8022e16eb"]
 password = ["password.txt"]
 
 [ui]
-force = true
+disable = true
 
 [network]
-port = 30303
-bootnodes = []
 discovery = true
 reserved_peers = "nodes.txt"
 
@@ -20,8 +18,8 @@ reserved_peers = "nodes.txt"
 apis = ["web3", "eth", "net", "personal", "parity", "parity_set", "traces", "rpc", "parity_accounts"] #RPC functionality can be restricted
 
 [mining]
-author = "ETH_MINER_ACCOUNT"
-engine_signer = "ETH_MINER_ACCOUNT"
+author = "0x574366e84f74f2e913ad9a6782ce6ac8022e16eb"
+engine_signer = "0x574366e84f74f2e913ad9a6782ce6ac8022e16eb"
 reseal_max_period = 30000
 
 [footprint] # This config is needed for block explorers

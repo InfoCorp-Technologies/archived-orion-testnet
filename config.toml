@@ -7,8 +7,6 @@ identity = "sentinel-chain-node"
 disable = true
 
 [network]
-port = 30303
-bootnodes = []
 discovery = true
 reserved_peers = "nodes.txt"
 
