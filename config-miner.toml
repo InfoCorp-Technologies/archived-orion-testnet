@@ -3,8 +3,12 @@ chain = "sentinel.json" #Sentinel Chain Genesis file
 base_path = "./base"
 identity = "sentinel-chain-node"
 
+[account]
+unlock = ["ETH_MINER_ACCOUNT"]
+password = ["password.txt"]
+
 [ui]
-disable = true
+force = true
 
 [network]
 port = 30303
@@ -14,6 +18,11 @@ reserved_peers = "nodes.txt"
 
 [rpc]
 apis = ["web3", "eth", "net", "personal", "parity", "parity_set", "traces", "rpc", "parity_accounts"] #RPC functionality can be restricted
+
+[mining]
+author = "ETH_MINER_ACCOUNT"
+engine_signer = "ETH_MINER_ACCOUNT"
+reseal_max_period = 30000
 
 [footprint] # This config is needed for block explorers
 tracing = "on"
