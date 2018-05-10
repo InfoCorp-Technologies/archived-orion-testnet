@@ -1,0 +1,6 @@
+[submodule "parity-bridge"]
+	path = parity-bridge
+	url = https://github.com/paritytech/parity-bridge
+[submodule "bridge-ui"]
+	path = bridge-ui
+	url = https://github.com/poanetwork/bridge-ui
