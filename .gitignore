@@ -3,3 +3,4 @@ parity.log
 base-path/
 base/
 nohup.out
+node_modules/
