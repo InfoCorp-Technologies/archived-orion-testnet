@@ -1,9 +1,18 @@
 [submodule "parity-bridge"]
 	path = parity-bridge
 	url = https://github.com/paritytech/parity-bridge
-[submodule "bridge-ui"]
-	path = bridge-ui
-	url = https://github.com/poanetwork/bridge-ui
 [submodule "etherchain-light"]
 	path = etherchain-light
 	url = https://github.com/gobitfly/etherchain-light
+[submodule "POA-bridges/poa-bridge"]
+	path = POA-bridges/poa-bridge
+	url = https://github.com/poanetwork/poa-bridge
+[submodule "POA-bridges/poa-bridge-contracts"]
+	path = POA-bridges/poa-bridge-contracts
+	url = https://github.com/poanetwork/poa-bridge-contracts
+[submodule "POA-bridges/deployment-bridge"]
+	path = POA-bridges/deployment-bridge
+	url = https://github.com/poanetwork/deployment-bridge.git
+[submodule "POA-bridges/bridge-ui"]
+	path = POA-bridges/bridge-ui
+	url = https://github.com/poanetwork/bridge-ui
