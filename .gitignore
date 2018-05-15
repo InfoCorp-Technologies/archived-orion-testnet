@@ -4,3 +4,4 @@ base-path/
 base/
 nohup.out
 node_modules/
+/package-lock.json
