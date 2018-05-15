@@ -162,6 +162,8 @@ contract Operations {
 	// Admin functions
 
 	function addClient(bytes32 _client, address _owner, bool _require) only_owner public {
+	    require(client[_client].owner == address(0));
+	    require(clientOwner[_owner] == 0);
 		client[_client] = Client(_owner, false, clientOwnerList.length);
 		setClientRequired(_client, _require);
 		clientOwner[_owner] = _client;
@@ -171,8 +173,14 @@ contract Operations {
 
 	function removeClient(bytes32 _client) only_owner public {
 		setClientRequired(_client, false);
-		resetClientOwner(_client, 0);
-		delete clientOwnerList[client[_client].index];
+// 		resetClientOwner(_client, 0);
+		uint index = client[_client].index;
+		address removedClient = client[_client].owner;
+		address lastClient = clientOwnerList[clientOwnerList.length - 1];
+		clientOwner[removedClient] = "";
+		clientOwnerList[index] = lastClient;
+		clientOwnerList.length--;
+		client[clientOwner[lastClient]].index = index;
 		delete client[_client];
 		emit ClientRemoved(_client);
 	}
@@ -185,10 +193,10 @@ contract Operations {
 		client[_client].owner = _newOwner;
 	}
 
-	function setClientRequired(bytes32 _client, bool _r) only_owner when_changing_required(_client, _r) public {
-		emit ClientRequiredChanged(_client, _r);
-		client[_client].required = _r;
-		clientsRequired = _r ? clientsRequired + 1 : (clientsRequired - 1);
+	function setClientRequired(bytes32 _client, bool _require) only_owner when_changing_required(_client, _require) public {
+		emit ClientRequiredChanged(_client, _require);
+		client[_client].required = _require;
+		clientsRequired = _require ? clientsRequired + 1 : (clientsRequired - 1);
 		checkFork();
 	}
 
