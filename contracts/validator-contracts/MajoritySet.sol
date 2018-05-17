@@ -24,7 +24,7 @@ import "./interfaces/ValidatorSet.sol";
 // Benign misbehaviour causes supprt removal if its called again after MAX_INACTIVITY.
 // Benign misbehaviour can be absolved before being called the second time.
 
-contract SentinelChainValidator is ValidatorSet {
+contract Validator is ValidatorSet {
     
 	// EVENTS
 	event Report(address indexed reporter, address indexed reported, bytes indexed proof);
@@ -68,7 +68,7 @@ contract SentinelChainValidator is ValidatorSet {
 		Data benignMisbehaviour;
 	}
 
-	address constant SYSTEM_ADDRESS = 0xfffffffffffffffffffffffffffffffffffffffe;
+	address constant SYSTEM_ADDRESS = 0xffffFFFfFFffffffffffffffFfFFFfffFFFfFFfE;
 	uint public constant MAX_VALIDATORS = 30;
 	uint public constant MAX_INACTIVITY = 6 hours;
 	uint public constant RECENT_BLOCKS = 20;
@@ -83,11 +83,9 @@ contract SentinelChainValidator is ValidatorSet {
 	// Used to lower the constructor cost.
 	Data initialSupport;
 
-	function SentinelChainValidator() public {
-		pendingList.push(0xf150418980985c8db80b10670c944c57b0db87b2);
-		pendingList.push(0x989a024250d7507026a1255636684cd5b43277a2);
-		pendingList.push(0x2d1ac42268694ba05ac92f9bb2e880e14d9b767e);
-		pendingList.push(0x0b35ad4423df57d19655445005b7438c53af816b);
+	constructor() public {
+		pendingList.push(0x574366e84f74f2e913aD9A6782CE6Ac8022e16EB);
+		pendingList.push(0x876BaDa62006F4d3b4063fd97618D666575efb07);
 		for (uint i = 0; i < pendingList.length; i++) {
 			address supporter = pendingList[i];
 			insert(initialSupport, supporter);
@@ -99,7 +97,6 @@ contract SentinelChainValidator is ValidatorSet {
 				insert(validatorsStatus[supporter].supported, validator);
 			}
 		}
-		
 		validatorsList = pendingList;
 		finalized = true;
 	}
