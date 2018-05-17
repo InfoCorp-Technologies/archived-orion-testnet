@@ -1,5 +1,7 @@
 pragma solidity ^0.4.23;
 
+import "../validator-contracts/ImmediateSet.sol";
+
 contract Operations {
     
 	uint8 constant Stable = 1;
@@ -52,6 +54,7 @@ contract Operations {
 		uint gas;
 	}
 	
+	Validator public validator;
 	uint32 public clientsRequired;
 	uint32 public latestFork;
 	uint32 public proposedFork;
@@ -81,11 +84,17 @@ contract Operations {
 	event ClientRequiredChanged(bytes32 indexed client, bool now);
 	event OwnerChanged(address old, address now);
 
-	constructor() public {
-		client["parity"] = Client(msg.sender, true, 0);
-		clientOwner[msg.sender] = "parity";
-		clientOwnerList.push(msg.sender);
-		clientsRequired = 1;
+	constructor(Validator _validator) public {
+	    require(_validator != address(0));
+	    validator = _validator;
+	    address[] memory validators = validator.getValidators();
+	    for (uint i = 0; i < validators.length; i++) {
+	        bytes32 cliendId = bytes32(i+1);
+	        clientOwnerList.push(validators[i]);
+	        clientOwner[validators[i]] = cliendId;
+	        client[cliendId] = Client(validators[i], true, i);
+	        clientsRequired++;
+	    }
 	}
 	
 	function clientList() external view returns(address[]) {
@@ -161,19 +170,19 @@ contract Operations {
 
 	// Admin functions
 
-	function addClient(bytes32 _client, address _owner, bool _require) only_owner public {
+	function addClient(bytes32 _client, address _owner, bool _require) only_client_owner public {
 	    require(client[_client].owner == address(0));
 	    require(clientOwner[_owner] == 0);
 		client[_client] = Client(_owner, false, clientOwnerList.length);
 		setClientRequired(_client, _require);
 		clientOwner[_owner] = _client;
 		clientOwnerList.push(_owner);
+		validator.addValidator(_owner, msg.sender);
 		emit ClientAdded(_client, _owner);
 	}
 
-	function removeClient(bytes32 _client) only_owner public {
+	function removeClient(bytes32 _client) only_client_owner public {
 		setClientRequired(_client, false);
-// 		resetClientOwner(_client, 0);
 		uint index = client[_client].index;
 		address removedClient = client[_client].owner;
 		address lastClient = clientOwnerList[clientOwnerList.length - 1];
@@ -182,6 +191,7 @@ contract Operations {
 		clientOwnerList.length--;
 		client[clientOwner[lastClient]].index = index;
 		delete client[_client];
+		validator.removeValidator(removedClient, msg.sender);
 		emit ClientRemoved(_client);
 	}
 
@@ -193,7 +203,7 @@ contract Operations {
 		client[_client].owner = _newOwner;
 	}
 
-	function setClientRequired(bytes32 _client, bool _require) only_owner when_changing_required(_client, _require) public {
+	function setClientRequired(bytes32 _client, bool _require) only_client_owner when_changing_required(_client, _require) public {
 		emit ClientRequiredChanged(_client, _require);
 		client[_client].required = _require;
 		clientsRequired = _require ? clientsRequired + 1 : (clientsRequired - 1);
@@ -220,13 +230,13 @@ contract Operations {
 	}
 
 	function build(bytes32 _client, bytes32 _checksum) constant public returns (bytes32 o_release, bytes32 o_platform) {
-		Build storage b = client[_client].build[_checksum];
+		Build memory b = client[_client].build[_checksum];
 		o_release = b.release;
 		o_platform = b.platform;
 	}
 
 	function release(bytes32 _client, bytes32 _release) constant public returns (uint32 o_forkBlock, uint8 o_track, uint24 o_semver, bool o_critical) {
-		Release storage b = client[_client].release[_release];
+		Release memory b = client[_client].release[_release];
 		o_forkBlock = b.forkBlock;
 		o_track = b.track;
 		o_semver = b.semver;
@@ -258,7 +268,7 @@ contract Operations {
 	}
 
 	function checkProxy(bytes32 _txid) internal when_proxy_confirmed(_txid) returns (uint txSuccess) {
-		Transaction storage transaction = proxy[_txid];
+		Transaction memory transaction = proxy[_txid];
 		uint value = transaction.value;
 		uint gas = transaction.gas;
 		bytes memory data = transaction.data;
@@ -276,14 +286,12 @@ contract Operations {
 	}
 	
 	modifier only_client_owner { 
-	    bytes32 newClient = clientOwner[msg.sender]; 
-	    require(newClient != 0); 
+	    require(clientOwner[msg.sender] != 0); 
 	    _; 
 	}
 	
 	modifier only_required_client_owner { 
-	    bytes32 newClient = clientOwner[msg.sender]; 
-	    require(client[newClient].required); 
+	    require(client[clientOwner[msg.sender]].required); 
 	    _; 
 	}
 	
@@ -347,5 +355,4 @@ contract Operations {
 	    if (proxy[_txid].requiredCount >= clientsRequired) 
 	    _; 
 	}
-
 }
