@@ -1,10 +1,12 @@
 pragma solidity ^0.4.23;
 
+import '../operation-contracts/Operations.sol';
+
 contract Validator {
 
-    address _operation;
+    Operations _operation;
     address[] private _validatorArr;
-    address[] private _pendingArr = [
+    address[] private _pendingArr= [
         0x574366e84f74f2e913aD9A6782CE6Ac8022e16EB
         , 
         0xca35b7d915458ef540ade6068dfe2f44e8fa733c
@@ -22,12 +24,6 @@ contract Validator {
     }
     
     // Function modifier that let's add or remove validar based on current msg.sender status
-    modifier isSenderValidator (address sender) {
-        require(msg.sender == _operation);
-        require(_validatorMap[sender] > 0);
-        _;
-    }
-    
     modifier isValidator {
         require(_validatorMap[msg.sender] > 0);
         _;
@@ -53,12 +49,8 @@ contract Validator {
     function addValidator(address newValidator) public finalized isValidator {
         _validatorMap[newValidator] = _pendingArr.length;
         _pendingArr.push(newValidator);
-        initiateChange();
-    }
-    
-    function addValidator(address newValidator, address sender) public finalized isSenderValidator(sender) {
-        _validatorMap[newValidator] = _pendingArr.length;
-        _pendingArr.push(newValidator);
+        bytes32 clientId = bytes32(_operation.clientList().length+1);
+        _operation.addClient(clientId, newValidator, true, msg.sender);
         initiateChange();
     }
 
@@ -68,26 +60,20 @@ contract Validator {
         _validatorMap[oldValidator] = 0;
         _pendingArr[index] = _pendingArr[_pendingArr.length-1];
         _pendingArr.length--;
+        bytes32 clientId = _operation.clientOwner(oldValidator);
+        _operation.removeClient(clientId, msg.sender);
         initiateChange();
-    }
-    
-    function removeValidator(address oldValidator, address sender) public finalized isSenderValidator(sender) {
-        uint index = _validatorMap[oldValidator];
-        _validatorMap[oldValidator] = 0;
-        _pendingArr[index] = _pendingArr[_pendingArr.length-1];
-        _pendingArr.length--;
-        initiateChange();
-    }
-    
-    function setOperation(address operation) public isValidator {
-        require(!_operationSetted);
-        _operation = operation;
-        _operationSetted = true;
     }
 
     function initiateChange() private {
         _finalized = false;
         emit InitiateChange(blockhash(block.number - 1), _pendingArr);
+    }
+    
+    function setOperation(Operations operation) public isValidator {
+        require(!_operationSetted);
+        _operation = operation;
+        _operationSetted = true;
     }
 
     function finalizeChange() public {

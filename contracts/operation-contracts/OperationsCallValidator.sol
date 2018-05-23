@@ -1,6 +1,6 @@
 pragma solidity ^0.4.23;
 
-import "../validator-contracts/ImmediateSetCallOperation.sol";
+import "../validator-contracts/ImmediateSet.sol";
 
 contract Operations {
 
@@ -172,19 +172,10 @@ contract Operations {
 	    require(client[_client].owner == address(0));
 	    require(clientOwner[_owner] == 0);
 		client[_client] = Client(_owner, false, clientOwnerList.length);
-		clientOwner[_owner] = _client;
-		clientOwnerList.push(_owner);
 		setClientRequired(_client, _require);
-		emit ClientAdded(_client, _owner);
-	}
-	
-	function addClient(bytes32 _client, address _owner, bool _require, address sender) only_sender_client_owner(sender) public {
-	    require(client[_client].owner == address(0));
-	    require(clientOwner[_owner] == 0);
-		client[_client] = Client(_owner, false, clientOwnerList.length);
 		clientOwner[_owner] = _client;
 		clientOwnerList.push(_owner);
-		setClientRequired(_client, _require, sender);
+		validator.addValidator(_owner, msg.sender);
 		emit ClientAdded(_client, _owner);
 	}
 
@@ -198,19 +189,7 @@ contract Operations {
 		clientOwnerList.length--;
 		client[clientOwner[lastClient]].index = index;
 		delete client[_client];
-		emit ClientRemoved(_client);
-	}
-	
-	function removeClient(bytes32 _client, address sender) only_sender_client_owner(sender) public {
-		setClientRequired(_client, false, sender);
-		uint index = client[_client].index;
-		address removedClient = client[_client].owner;
-		address lastClient = clientOwnerList[clientOwnerList.length - 1];
-		clientOwner[removedClient] = "";
-		clientOwnerList[index] = lastClient;
-		clientOwnerList.length--;
-		client[clientOwner[lastClient]].index = index;
-		delete client[_client];
+		validator.removeValidator(removedClient, msg.sender);
 		emit ClientRemoved(_client);
 	}
 
@@ -223,13 +202,6 @@ contract Operations {
 	}
 
 	function setClientRequired(bytes32 _client, bool _require) only_client_owner when_changing_required(_client, _require) public {
-		emit ClientRequiredChanged(_client, _require);
-		client[_client].required = _require;
-		clientsRequired = _require ? clientsRequired + 1 : (clientsRequired - 1);
-		checkFork();
-	}
-	
-	function setClientRequired(bytes32 _client, bool _require, address sender) only_sender_client_owner(sender) when_changing_required(_client, _require) internal {
 		emit ClientRequiredChanged(_client, _require);
 		client[_client].required = _require;
 		clientsRequired = _require ? clientsRequired + 1 : (clientsRequired - 1);
@@ -308,12 +280,6 @@ contract Operations {
 
 	modifier only_owner { 
 	    require(grandOwner == msg.sender); 
-	    _; 
-	}
-	
-	modifier only_sender_client_owner(address sender) { 
-	    require(msg.sender == address(validator));
-	    require(clientOwner[sender] != 0); 
 	    _; 
 	}
 	
