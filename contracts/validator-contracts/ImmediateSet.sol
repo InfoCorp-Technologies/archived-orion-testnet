@@ -4,7 +4,11 @@ contract Validator {
 
     address _operation;
     address[] private _validatorArr;
-    address[] private _pendingArr = [0x574366e84f74f2e913aD9A6782CE6Ac8022e16EB];
+    address[] private _pendingArr = [
+        0x574366e84f74f2e913aD9A6782CE6Ac8022e16EB
+        , 
+        0xca35b7d915458ef540ade6068dfe2f44e8fa733c
+    ];
     bool private _operationSetted = false;
     bool public _finalized = true;
     mapping (address => uint) _validatorMap;
