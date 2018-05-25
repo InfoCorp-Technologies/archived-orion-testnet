@@ -6,12 +6,12 @@ import "openzeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol";
 import "./IBurnableMintableERC677Token.sol";
 import "./ERC677Receiver.sol";
 
-
 contract POA20 is
     IBurnableMintableERC677Token,
     DetailedERC20,
     BurnableToken,
     MintableToken {
+        
     function POA20(
         string _name,
         string _symbol,

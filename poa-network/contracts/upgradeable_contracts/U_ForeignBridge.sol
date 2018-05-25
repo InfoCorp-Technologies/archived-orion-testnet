@@ -4,10 +4,10 @@ import "../libraries/Message.sol";
 import "./U_BasicBridge.sol";
 import "../IBurnableMintableERC677Token.sol";
 import "../ERC677Receiver.sol";
-import "openzeppelin-solidity/contracts/token/ERC20/ERC20Basic.sol";
-
+import "../zeppelin-solidity/contracts/token/ERC20/ERC20Basic.sol";
 
 contract ForeignBridge is ERC677Receiver, BasicBridge {
+    
     using SafeMath for uint256;
     /// triggered when relay of deposit from HomeBridge is complete
     event Deposit(address recipient, uint value, bytes32 transactionHash);
@@ -31,8 +31,9 @@ contract ForeignBridge is ERC677Receiver, BasicBridge {
         uint256 _maxPerTx,
         uint256 _minPerTx,
         uint256 _foreignGasPrice,
-        uint256 _requiredBlockConfirmations
-    ) public returns(bool) {
+        uint256 _requiredBlockConfirmations) 
+        public returns(bool) 
+    {
         require(!isInitialized());
         require(_validatorContract != address(0));
         require(_minPerTx > 0 && _maxPerTx > _minPerTx && _foreignDailyLimit > _maxPerTx);

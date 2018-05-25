@@ -3,30 +3,41 @@ import "../libraries/SafeMath.sol";
 import "../libraries/Message.sol";
 import "./U_BasicBridge.sol";
 import "../upgradeability/EternalStorage.sol";
-
+import "../zeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 
 contract HomeBridge is EternalStorage, BasicBridge {
+    
     using SafeMath for uint256;
     event GasConsumptionLimitsUpdated(uint256 gas);
     event Deposit (address recipient, uint256 value);
     event Withdraw (address recipient, uint256 value, bytes32 transactionHash);
     event DailyLimit(uint256 newLimit);
+    
+    ERC20 public ERCToken;
+    
+    function checkToken(address token) public view returns(bool) {
+        uint size;
+        assembly { size := extcodesize(token) }
+        return size > 0;
+    }
 
     function initialize (
         address _validatorContract,
+        address _token,
         uint256 _homeDailyLimit,
         uint256 _maxPerTx,
         uint256 _minPerTx,
         uint256 _homeGasPrice,
-        uint256 _requiredBlockConfirmations
-    ) public
-      returns(bool)
+        uint256 _requiredBlockConfirmations) 
+        public returns(bool)
     {
         require(!isInitialized());
         require(_validatorContract != address(0));
+        require(checkToken(_token));
         require(_homeGasPrice > 0);
         require(_requiredBlockConfirmations > 0);
         require(_minPerTx > 0 && _maxPerTx > _minPerTx && _homeDailyLimit > _maxPerTx);
+        ERCToken = ERC20(_token);
         addressStorage[keccak256("validatorContract")] = _validatorContract;
         uintStorage[keccak256("deployedAtBlock")] = block.number;
         uintStorage[keccak256("homeDailyLimit")] = _homeDailyLimit;
@@ -38,12 +49,12 @@ contract HomeBridge is EternalStorage, BasicBridge {
         return isInitialized();
     }
 
-    function () public payable {
-        require(msg.value > 0);
-        require(msg.data.length == 0);
-        require(withinLimit(msg.value));
-        setTotalSpentPerDay(getCurrentDay(), totalSpentPerDay(getCurrentDay()).add(msg.value));
-        emit Deposit(msg.sender, msg.value);
+    function deposit (uint value) public {
+        require(value > 0);
+        require(withinLimit(value));
+        setTotalSpentPerDay(getCurrentDay(), totalSpentPerDay(getCurrentDay()).add(value));
+        ERCToken.transferFrom(msg.sender, this, value);
+        emit Deposit(msg.sender, value);
     }
 
     function gasLimitWithdrawRelay() public view returns(uint256) {
