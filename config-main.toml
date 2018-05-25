@@ -13,6 +13,11 @@ disable = true
 discovery = true
 reserved_peers = "nodes.txt"
 
+[rpc]
+interface = "local"
+cors = ["*"]
+hosts = ["all"]
+
 [mining]
 author = "0x574366e84f74f2e913ad9a6782ce6ac8022e16eb"
 engine_signer = "0x574366e84f74f2e913ad9a6782ce6ac8022e16eb"
