@@ -1,4 +1,5 @@
 pragma solidity 0.4.23;
+
 import "../IBridgeValidators.sol";
 import "../upgradeability/EternalStorage.sol";
 

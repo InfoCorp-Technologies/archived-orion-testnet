@@ -1,8 +1,8 @@
 pragma solidity 0.4.23;
 
-import "openzeppelin-solidity/contracts/token/ERC20/BurnableToken.sol";
-import "openzeppelin-solidity/contracts/token/ERC20/MintableToken.sol";
-import "openzeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol";
+import "./zeppelin-solidity/contracts/token/ERC20/BurnableToken.sol";
+import "./zeppelin-solidity/contracts/token/ERC20/MintableToken.sol";
+import "./zeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol";
 import "./IBurnableMintableERC677Token.sol";
 import "./ERC677Receiver.sol";
 
@@ -10,8 +10,8 @@ contract POA20 is
     IBurnableMintableERC677Token,
     DetailedERC20,
     BurnableToken,
-    MintableToken {
-        
+    MintableToken 
+{
     function POA20(
         string _name,
         string _symbol,
@@ -67,6 +67,4 @@ contract POA20 is
         uint256 balance = token.balanceOf(address(this));
         require(token.transfer(_to, balance));
     }
-
-
 }

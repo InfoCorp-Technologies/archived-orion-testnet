@@ -1,4 +1,5 @@
 pragma solidity 0.4.23;
+
 import "../libraries/SafeMath.sol";
 import "../libraries/Message.sol";
 import "./U_BasicBridge.sol";
@@ -289,5 +290,4 @@ contract ForeignBridge is ERC677Receiver, BasicBridge {
     function setInitialize(bool _status) private {
         boolStorage[keccak256("isInitialized")] = _status;
     }
-
 }

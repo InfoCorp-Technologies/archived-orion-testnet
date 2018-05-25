@@ -3,12 +3,12 @@ pragma solidity 0.4.23;
 import "./UpgradeabilityProxy.sol";
 import "./UpgradeabilityOwnerStorage.sol";
 
-
 /**
  * @title OwnedUpgradeabilityProxy
  * @dev This contract combines an upgradeability proxy with basic authorization control functionalities
  */
 contract OwnedUpgradeabilityProxy is UpgradeabilityOwnerStorage, UpgradeabilityProxy {
+    
   /**
   * @dev Event to show ownership has been transferred
   * @param previousOwner representing the address of the previous owner
