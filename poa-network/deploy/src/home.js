@@ -1,19 +1,19 @@
 const Web3Utils = require('web3-utils')
 require('dotenv').config({
-  path: __dirname + '/../.env'
+  path: __dirname + '/../env'
 });
 
 const assert = require('assert');
 
-const {deployContract, sendRawTx} = require('./deploymentUtils');
-const {web3Home, deploymentPrivateKey, HOME_RPC_URL} = require('./web3');
+const { deployContract, sendRawTx } = require('./deploymentUtils');
+const { web3Home, deploymentPrivateKey, HOME_RPC_URL } = require('./web3');
 
 const EternalStorageProxy = require('../../build/contracts/EternalStorageProxy.json');
 const BridgeValidators = require('../../build/contracts/BridgeValidators.json')
 const HomeBridge = require('../../build/contracts/HomeBridge.json')
 
 const VALIDATORS = process.env.VALIDATORS.split(" ")
-const HOME_GAS_PRICE =  Web3Utils.toWei(process.env.HOME_GAS_PRICE, 'gwei');
+const HOME_GAS_PRICE = Web3Utils.toWei(process.env.HOME_GAS_PRICE, 'gwei');
 
 const {
   DEPLOYMENT_ACCOUNT_ADDRESS,
@@ -25,24 +25,24 @@ const {
   HOME_MAX_AMOUNT_PER_TX,
   HOME_MIN_AMOUNT_PER_TX,
   HOME_REQUIRED_BLOCK_CONFIRMATIONS,
+  HOME_ERC20_TOKEN
 } = process.env;
 
-async function deployHome()
-{
+async function deployHome() {
   let homeNonce = await web3Home.eth.getTransactionCount(DEPLOYMENT_ACCOUNT_ADDRESS);
   console.log('deploying storage for home validators')
-  const storageValidatorsHome = await deployContract(EternalStorageProxy, [], {from: DEPLOYMENT_ACCOUNT_ADDRESS, nonce: homeNonce})
+  const storageValidatorsHome = await deployContract(EternalStorageProxy, [], { from: DEPLOYMENT_ACCOUNT_ADDRESS, nonce: homeNonce })
   console.log('[Home] BridgeValidators Storage: ', storageValidatorsHome.options.address)
   homeNonce++;
 
   console.log('\ndeploying implementation for home validators')
-  let bridgeValidatorsHome = await deployContract(BridgeValidators, [], {from: DEPLOYMENT_ACCOUNT_ADDRESS, nonce: homeNonce})
+  let bridgeValidatorsHome = await deployContract(BridgeValidators, [], { from: DEPLOYMENT_ACCOUNT_ADDRESS, nonce: homeNonce })
   console.log('[Home] BridgeValidators Implementation: ', bridgeValidatorsHome.options.address)
   homeNonce++;
 
   console.log('\nhooking up eternal storage to BridgeValidators')
   const upgradeToBridgeVHomeData = await storageValidatorsHome.methods.upgradeTo('1', bridgeValidatorsHome.options.address)
-    .encodeABI({from: DEPLOYMENT_ACCOUNT_ADDRESS});
+    .encodeABI({ from: DEPLOYMENT_ACCOUNT_ADDRESS });
   const txUpgradeToBridgeVHome = await sendRawTx({
     data: upgradeToBridgeVHomeData,
     nonce: homeNonce,
@@ -58,7 +58,7 @@ async function deployHome()
   bridgeValidatorsHome.options.address = storageValidatorsHome.options.address
   const initializeData = await bridgeValidatorsHome.methods.initialize(
     REQUIRED_NUMBER_OF_VALIDATORS, VALIDATORS, HOME_OWNER_MULTISIG
-  ).encodeABI({from: DEPLOYMENT_ACCOUNT_ADDRESS})
+  ).encodeABI({ from: DEPLOYMENT_ACCOUNT_ADDRESS })
   const txInitialize = await sendRawTx({
     data: initializeData,
     nonce: homeNonce,
@@ -86,18 +86,18 @@ async function deployHome()
   homeNonce++;
 
   console.log('\ndeploying homeBridge storage\n')
-  const homeBridgeStorage = await deployContract(EternalStorageProxy, [], {from: DEPLOYMENT_ACCOUNT_ADDRESS, nonce: homeNonce})
+  const homeBridgeStorage = await deployContract(EternalStorageProxy, [], { from: DEPLOYMENT_ACCOUNT_ADDRESS, nonce: homeNonce })
   homeNonce++;
   console.log('[Home] HomeBridge Storage: ', homeBridgeStorage.options.address)
 
   console.log('\ndeploying homeBridge implementation\n')
-  const homeBridgeImplementation = await deployContract(HomeBridge, [], {from: DEPLOYMENT_ACCOUNT_ADDRESS, nonce: homeNonce})
+  const homeBridgeImplementation = await deployContract(HomeBridge, [], { from: DEPLOYMENT_ACCOUNT_ADDRESS, nonce: homeNonce })
   homeNonce++;
   console.log('[Home] HomeBridge Implementation: ', homeBridgeImplementation.options.address)
 
   console.log('\nhooking up HomeBridge storage to HomeBridge implementation')
   const upgradeToHomeBridgeData = await homeBridgeStorage.methods.upgradeTo('1', homeBridgeImplementation.options.address)
-    .encodeABI({from: DEPLOYMENT_ACCOUNT_ADDRESS});
+    .encodeABI({ from: DEPLOYMENT_ACCOUNT_ADDRESS });
   const txUpgradeToHomeBridge = await sendRawTx({
     data: upgradeToHomeBridgeData,
     nonce: homeNonce,
@@ -117,8 +117,8 @@ async function deployHome()
   `)
   homeBridgeImplementation.options.address = homeBridgeStorage.options.address
   const initializeHomeBridgeData = await homeBridgeImplementation.methods.initialize(
-    storageValidatorsHome.options.address, HOME_DAILY_LIMIT, HOME_MAX_AMOUNT_PER_TX, HOME_MIN_AMOUNT_PER_TX, HOME_GAS_PRICE, HOME_REQUIRED_BLOCK_CONFIRMATIONS
-  ).encodeABI({from: DEPLOYMENT_ACCOUNT_ADDRESS});
+    storageValidatorsHome.options.address, HOME_ERC20_TOKEN, HOME_DAILY_LIMIT, HOME_MAX_AMOUNT_PER_TX, HOME_MIN_AMOUNT_PER_TX, HOME_GAS_PRICE, HOME_REQUIRED_BLOCK_CONFIRMATIONS
+  ).encodeABI({ from: DEPLOYMENT_ACCOUNT_ADDRESS });
   const txInitializeHomeBridge = await sendRawTx({
     data: initializeHomeBridgeData,
     nonce: homeNonce,

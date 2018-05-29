@@ -27,7 +27,7 @@
     "chai-bignumber": "^2.0.2",
     "lodash": "^4.17.4",
     "rimraf": "^2.6.2",
-    "solc": "^0.4.19",
+    "solc": "^0.4.23",
     "solidity-coverage": "^0.4.9",
     "solium": "^1.0.5",
     "truffle": "^4.0.4"
