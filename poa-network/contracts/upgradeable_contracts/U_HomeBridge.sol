@@ -1,9 +1,10 @@
-pragma solidity 0.4.23;
+pragma solidity ^0.4.23;
+import "./U_BasicBridge.sol";
 import "../libraries/SafeMath.sol";
 import "../libraries/Message.sol";
-import "./U_BasicBridge.sol";
 import "../upgradeability/EternalStorage.sol";
 import "../zeppelin-solidity/contracts/token/ERC20/ERC20.sol";
+import "../IBurnableMintableERC677Token.sol";
 
 contract HomeBridge is EternalStorage, BasicBridge {
     
@@ -12,18 +13,10 @@ contract HomeBridge is EternalStorage, BasicBridge {
     event Deposit (address recipient, uint256 value);
     event Withdraw (address recipient, uint256 value, bytes32 transactionHash);
     event DailyLimit(uint256 newLimit);
-    
-    ERC20 public ERCToken;
-    
-    function checkToken(address token) public view returns(bool) {
-        uint size;
-        assembly { size := extcodesize(token) }
-        return size > 0;
-    }
 
     function initialize (
         address _validatorContract,
-        address _token,
+        address _erc20token,
         uint256 _homeDailyLimit,
         uint256 _maxPerTx,
         uint256 _minPerTx,
@@ -32,13 +25,13 @@ contract HomeBridge is EternalStorage, BasicBridge {
         public returns(bool)
     {
         require(!isInitialized());
-        require(_validatorContract != address(0));
-        require(checkToken(_token));
+        require(isContract(_erc20token));
+        require(isContract(_validatorContract));
         require(_homeGasPrice > 0);
         require(_requiredBlockConfirmations > 0);
         require(_minPerTx > 0 && _maxPerTx > _minPerTx && _homeDailyLimit > _maxPerTx);
-        ERCToken = ERC20(_token);
         addressStorage[keccak256("validatorContract")] = _validatorContract;
+        addressStorage[keccak256("erc677token")] = _erc20token;
         uintStorage[keccak256("deployedAtBlock")] = block.number;
         uintStorage[keccak256("homeDailyLimit")] = _homeDailyLimit;
         uintStorage[keccak256("maxPerTx")] = _maxPerTx;
@@ -48,12 +41,18 @@ contract HomeBridge is EternalStorage, BasicBridge {
         setInitialize(true);
         return isInitialized();
     }
+    
+    function isContract(address token) private view returns(bool) {
+        uint size;
+        assembly { size := extcodesize(token) }
+        return size > 0;
+    }
 
     function deposit (uint value) public {
         require(value > 0);
         require(withinLimit(value));
         setTotalSpentPerDay(getCurrentDay(), totalSpentPerDay(getCurrentDay()).add(value));
-        ERCToken.transferFrom(msg.sender, this, value);
+        erc20token().transferFrom(msg.sender, this, value);
         emit Deposit(msg.sender, value);
     }
 
@@ -81,6 +80,10 @@ contract HomeBridge is EternalStorage, BasicBridge {
         uintStorage[keccak256("gasLimitWithdrawRelay")] = _gas;
         emit GasConsumptionLimitsUpdated(_gas);
     }
+    
+    function erc20token() public view returns(ERC20) {
+        return ERC20(addressStorage[keccak256("erc677token")]);
+    }
 
     function withdraw(uint8[] vs, bytes32[] rs, bytes32[] ss, bytes message) external {
         Message.hasEnoughValidSignatures(message, vs, rs, ss, validatorContract());
@@ -90,10 +93,7 @@ contract HomeBridge is EternalStorage, BasicBridge {
         (recipient, amount, txHash) = Message.parseMessage(message);
         require(!withdraws(txHash));
         setWithdraws(txHash, true);
-
-        // pay out recipient
-        recipient.transfer(amount);
-
+        erc20token().transfer(recipient, amount);
         emit Withdraw(recipient, amount, txHash);
     }
 
