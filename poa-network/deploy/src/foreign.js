@@ -35,12 +35,6 @@ async function deployForeign() {
   console.log('deploying ForeignBridge')
   console.log('========================================\n')
 
-  console.log('\n[Foreign] deploying POA20 token')
-  const poa20foreign = await deployContract(POA20, ["POA ERC20 on Foundation", "POA20", 18], {from: DEPLOYMENT_ACCOUNT_ADDRESS, network: 'foreign', nonce: foreignNonce})
-  foreignNonce++;
-  console.log('[Foreign] POA20: ', poa20foreign.options.address)
-
-
   console.log('deploying storage for foreign validators')
   const storageValidatorsForeign = await deployContract(EternalStorageProxy, [], {from: DEPLOYMENT_ACCOUNT_ADDRESS, network: 'foreign', nonce: foreignNonce})
   foreignNonce++;
@@ -128,7 +122,7 @@ async function deployForeign() {
   `)
   foreignBridgeImplementation.options.address = foreignBridgeStorage.options.address
   const initializeFBridgeData = await foreignBridgeImplementation.methods.initialize(
-    storageValidatorsForeign.options.address, poa20foreign.options.address, FOREIGN_DAILY_LIMIT, FOREIGN_MAX_AMOUNT_PER_TX, FOREIGN_MIN_AMOUNT_PER_TX, FOREIGN_GAS_PRICE, FOREIGN_REQUIRED_BLOCK_CONFIRMATIONS
+    storageValidatorsForeign.options.address, FOREIGN_DAILY_LIMIT, FOREIGN_MAX_AMOUNT_PER_TX, FOREIGN_MIN_AMOUNT_PER_TX, FOREIGN_GAS_PRICE, FOREIGN_REQUIRED_BLOCK_CONFIRMATIONS
   ).encodeABI({from: DEPLOYMENT_ACCOUNT_ADDRESS});
   const txInitializeBridge = await sendRawTx({
     data: initializeFBridgeData,
@@ -138,19 +132,6 @@ async function deployForeign() {
     url: FOREIGN_RPC_URL
   });
   assert.equal(txInitializeBridge.status, '0x1', 'Transaction Failed');
-  foreignNonce++;
-
-  console.log('transferring ownership of POA20 token to foreignBridge contract')
-  const txOwnershipData = await poa20foreign.methods.transferOwnership(foreignBridgeStorage.options.address)
-          .encodeABI({from: DEPLOYMENT_ACCOUNT_ADDRESS})
-  const txOwnership = await sendRawTx({
-    data: txOwnershipData,
-    nonce: foreignNonce,
-    to: poa20foreign.options.address,
-    privateKey: deploymentPrivateKey,
-    url: FOREIGN_RPC_URL
-  });
-  assert.equal(txOwnership.status, '0x1', 'Transaction Failed');
   foreignNonce++;
 
   const bridgeOwnershipData = await foreignBridgeStorage.methods.transferProxyOwnership(FOREIGN_UPGRADEABLE_ADMIN_BRIDGE)
@@ -172,8 +153,7 @@ async function deployForeign() {
       {
         address: foreignBridgeStorage.options.address,
         deployedBlockNumber: Web3Utils.hexToNumber(foreignBridgeStorage.deployedBlockNumber)
-      },
-    erc677: {address: poa20foreign.options.address}
+      }
   }
 }
 

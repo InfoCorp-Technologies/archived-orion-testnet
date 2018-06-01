@@ -3,6 +3,27 @@ chain = "sentinel.json"
 base_path = "./base-path"
 identity = "sentinel-node"
 
+[ui]
+disable = false
+force = true
+port = 8180
+interface = "127.0.0.1"
+
+[account]
+unlock = ["0x574366e84f74f2e913aD9A6782CE6Ac8022e16EB"]
+password = ["password.txt"]
+
+[websockets]
+disable = false
+port = 8546
+interface = "local"
+origins = ["none"]
+apis = ["web3", "eth", "pubsub", "net", "parity", "parity_pubsub", "traces", "rpc", "shh", "shh_pubsub"]
+hosts = ["none"]
+
+[dapps]
+disable = false
+
 [network]
 discovery = true
 reserved_peers = "nodes.txt"
