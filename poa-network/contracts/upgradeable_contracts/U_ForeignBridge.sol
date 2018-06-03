@@ -103,7 +103,7 @@ contract ForeignBridge is BasicBridge {
         emit GasConsumptionLimitsUpdated(gasLimitDepositRelay(), gasLimitWithdrawConfirm());
     }
 
-    function deposit(address _recipient, uint256 value, bytes32 _transactionHash) external onlyValidator {
+    function deposit(address _recipient, uint256 _value, bytes32 _transactionHash) external onlyValidator {
         bytes32 hashMsg = keccak256(_recipient, _value, _transactionHash);
         bytes32 hashSender = keccak256(msg.sender, hashMsg);
         // Duplicated deposits
@@ -138,7 +138,7 @@ contract ForeignBridge is BasicBridge {
     /// foreign transaction hash (bytes32) // to avoid transaction duplication
     function submitSignature(bytes _signature, bytes _message) external onlyValidator {
         // ensure that `signature` is really `message` signed by `msg.sender`
-        require(Message.isMessageValid(message));
+        require(Message.isMessageValid(_message));
         require(msg.sender == Message.recoverAddressFromSignedMessage(_signature, _message));
         bytes32 hashMsg = keccak256(_message);
         bytes32 hashSender = keccak256(msg.sender, hashMsg);
