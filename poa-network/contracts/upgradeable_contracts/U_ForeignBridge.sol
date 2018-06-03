@@ -49,9 +49,13 @@ contract ForeignBridge is BasicBridge {
     function () public payable {
         require(msg.value > 0);
         require(msg.data.length == 0);
-        require(withinLimit(msg.value));
-        setTotalSpentPerDay(getCurrentDay(), totalSpentPerDay(getCurrentDay()).add(msg.value));
-        emit Withdraw(msg.sender, msg.value, gasPriceForCompensationAtHomeSide());
+        // This check is so that at the moment of deployment flow can send
+        // ether to contract balance.
+        if (isInitialized()) {
+            require(withinLimit(msg.value));
+            setTotalSpentPerDay(getCurrentDay(), totalSpentPerDay(getCurrentDay()).add(msg.value));
+            emit Withdraw(msg.sender, msg.value, gasPriceForCompensationAtHomeSide());
+        }
     }
 
     function setMaxPerTx(uint256 _maxPerTx) external onlyOwner {
