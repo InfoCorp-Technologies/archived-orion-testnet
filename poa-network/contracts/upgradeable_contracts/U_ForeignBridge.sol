@@ -58,12 +58,6 @@ contract ForeignBridge is BasicBridge {
         }
     }
 
-    function sendEther() public payable {
-        // This method is only for testing.
-        require(msg.value > 0);
-        require(msg.data.length == 0);
-    }
-
     function setMaxPerTx(uint256 _maxPerTx) external onlyOwner {
         require(_maxPerTx < foreignDailyLimit());
         uintStorage[keccak256("maxPerTx")] = _maxPerTx;

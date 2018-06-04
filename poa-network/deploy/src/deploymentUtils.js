@@ -47,14 +47,15 @@ async function deployContract(contractJson, args, {from, network, nonce}) {
 }
 
 
-async function sendRawTx({data, nonce, to, privateKey, url}) {
+async function sendRawTx({data, nonce, to, privateKey, url, value = '0x0'}) {
   try {
     var rawTx = {
       nonce,
       gasPrice: Web3Utils.toHex(GAS_PRICE),
       gasLimit: Web3Utils.toHex(GAS_LIMIT),
       to,
-      data
+      data,
+      value
     }
 
     var tx = new Tx(rawTx);
