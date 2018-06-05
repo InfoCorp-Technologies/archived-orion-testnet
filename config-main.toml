@@ -23,6 +23,7 @@ author = "0x574366e84f74f2e913ad9a6782ce6ac8022e16eb"
 engine_signer = "0x574366e84f74f2e913ad9a6782ce6ac8022e16eb"
 reseal_max_period = 600000
 min_gas_price = 100000000000000000 #min gas price in WEI per GAS unit (0.1 Ether)
+extra_data = "0x0" # Blocks that you mine will have '0x53' in extra data field.
 
 [footprint]
 tracing = "on"

@@ -18,6 +18,7 @@ author = "ETH_MINER_ACCOUNT"
 engine_signer = "ETH_MINER_ACCOUNT"
 reseal_max_period = 600000
 min_gas_price = 100000000000000000 #min gas price in WEI per GAS unit (0.1 Ether)
+extra_data = "0x1" # Blocks that you mine will have '0x53' in extra data field.
 
 [misc]
 logging = "own_tx=trace"
