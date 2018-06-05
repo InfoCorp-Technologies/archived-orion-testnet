@@ -4,14 +4,9 @@ base_path = "./base-path"
 identity = "sentinel-node"
 
 [ui]
-disable = false
 force = true
 port = 8180
 interface = "127.0.0.1"
-
-[account]
-unlock = ["0x574366e84f74f2e913aD9A6782CE6Ac8022e16EB"]
-password = ["password.txt"]
 
 [websockets]
 disable = false
