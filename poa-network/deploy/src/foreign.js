@@ -8,7 +8,6 @@ const assert = require('assert');
 const {deployContract, sendRawTx} = require('./deploymentUtils');
 const {web3Foreign, deploymentPrivateKey, FOREIGN_RPC_URL} = require('./web3');
 
-const POA20 = require('../../build/contracts/POA20.json');
 const EternalStorageProxy = require('../../build/contracts/EternalStorageProxy.json');
 const BridgeValidators = require('../../build/contracts/BridgeValidators.json')
 const ForeignBridge = require('../../build/contracts/ForeignBridge.json')

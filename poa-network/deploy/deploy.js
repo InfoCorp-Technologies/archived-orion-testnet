@@ -9,7 +9,7 @@ async function main() {
   console.log("\nDeployment has been completed.\n\n")
   console.log(`[   Home  ] HomeBridge: ${homeBridge.address} at block ${homeBridge.deployedBlockNumber}`)
   console.log(`[ Foreign ] ForeignBridge: ${foreignBridge.address} at block ${foreignBridge.deployedBlockNumber}`)
-  console.log(`[ Foreign ] SENC: ${sencToken}`)
+  console.log(`[ Foreign ] SENC: ${sencToken.address}`)
   fs.writeFileSync('./bridgeDeploymentResults.json', JSON.stringify({
     homeBridge: {
       ...homeBridge,

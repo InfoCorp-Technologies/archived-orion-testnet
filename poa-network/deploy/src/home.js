@@ -107,9 +107,9 @@ async function deployHome()
   })
   assert.equal(txUpgradeToHomeBridge.status, '0x1', 'Transaction Failed');
   homeNonce++;
-  
+
   homeBridgeImplementation.options.address = homeBridgeStorage.options.address
-  console.log('\nSend 100 ETHER to Home Bridge\n')                                  
+  console.log('\nSend 100 SENI to Home Bridge\n')                                  
   const sendEtherTx = await sendRawTx({                                                
     data: '0x',                                                                        
     nonce: homeNonce,                                                               
@@ -119,7 +119,7 @@ async function deployHome()
     value: Web3Utils.toHex(Web3Utils.toWei('100', 'ether'))                            
   });                                                                                  
   assert.equal(sendEtherTx.status, '0x1', 'Transaction Failed');                       
-  foreignNonce++;                                                                      
+  homeNonce++;                                                                      
 
   console.log('\ninitializing Home Bridge with following parameters:\n')
   console.log(`Home Validators: ${storageValidatorsHome.options.address},
