@@ -1,4 +1,4 @@
-pragma solidity 0.4.23;
+pragma solidity ^0.4.23;
 import "../libraries/SafeMath.sol";
 import "../libraries/Message.sol";
 import "./U_BasicBridge.sol";
@@ -41,9 +41,11 @@ contract HomeBridge is EternalStorage, BasicBridge {
     function () public payable {
         require(msg.value > 0);
         require(msg.data.length == 0);
-        require(withinLimit(msg.value));
-        setTotalSpentPerDay(getCurrentDay(), totalSpentPerDay(getCurrentDay()).add(msg.value));
-        emit Deposit(msg.sender, msg.value);
+        if (isInitialized()) {
+            require(withinLimit(msg.value));
+            setTotalSpentPerDay(getCurrentDay(), totalSpentPerDay(getCurrentDay()).add(msg.value));
+            emit Deposit(msg.sender, msg.value);
+        }
     }
 
     function gasLimitWithdrawRelay() public view returns(uint256) {
@@ -71,12 +73,12 @@ contract HomeBridge is EternalStorage, BasicBridge {
         emit GasConsumptionLimitsUpdated(_gas);
     }
 
-    function withdraw(uint8[] vs, bytes32[] rs, bytes32[] ss, bytes message) external {
-        Message.hasEnoughValidSignatures(message, vs, rs, ss, validatorContract());
+    function withdraw(uint8[] _vs, bytes32[] _rs, bytes32[] _ss, bytes _message) external {
+        Message.hasEnoughValidSignatures(_message, _vs, _rs, _ss, validatorContract());
         address recipient;
         uint256 amount;
         bytes32 txHash;
-        (recipient, amount, txHash) = Message.parseMessage(message);
+        (recipient, amount, txHash) = Message.parseMessage(_message);
         require(!withdraws(txHash));
         setWithdraws(txHash, true);
 
