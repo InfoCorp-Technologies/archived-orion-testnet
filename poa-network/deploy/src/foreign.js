@@ -26,7 +26,7 @@ const {
   FOREIGN_MAX_AMOUNT_PER_TX,
   FOREIGN_MIN_AMOUNT_PER_TX,
   FOREIGN_REQUIRED_BLOCK_CONFIRMATIONS,
-
+  FOREIGN_SENC_ADDRESS,
 } = process.env;
 
 async function deployForeign() {
@@ -114,27 +114,15 @@ async function deployForeign() {
   assert.equal(txUpgradeToForeignBridge.status, '0x1', 'Transaction Failed');
   foreignNonce++;
 
-  foreignBridgeImplementation.options.address = foreignBridgeStorage.options.address
-  console.log('\nSend 100 ETHER to Foreign Bridge\n')
-  const sendEtherTx = await sendRawTx({
-    data: '0x',
-    nonce: foreignNonce,
-    to: foreignBridgeImplementation.options.address,
-    privateKey: deploymentPrivateKey,
-    url: FOREIGN_RPC_URL,
-    value: Web3Utils.toHex(Web3Utils.toWei('100', 'ether'))
-  });
-  assert.equal(sendEtherTx.status, '0x1', 'Transaction Failed');
-  foreignNonce++;
-
   console.log('\ninitializing Foreign Bridge with following parameters:\n')
   console.log(`Foreign Validators: ${storageValidatorsForeign.options.address},
   FOREIGN_DAILY_LIMIT : ${FOREIGN_DAILY_LIMIT} which is ${Web3Utils.fromWei(FOREIGN_DAILY_LIMIT)} in eth,
   FOREIGN_MAX_AMOUNT_PER_TX: ${FOREIGN_MAX_AMOUNT_PER_TX} which is ${Web3Utils.fromWei(FOREIGN_MAX_AMOUNT_PER_TX)} in eth,
   FOREIGN_MIN_AMOUNT_PER_TX: ${FOREIGN_MIN_AMOUNT_PER_TX} which is ${Web3Utils.fromWei(FOREIGN_MIN_AMOUNT_PER_TX)} in eth
   `)
+  foreignBridgeImplementation.options.address = foreignBridgeStorage.options.address
   const initializeFBridgeData = await foreignBridgeImplementation.methods.initialize(
-    storageValidatorsForeign.options.address, FOREIGN_DAILY_LIMIT, FOREIGN_MAX_AMOUNT_PER_TX, FOREIGN_MIN_AMOUNT_PER_TX, FOREIGN_GAS_PRICE, FOREIGN_REQUIRED_BLOCK_CONFIRMATIONS
+    storageValidatorsForeign.options.address, FOREIGN_SENC_ADDRESS, FOREIGN_DAILY_LIMIT, FOREIGN_MAX_AMOUNT_PER_TX, FOREIGN_MIN_AMOUNT_PER_TX, FOREIGN_GAS_PRICE, FOREIGN_REQUIRED_BLOCK_CONFIRMATIONS
   ).encodeABI({from: DEPLOYMENT_ACCOUNT_ADDRESS});
   const txInitializeBridge = await sendRawTx({
     data: initializeFBridgeData,
@@ -145,6 +133,19 @@ async function deployForeign() {
   });
   assert.equal(txInitializeBridge.status, '0x1', 'Transaction Failed');
   foreignNonce++;
+
+/*   console.log('transferring ownership of POA20 token to foreignBridge contract')
+  const txOwnershipData = await poa20foreign.methods.transferOwnership(foreignBridgeStorage.options.address)
+          .encodeABI({from: DEPLOYMENT_ACCOUNT_ADDRESS})
+  const txOwnership = await sendRawTx({
+    data: txOwnershipData,
+    nonce: foreignNonce,
+    to: FOREIGN_SENC_ADDRESS,
+    privateKey: deploymentPrivateKey,
+    url: FOREIGN_RPC_URL
+  });
+  assert.equal(txOwnership.status, '0x1', 'Transaction Failed');
+  foreignNonce++; */
 
   const bridgeOwnershipData = await foreignBridgeStorage.methods.transferProxyOwnership(FOREIGN_UPGRADEABLE_ADMIN_BRIDGE)
     .encodeABI({from: DEPLOYMENT_ACCOUNT_ADDRESS});
@@ -165,7 +166,8 @@ async function deployForeign() {
       {
         address: foreignBridgeStorage.options.address,
         deployedBlockNumber: Web3Utils.hexToNumber(foreignBridgeStorage.deployedBlockNumber)
-      }
+      },
+    sencToken: {address: FOREIGN_SENC_ADDRESS}
   }
 }
 
