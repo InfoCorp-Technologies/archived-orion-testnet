@@ -5,11 +5,11 @@ const deployForeign = require('./src/foreign');
 
 async function main() {
   const homeBridge = await deployHome()
-  const {foreignBridge, erc677} = await deployForeign();
+  const {foreignBridge, sencToken} = await deployForeign();
   console.log("\nDeployment has been completed.\n\n")
   console.log(`[   Home  ] HomeBridge: ${homeBridge.address} at block ${homeBridge.deployedBlockNumber}`)
   console.log(`[ Foreign ] ForeignBridge: ${foreignBridge.address} at block ${foreignBridge.deployedBlockNumber}`)
-  console.log(`[ Foreign ] POA20: ${erc677.address}`)
+  console.log(`[ Foreign ] SENC: ${sencToken}`)
   fs.writeFileSync('./bridgeDeploymentResults.json', JSON.stringify({
     homeBridge: {
       ...homeBridge,
