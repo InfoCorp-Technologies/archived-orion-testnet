@@ -50,8 +50,8 @@ contract ForeignBridge is BasicBridge {
 
     function onTokenTransfer(uint256 _value) external returns(bool) {
         require(withinLimit(_value));
-        require(erc20token().transferFrom(msg.sender, address(this), _value));
         setTotalSpentPerDay(getCurrentDay(), totalSpentPerDay(getCurrentDay()).add(_value));
+        erc20token().transferFrom(msg.sender, this, _value);
         emit Withdraw(msg.sender, _value, gasPriceForCompensationAtHomeSide());
         return true;
     }
@@ -149,11 +149,11 @@ contract ForeignBridge is BasicBridge {
     /// withdrawal recipient (bytes20)
     /// withdrawal value (uint)
     /// foreign transaction hash (bytes32) // to avoid transaction duplication
-    function submitSignature(bytes _signature, bytes _message) external onlyValidator {
+    function submitSignature(bytes signature, bytes message) external onlyValidator {
         // ensure that `signature` is really `message` signed by `msg.sender`
-        require(Message.isMessageValid(_message));
-        require(msg.sender == Message.recoverAddressFromSignedMessage(_signature, _message));
-        bytes32 hashMsg = keccak256(_message);
+        require(Message.isMessageValid(message));
+        require(msg.sender == Message.recoverAddressFromSignedMessage(signature, message));
+        bytes32 hashMsg = keccak256(message);
         bytes32 hashSender = keccak256(msg.sender, hashMsg);
 
         uint256 signed = numMessagesSigned(hashMsg);
@@ -164,12 +164,12 @@ contract ForeignBridge is BasicBridge {
             // Duplicated signatures
             require(!messagesSigned(hashSender));
         } else {
-            setMessages(hashMsg, _message);
+            setMessages(hashMsg, message);
         }
         setMessagesSigned(hashSender, true);
 
         bytes32 signIdx = keccak256(hashMsg, (signed-1));
-        setSignatures(signIdx, _signature);
+        setSignatures(signIdx, signature);
 
         setNumMessagesSigned(hashMsg, signed);
 

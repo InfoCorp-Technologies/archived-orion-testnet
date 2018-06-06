@@ -13,7 +13,8 @@ async function main() {
   fs.writeFileSync('./bridgeDeploymentResults.json', JSON.stringify({
     homeBridge: {
       ...homeBridge,
-    },foreignBridge: {
+    },
+    foreignBridge: {
       ...foreignBridge,
     },sencToken
   },null,4));
