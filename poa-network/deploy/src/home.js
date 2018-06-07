@@ -109,14 +109,14 @@ async function deployHome()
   homeNonce++;
 
   homeBridgeImplementation.options.address = homeBridgeStorage.options.address
-  console.log('\nSend 100 SENI to Home Bridge\n')                                  
+  console.log('\nSend 5 SENI to Home Bridge\n')                                  
   const sendEtherTx = await sendRawTx({                                                
     data: '0x',                                                                        
     nonce: homeNonce,                                                               
     to: homeBridgeImplementation.options.address,                                   
     privateKey: deploymentPrivateKey,                                                  
     url: HOME_RPC_URL,                                                              
-    value: Web3Utils.toHex(Web3Utils.toWei('100', 'ether'))                            
+    value: Web3Utils.toHex(Web3Utils.toWei('5', 'ether'))                            
   });                                                                                  
   assert.equal(sendEtherTx.status, '0x1', 'Transaction Failed');                       
   homeNonce++;                                                                      
