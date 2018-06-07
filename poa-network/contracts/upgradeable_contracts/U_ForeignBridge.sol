@@ -1,9 +1,9 @@
 pragma solidity ^0.4.23;
+
 import "../libraries/SafeMath.sol";
 import "../libraries/Message.sol";
 import "./U_BasicBridge.sol";
 import "../zeppelin-solidity/contracts/token/ERC20/ERC20.sol"; 
-
 
 
 contract ForeignBridge is BasicBridge {
@@ -15,7 +15,7 @@ contract ForeignBridge is BasicBridge {
     event Withdraw(address recipient, uint256 value, uint256 homeGasPrice);
 
     /// Collected signatures which should be relayed to home chain.
-    event CollectedSignatures(address authorityResponsibleForRelay, bytes32 messageHash, uint256 NumberOfCollectedSignatures);
+    event CollectedSignatures(address authorityResponsibleForRelay, bytes32 messageHash);
 
     event GasConsumptionLimitsUpdated(uint256 gasLimitDepositRelay, uint256 gasLimitWithdrawConfirm);
 
@@ -149,11 +149,11 @@ contract ForeignBridge is BasicBridge {
     /// withdrawal recipient (bytes20)
     /// withdrawal value (uint)
     /// foreign transaction hash (bytes32) // to avoid transaction duplication
-    function submitSignature(bytes signature, bytes message) external onlyValidator {
+    function submitSignature(bytes _signature, bytes _message) external onlyValidator {
         // ensure that `signature` is really `message` signed by `msg.sender`
-        require(Message.isMessageValid(message));
-        require(msg.sender == Message.recoverAddressFromSignedMessage(signature, message));
-        bytes32 hashMsg = keccak256(message);
+        require(Message.isMessageValid(_message));
+        require(msg.sender == Message.recoverAddressFromSignedMessage(_signature, _message));
+        bytes32 hashMsg = keccak256(_message);
         bytes32 hashSender = keccak256(msg.sender, hashMsg);
 
         uint256 signed = numMessagesSigned(hashMsg);
@@ -164,21 +164,19 @@ contract ForeignBridge is BasicBridge {
             // Duplicated signatures
             require(!messagesSigned(hashSender));
         } else {
-            setMessages(hashMsg, message);
+            setMessages(hashMsg, _message);
         }
         setMessagesSigned(hashSender, true);
 
         bytes32 signIdx = keccak256(hashMsg, (signed-1));
-        setSignatures(signIdx, signature);
+        setSignatures(signIdx, _signature);
 
         setNumMessagesSigned(hashMsg, signed);
 
         emit SignedForWithdraw(msg.sender, hashMsg);
-
-        uint256 reqSigs = validatorContract().requiredSignatures();
-        if (signed >= reqSigs) {
+        if (signed >= validatorContract().requiredSignatures()) {
             setNumMessagesSigned(hashMsg, markAsProcessed(signed));
-            emit CollectedSignatures(msg.sender, hashMsg, reqSigs);
+            emit CollectedSignatures(msg.sender, hashMsg);
         }
     }
 

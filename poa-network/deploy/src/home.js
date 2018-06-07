@@ -108,8 +108,8 @@ async function deployHome()
   assert.equal(txUpgradeToHomeBridge.status, '0x1', 'Transaction Failed');
   homeNonce++;
 
-  homeBridgeImplementation.options.address = homeBridgeStorage.options.address
   console.log('\nSend 5 SENI to Home Bridge\n')                                  
+  homeBridgeImplementation.options.address = homeBridgeStorage.options.address
   const sendEtherTx = await sendRawTx({                                                
     data: '0x',                                                                        
     nonce: homeNonce,                                                               
