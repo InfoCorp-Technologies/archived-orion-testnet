@@ -1,27 +1,33 @@
 [parity]
 chain = "sentinel.json"
-base_path = "./base-path"
-identity = "sentinel-node"
+identity = "sentinel-main"
+
+[account]
+password = ["password.txt"]
 
 [ui]
-force = true
-port = 8180
-interface = "127.0.0.1"
-
-[websockets]
-disable = false
-port = 8546
-interface = "local"
-origins = ["none"]
-apis = ["web3", "eth", "pubsub", "net", "parity", "parity_pubsub", "traces", "rpc", "shh", "shh_pubsub"]
-hosts = ["none"]
-
-[dapps]
 disable = false
 
 [network]
 discovery = true
 reserved_peers = "nodes.txt"
+
+[rpc]
+interface = "local"
+cors = ["*"]
+hosts = ["all"]
+
+[mining]
+author = "0x574366e84f74f2e913ad9a6782ce6ac8022e16eb"
+engine_signer = "0x574366e84f74f2e913ad9a6782ce6ac8022e16eb"
+reseal_max_period = 600000
+min_gas_price = 100000000000000000 #min gas price in WEI per GAS unit (0.1 Ether)
+extra_data = "0x0" # Blocks that you mine will have '0x53' in extra data field.
+
+[footprint]
+tracing = "on"
+fat_db = "on"
+pruning = "archive"
 
 [misc]
 logging = "own_tx=trace"
