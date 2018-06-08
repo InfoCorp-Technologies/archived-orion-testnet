@@ -1,5 +1,5 @@
 require('dotenv').config({
-  path: __dirname + '/../.env'
+  path: __dirname + '/../env'
 });
 const Web3Utils = require('web3-utils');
 
@@ -17,7 +17,7 @@ const GAS_LIMIT = process.env.DEPLOYMENT_GAS_LIMIT;
 const GET_RECEIPT_INTERVAL_IN_MILLISECONDS = process.env.GET_RECEIPT_INTERVAL_IN_MILLISECONDS;
 
 const DEPLOYMENT_ACCOUNT_ADDRESS = process.env.DEPLOYMENT_ACCOUNT_ADDRESS;
-const DEPLOYMENT_ACCOUNT_PRIVATE_KEY= process.env.DEPLOYMENT_ACCOUNT_PRIVATE_KEY;
+const DEPLOYMENT_ACCOUNT_PRIVATE_KEY = process.env.DEPLOYMENT_ACCOUNT_PRIVATE_KEY;
 const deploymentPrivateKey = Buffer.from(DEPLOYMENT_ACCOUNT_PRIVATE_KEY, 'hex')
 
 
