@@ -75,7 +75,7 @@ async function deployForeign() {
   assert.equal(validatorOwner.toLowerCase(), FOREIGN_OWNER_MULTISIG.toLocaleLowerCase());
   foreignNonce++;
 
-  console.log('\nTransferring ownership of ValidatorsProxy\n')
+  console.log('\nTransferring ownership of ValidatorsProxy')
   const validatorsForeignOwnershipData = await storageValidatorsForeign.methods.transferProxyOwnership(FOREIGN_UPGRADEABLE_ADMIN_VALIDATORS)
     .encodeABI({ from: DEPLOYMENT_ACCOUNT_ADDRESS });
   const txValidatorsForeignOwnershipData = await sendRawTx({
@@ -90,12 +90,12 @@ async function deployForeign() {
   const newProxyValidatorsOwner = await storageValidatorsForeign.methods.proxyOwner().call();
   assert.equal(newProxyValidatorsOwner.toLowerCase(), FOREIGN_UPGRADEABLE_ADMIN_VALIDATORS.toLowerCase());
 
-  console.log('\ndeploying foreignBridge storage\n')
+  console.log('\ndeploying foreignBridge storage')
   const foreignBridgeStorage = await deployContract(EternalStorageProxy, [], { from: DEPLOYMENT_ACCOUNT_ADDRESS, network: 'foreign', nonce: foreignNonce })
   foreignNonce++;
   console.log('[Foreign] ForeignBridge Storage: ', foreignBridgeStorage.options.address)
 
-  console.log('\ndeploying foreignBridge implementation\n')
+  console.log('\ndeploying foreignBridge implementation')
   const foreignBridgeImplementation = await deployContract(ForeignBridge, [], { from: DEPLOYMENT_ACCOUNT_ADDRESS, network: 'foreign', nonce: foreignNonce })
   foreignNonce++;
   console.log('[Foreign] ForeignBridge Implementation: ', foreignBridgeImplementation.options.address)
@@ -113,7 +113,7 @@ async function deployForeign() {
   assert.equal(txUpgradeToForeignBridge.status, '0x1', 'Transaction Failed');
   foreignNonce++;
 
-  console.log('\ninitializing Foreign Bridge with following parameters:\n')
+  console.log('\ninitializing Foreign Bridge with following parameters:')
   console.log(`Foreign Validators: ${storageValidatorsForeign.options.address},
   FOREIGN_DAILY_LIMIT : ${FOREIGN_DAILY_LIMIT} which is ${Web3Utils.fromWei(FOREIGN_DAILY_LIMIT)} in eth,
   FOREIGN_MAX_AMOUNT_PER_TX: ${FOREIGN_MAX_AMOUNT_PER_TX} which is ${Web3Utils.fromWei(FOREIGN_MAX_AMOUNT_PER_TX)} in eth,

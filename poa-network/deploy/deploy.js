@@ -5,8 +5,8 @@ const deployForeign = require('./src/foreign');
 
 async function main() {
   const homeBridge = await deployHome()
-  const {foreignBridge, sencToken} = await deployForeign();
-  console.log("\nDeployment has been completed.\n\n")
+  const { foreignBridge, sencToken } = await deployForeign();
+  console.log("\nDeployment has been completed.\n")
   console.log(`[   Home  ] HomeBridge: ${homeBridge.address} at block ${homeBridge.deployedBlockNumber}`)
   console.log(`[ Foreign ] ForeignBridge: ${foreignBridge.address} at block ${foreignBridge.deployedBlockNumber}`)
   console.log(`[ Foreign ] SENC: ${sencToken.address}`)
@@ -16,8 +16,8 @@ async function main() {
     },
     foreignBridge: {
       ...foreignBridge,
-    },sencToken
-  },null,4));
-  console.log('Contracts Deployment have been saved to `bridgeDeploymentResults.json`')
+    }, sencToken
+  }, null, 4));
+  console.log('\nContracts Deployment have been saved to `bridgeDeploymentResults.json`')
 }
 main()
