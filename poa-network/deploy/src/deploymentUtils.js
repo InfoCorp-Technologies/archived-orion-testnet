@@ -5,7 +5,8 @@ const {
   FOREIGN_RPC_URL,
   HOME_RPC_URL,
   GAS_LIMIT,
-  GAS_PRICE,
+  HOME_GAS_PRICE,
+  FOREIGN_GAS_PRICE,
   GET_RECEIPT_INTERVAL_IN_MILLISECONDS
 } = require('./web3');
 const Tx = require('ethereumjs-tx');
@@ -14,17 +15,19 @@ const fetch = require('node-fetch');
 const assert = require('assert')
 
 async function deployContract(contractJson, args, {from, network, nonce}) {
-  let web3, url;
+  let web3, url, gas_price;
   if(network === 'foreign'){
     web3 = web3Foreign
     url = FOREIGN_RPC_URL
+    gas_price = FOREIGN_GAS_PRICE
   } else {
     web3 = web3Home
     url = HOME_RPC_URL
+    gas_price = HOME_GAS_PRICE
   }
   const options = {
     from,
-    gasPrice: GAS_PRICE,
+    gasPrice: gas_price,
   };
   let instance = new web3.eth.Contract(contractJson.abi, options);
   const result = await instance.deploy({
@@ -36,7 +39,8 @@ async function deployContract(contractJson, args, {from, network, nonce}) {
     nonce: Web3Utils.toHex(nonce),
     to: null,
     privateKey: deploymentPrivateKey,
-    url
+    url,
+    network
   })
   if(tx.status !== '0x1'){
     throw new Error('Tx failed');
@@ -47,8 +51,10 @@ async function deployContract(contractJson, args, {from, network, nonce}) {
 }
 
 
-async function sendRawTx({data, nonce, to, privateKey, url, value = '0x0'}) {
+async function sendRawTx({data, nonce, to, privateKey, url, value = '0x0', network = 'home'}) {
   try {
+    const GAS_PRICE = (network === 'foreign' ? FOREIGN_GAS_PRICE : HOME_GAS_PRICE);
+
     var rawTx = {
       nonce,
       gasPrice: Web3Utils.toHex(GAS_PRICE),

@@ -1,6 +1,6 @@
 const fs = require('fs');
 
-const deployHome = require('./src/home');
+const deploy = require('./src/home');
 const deployForeign = require('./src/foreign');
 
 async function main() {
