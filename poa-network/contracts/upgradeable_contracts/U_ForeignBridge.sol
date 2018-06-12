@@ -1,14 +1,12 @@
-pragma solidity 0.4.23;
+pragma solidity ^0.4.23;
 
 import "../libraries/SafeMath.sol";
 import "../libraries/Message.sol";
 import "./U_BasicBridge.sol";
-import "../IBurnableMintableERC677Token.sol";
-import "../ERC677Receiver.sol";
-import "../zeppelin-solidity/contracts/token/ERC20/ERC20Basic.sol";
+import "../zeppelin-solidity/contracts/token/ERC20/ERC20.sol"; 
 
-contract ForeignBridge is ERC677Receiver, BasicBridge {
-    
+
+contract ForeignBridge is BasicBridge {
     using SafeMath for uint256;
     /// triggered when relay of deposit from HomeBridge is complete
     event Deposit(address recipient, uint value, bytes32 transactionHash);
@@ -17,7 +15,7 @@ contract ForeignBridge is ERC677Receiver, BasicBridge {
     event Withdraw(address recipient, uint256 value, uint256 homeGasPrice);
 
     /// Collected signatures which should be relayed to home chain.
-    event CollectedSignatures(address authorityResponsibleForRelay, bytes32 messageHash, uint256 NumberOfCollectedSignatures);
+    event CollectedSignatures(address authorityResponsibleForRelay, bytes32 messageHash);
 
     event GasConsumptionLimitsUpdated(uint256 gasLimitDepositRelay, uint256 gasLimitWithdrawConfirm);
 
@@ -27,20 +25,19 @@ contract ForeignBridge is ERC677Receiver, BasicBridge {
 
     function initialize(
         address _validatorContract,
-        address _erc677token,
+        address _erc20token,
         uint256 _foreignDailyLimit,
         uint256 _maxPerTx,
         uint256 _minPerTx,
         uint256 _foreignGasPrice,
-        uint256 _requiredBlockConfirmations) 
-        public returns(bool) 
-    {
+        uint256 _requiredBlockConfirmations
+    ) public returns(bool) {
         require(!isInitialized());
         require(_validatorContract != address(0));
         require(_minPerTx > 0 && _maxPerTx > _minPerTx && _foreignDailyLimit > _maxPerTx);
         require(_foreignGasPrice > 0);
         addressStorage[keccak256("validatorContract")] = _validatorContract;
-        setErc677token(_erc677token);
+        setErc20token(_erc20token);
         uintStorage[keccak256("foreignDailyLimit")] = _foreignDailyLimit;
         uintStorage[keccak256("deployedAtBlock")] = block.number;
         uintStorage[keccak256("maxPerTx")] = _maxPerTx;
@@ -51,12 +48,11 @@ contract ForeignBridge is ERC677Receiver, BasicBridge {
         return isInitialized();
     }
 
-    function onTokenTransfer(address _from, uint256 _value, bytes /*_data*/) external returns(bool) {
-        require(msg.sender == address(erc677token()));
+    function onTokenTransfer(uint256 _value) external returns(bool) {
         require(withinLimit(_value));
         setTotalSpentPerDay(getCurrentDay(), totalSpentPerDay(getCurrentDay()).add(_value));
-        erc677token().burn(_value);
-        emit Withdraw(_from, _value, gasPriceForCompensationAtHomeSide());
+        erc20token().transferFrom(msg.sender, this, _value);
+        emit Withdraw(msg.sender, _value, gasPriceForCompensationAtHomeSide());
         return true;
     }
 
@@ -80,10 +76,6 @@ contract ForeignBridge is ERC677Receiver, BasicBridge {
         ERC20Basic token = ERC20Basic(_token);
         uint256 balance = token.balanceOf(this);
         require(token.transfer(_to, balance));
-    }
-
-    function claimTokensFromErc677(address _token, address _to) external onlyOwner {
-        erc677token().claimTokens(_token, _to);
     }
 
     function minPerTx() public view returns(uint256) {
@@ -114,8 +106,8 @@ contract ForeignBridge is ERC677Receiver, BasicBridge {
         return uintStorage[keccak256("foreignDailyLimit")];
     }
 
-    function erc677token() public view returns(IBurnableMintableERC677Token) {
-        return IBurnableMintableERC677Token(addressStorage[keccak256("erc677token")]);
+    function erc20token() public view returns(ERC20) {
+        return ERC20(addressStorage[keccak256("erc20token")]);
     }
 
     function setGasLimits(uint256 _gasLimitDepositRelay, uint256 _gasLimitWithdrawConfirm) external onlyOwner {
@@ -124,8 +116,8 @@ contract ForeignBridge is ERC677Receiver, BasicBridge {
         emit GasConsumptionLimitsUpdated(gasLimitDepositRelay(), gasLimitWithdrawConfirm());
     }
 
-    function deposit(address recipient, uint256 value, bytes32 transactionHash) external onlyValidator {
-        bytes32 hashMsg = keccak256(recipient, value, transactionHash);
+    function deposit(address _recipient, uint256 _value, bytes32 _transactionHash) external onlyValidator {
+        bytes32 hashMsg = keccak256(_recipient, _value, _transactionHash);
         bytes32 hashSender = keccak256(msg.sender, hashMsg);
         // Duplicated deposits
         require(!depositsSigned(hashSender));
@@ -138,14 +130,14 @@ contract ForeignBridge is ERC677Receiver, BasicBridge {
 
         setNumDepositsSigned(hashMsg, signed);
 
-        emit SignedForDeposit(msg.sender, transactionHash);
+        emit SignedForDeposit(msg.sender, _transactionHash);
 
         if (signed >= validatorContract().requiredSignatures()) {
             // If the bridge contract does not own enough tokens to transfer
             // it will couse funds lock on the home side of the bridge
             setNumDepositsSigned(hashMsg, markAsProcessed(signed));
-            erc677token().mint(recipient, value);
-            emit Deposit(recipient, value, transactionHash);
+            erc20token().transfer(_recipient, _value);
+            emit Deposit(_recipient, _value, _transactionHash);
         }
     }
 
@@ -157,11 +149,11 @@ contract ForeignBridge is ERC677Receiver, BasicBridge {
     /// withdrawal recipient (bytes20)
     /// withdrawal value (uint)
     /// foreign transaction hash (bytes32) // to avoid transaction duplication
-    function submitSignature(bytes signature, bytes message) external onlyValidator {
+    function submitSignature(bytes _signature, bytes _message) external onlyValidator {
         // ensure that `signature` is really `message` signed by `msg.sender`
-        require(Message.isMessageValid(message));
-        require(msg.sender == Message.recoverAddressFromSignedMessage(signature, message));
-        bytes32 hashMsg = keccak256(message);
+        require(Message.isMessageValid(_message));
+        require(msg.sender == Message.recoverAddressFromSignedMessage(_signature, _message));
+        bytes32 hashMsg = keccak256(_message);
         bytes32 hashSender = keccak256(msg.sender, hashMsg);
 
         uint256 signed = numMessagesSigned(hashMsg);
@@ -172,21 +164,19 @@ contract ForeignBridge is ERC677Receiver, BasicBridge {
             // Duplicated signatures
             require(!messagesSigned(hashSender));
         } else {
-            setMessages(hashMsg, message);
+            setMessages(hashMsg, _message);
         }
         setMessagesSigned(hashSender, true);
 
         bytes32 signIdx = keccak256(hashMsg, (signed-1));
-        setSignatures(signIdx, signature);
+        setSignatures(signIdx, _signature);
 
         setNumMessagesSigned(hashMsg, signed);
 
         emit SignedForWithdraw(msg.sender, hashMsg);
-
-        uint256 reqSigs = validatorContract().requiredSignatures();
-        if (signed >= reqSigs) {
+        if (signed >= validatorContract().requiredSignatures()) {
             setNumMessagesSigned(hashMsg, markAsProcessed(signed));
-            emit CollectedSignatures(msg.sender, hashMsg, reqSigs);
+            emit CollectedSignatures(msg.sender, hashMsg);
         }
     }
 
@@ -282,12 +272,13 @@ contract ForeignBridge is ERC677Receiver, BasicBridge {
         uintStorage[keccak256("totalSpentPerDay", _day)] = _value;
     }
 
-    function setErc677token(address _token) private {
+    function setErc20token(address _token) private {
         require(_token != address(0));
-        addressStorage[keccak256("erc677token")] = _token;
+        addressStorage[keccak256("erc20token")] = _token;
     }
 
     function setInitialize(bool _status) private {
         boolStorage[keccak256("isInitialized")] = _status;
     }
+
 }

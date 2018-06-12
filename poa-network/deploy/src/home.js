@@ -25,12 +25,15 @@ const {
   HOME_MAX_AMOUNT_PER_TX,
   HOME_MIN_AMOUNT_PER_TX,
   HOME_REQUIRED_BLOCK_CONFIRMATIONS,
-  HOME_ERC20_TOKEN
 } = process.env;
 
 async function deployHome() {
   let homeNonce = await web3Home.eth.getTransactionCount(DEPLOYMENT_ACCOUNT_ADDRESS);
-  console.log('deploying storage for home validators')
+  console.log('========================================')
+  console.log('deploying HomeBridge')
+  console.log('========================================\n')
+
+  console.log('\ndeploying storage for home validators')
   const storageValidatorsHome = await deployContract(EternalStorageProxy, [], { from: DEPLOYMENT_ACCOUNT_ADDRESS, nonce: homeNonce })
   console.log('[Home] BridgeValidators Storage: ', storageValidatorsHome.options.address)
   homeNonce++;
@@ -71,7 +74,7 @@ async function deployHome() {
   assert.equal(validatorOwner.toLocaleLowerCase(), HOME_OWNER_MULTISIG.toLocaleLowerCase());
   homeNonce++;
 
-  console.log('transferring proxy ownership to multisig for Validators Proxy contract');
+  console.log('\ntransferring proxy ownership to multisig for Validators Proxy contract');
   const proxyDataTransfer = await storageValidatorsHome.methods.transferProxyOwnership(HOME_UPGRADEABLE_ADMIN_VALIDATORS).encodeABI();
   const txProxyDataTransfer = await sendRawTx({
     data: proxyDataTransfer,
@@ -85,7 +88,7 @@ async function deployHome() {
   assert.equal(newProxyOwner.toLocaleLowerCase(), HOME_UPGRADEABLE_ADMIN_VALIDATORS.toLocaleLowerCase());
   homeNonce++;
 
-  console.log('\ndeploying homeBridge storage\n')
+  console.log('\ndeploying homeBridge storage')
   const homeBridgeStorage = await deployContract(EternalStorageProxy, [], { from: DEPLOYMENT_ACCOUNT_ADDRESS, nonce: homeNonce })
   homeNonce++;
   console.log('[Home] HomeBridge Storage: ', homeBridgeStorage.options.address)
@@ -108,16 +111,28 @@ async function deployHome() {
   assert.equal(txUpgradeToHomeBridge.status, '0x1', 'Transaction Failed');
   homeNonce++;
 
-  console.log('\ninitializing Home Bridge with following parameters:\n')
+  console.log('\nSend 5 SENI to Home Bridge')
+  homeBridgeImplementation.options.address = homeBridgeStorage.options.address
+  const sendEtherTx = await sendRawTx({
+    data: '0x',
+    nonce: homeNonce,
+    to: homeBridgeImplementation.options.address,
+    privateKey: deploymentPrivateKey,
+    url: HOME_RPC_URL,
+    value: Web3Utils.toHex(Web3Utils.toWei('5', 'ether'))
+  });
+  assert.equal(sendEtherTx.status, '0x1', 'Transaction Failed');
+  homeNonce++;
+
+  console.log('\ninitializing Home Bridge with following parameters:')
   console.log(`Home Validators: ${storageValidatorsHome.options.address},
   HOME_DAILY_LIMIT : ${HOME_DAILY_LIMIT} which is ${Web3Utils.fromWei(HOME_DAILY_LIMIT)} in eth,
   HOME_MAX_AMOUNT_PER_TX: ${HOME_MAX_AMOUNT_PER_TX} which is ${Web3Utils.fromWei(HOME_MAX_AMOUNT_PER_TX)} in eth,
   HOME_MIN_AMOUNT_PER_TX: ${HOME_MIN_AMOUNT_PER_TX} which is ${Web3Utils.fromWei(HOME_MIN_AMOUNT_PER_TX)} in eth,
   HOME_GAS_PRICE: ${HOME_GAS_PRICE}, HOME_REQUIRED_BLOCK_CONFIRMATIONS : ${HOME_REQUIRED_BLOCK_CONFIRMATIONS}
   `)
-  homeBridgeImplementation.options.address = homeBridgeStorage.options.address
   const initializeHomeBridgeData = await homeBridgeImplementation.methods.initialize(
-    storageValidatorsHome.options.address, HOME_ERC20_TOKEN, HOME_DAILY_LIMIT, HOME_MAX_AMOUNT_PER_TX, HOME_MIN_AMOUNT_PER_TX, HOME_GAS_PRICE, HOME_REQUIRED_BLOCK_CONFIRMATIONS
+    storageValidatorsHome.options.address, HOME_DAILY_LIMIT, HOME_MAX_AMOUNT_PER_TX, HOME_MIN_AMOUNT_PER_TX, HOME_GAS_PRICE, HOME_REQUIRED_BLOCK_CONFIRMATIONS
   ).encodeABI({ from: DEPLOYMENT_ACCOUNT_ADDRESS });
   const txInitializeHomeBridge = await sendRawTx({
     data: initializeHomeBridgeData,
@@ -129,7 +144,7 @@ async function deployHome() {
   assert.equal(txInitializeHomeBridge.status, '0x1', 'Transaction Failed');
   homeNonce++;
 
-  console.log('transferring proxy ownership to multisig for Home bridge Proxy contract');
+  console.log('\ntransferring proxy ownership to multisig for Home bridge Proxy contract');
   const homeBridgeProxyData = await homeBridgeStorage.methods.transferProxyOwnership(HOME_UPGRADEABLE_ADMIN_BRIDGE).encodeABI();
   const txhomeBridgeProxyData = await sendRawTx({
     data: homeBridgeProxyData,
