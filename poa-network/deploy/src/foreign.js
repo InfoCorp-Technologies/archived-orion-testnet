@@ -14,6 +14,7 @@ const ForeignBridge = require('../../build/contracts/ForeignBridge.json')
 
 const VALIDATORS = process.env.VALIDATORS.split(" ")
 const FOREIGN_GAS_PRICE = Web3Utils.toWei(process.env.FOREIGN_GAS_PRICE, 'gwei');
+const NETWORK = 'foreign';
 
 const {
   DEPLOYMENT_ACCOUNT_ADDRESS,
@@ -35,12 +36,12 @@ async function deployForeign() {
   console.log('========================================\n')
 
   console.log('deploying storage for foreign validators')
-  const storageValidatorsForeign = await deployContract(EternalStorageProxy, [], { from: DEPLOYMENT_ACCOUNT_ADDRESS, network: 'foreign', nonce: foreignNonce })
+  const storageValidatorsForeign = await deployContract(EternalStorageProxy, [], { from: DEPLOYMENT_ACCOUNT_ADDRESS, network: NETWORK, nonce: foreignNonce })
   foreignNonce++;
   console.log('[Foreign] BridgeValidators Storage: ', storageValidatorsForeign.options.address)
 
   console.log('\ndeploying implementation for foreign validators')
-  let bridgeValidatorsForeign = await deployContract(BridgeValidators, [], { from: DEPLOYMENT_ACCOUNT_ADDRESS, network: 'foreign', nonce: foreignNonce })
+  let bridgeValidatorsForeign = await deployContract(BridgeValidators, [], { from: DEPLOYMENT_ACCOUNT_ADDRESS, network: NETWORK, nonce: foreignNonce })
   foreignNonce++;
   console.log('[Foreign] BridgeValidators Implementation: ', bridgeValidatorsForeign.options.address)
 
@@ -52,7 +53,8 @@ async function deployForeign() {
     nonce: foreignNonce,
     to: storageValidatorsForeign.options.address,
     privateKey: deploymentPrivateKey,
-    url: FOREIGN_RPC_URL
+    url: FOREIGN_RPC_URL,
+    network: NETWORK
   });
   assert.equal(txUpgradeToBridgeVForeign.status, '0x1', 'Transaction Failed');
   foreignNonce++;
@@ -68,7 +70,8 @@ async function deployForeign() {
     nonce: foreignNonce,
     to: bridgeValidatorsForeign.options.address,
     privateKey: deploymentPrivateKey,
-    url: FOREIGN_RPC_URL
+    url: FOREIGN_RPC_URL,
+    network: NETWORK
   });
   assert.equal(txInitializeForeign.status, '0x1', 'Transaction Failed');
   const validatorOwner = await bridgeValidatorsForeign.methods.owner().call();
@@ -83,7 +86,8 @@ async function deployForeign() {
     nonce: foreignNonce,
     to: storageValidatorsForeign.options.address,
     privateKey: deploymentPrivateKey,
-    url: FOREIGN_RPC_URL
+    url: FOREIGN_RPC_URL,
+    network: NETWORK
   });
   assert.equal(txValidatorsForeignOwnershipData.status, '0x1', 'Transaction Failed');
   foreignNonce++;
@@ -91,12 +95,12 @@ async function deployForeign() {
   assert.equal(newProxyValidatorsOwner.toLowerCase(), FOREIGN_UPGRADEABLE_ADMIN_VALIDATORS.toLowerCase());
 
   console.log('\ndeploying foreignBridge storage')
-  const foreignBridgeStorage = await deployContract(EternalStorageProxy, [], { from: DEPLOYMENT_ACCOUNT_ADDRESS, network: 'foreign', nonce: foreignNonce })
+  const foreignBridgeStorage = await deployContract(EternalStorageProxy, [], { from: DEPLOYMENT_ACCOUNT_ADDRESS, network: NETWORK, nonce: foreignNonce })
   foreignNonce++;
   console.log('[Foreign] ForeignBridge Storage: ', foreignBridgeStorage.options.address)
 
   console.log('\ndeploying foreignBridge implementation')
-  const foreignBridgeImplementation = await deployContract(ForeignBridge, [], { from: DEPLOYMENT_ACCOUNT_ADDRESS, network: 'foreign', nonce: foreignNonce })
+  const foreignBridgeImplementation = await deployContract(ForeignBridge, [], { from: DEPLOYMENT_ACCOUNT_ADDRESS, network: NETWORK, nonce: foreignNonce })
   foreignNonce++;
   console.log('[Foreign] ForeignBridge Implementation: ', foreignBridgeImplementation.options.address)
 
@@ -108,7 +112,8 @@ async function deployForeign() {
     nonce: foreignNonce,
     to: foreignBridgeStorage.options.address,
     privateKey: deploymentPrivateKey,
-    url: FOREIGN_RPC_URL
+    url: FOREIGN_RPC_URL,
+    network: NETWORK
   });
   assert.equal(txUpgradeToForeignBridge.status, '0x1', 'Transaction Failed');
   foreignNonce++;
@@ -128,7 +133,8 @@ async function deployForeign() {
     nonce: foreignNonce,
     to: foreignBridgeStorage.options.address,
     privateKey: deploymentPrivateKey,
-    url: FOREIGN_RPC_URL
+    url: FOREIGN_RPC_URL,
+    network: NETWORK
   });
   assert.equal(txInitializeBridge.status, '0x1', 'Transaction Failed');
   foreignNonce++;
@@ -141,7 +147,8 @@ async function deployForeign() {
       nonce: foreignNonce,
       to: FOREIGN_SENC_ADDRESS,
       privateKey: deploymentPrivateKey,
-      url: FOREIGN_RPC_URL
+      url: FOREIGN_RPC_URL,
+      network: NETWORK
     });
     assert.equal(txOwnership.status, '0x1', 'Transaction Failed');
     foreignNonce++; */
@@ -153,7 +160,8 @@ async function deployForeign() {
     nonce: foreignNonce,
     to: foreignBridgeStorage.options.address,
     privateKey: deploymentPrivateKey,
-    url: FOREIGN_RPC_URL
+    url: FOREIGN_RPC_URL,
+    network: NETWORK
   });
   assert.equal(txBridgeOwnershipData.status, '0x1', 'Transaction Failed');
   foreignNonce++;
