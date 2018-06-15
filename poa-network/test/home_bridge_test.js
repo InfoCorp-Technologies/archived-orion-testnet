@@ -6,26 +6,33 @@ const {ERROR_MSG, ZERO_ADDRESS} = require('./setup');
 const {createMessage, sign, signatureToVRS} = require('./helpers/helpers');
 const minPerTx = web3.toBigNumber(web3.toWei(0.01, "ether"));
 const requireBlockConfirmations = 8;
-const gasPrice = Web3Utils.toWei('1', 'gwei');
+const gasPrice = Web3Utils.toWei('100000000', 'gwei');
 
 contract('HomeBridge', async (accounts) => {
+
   let homeContract, validatorContract, authorities, owner;
+  
   before(async () => {
     validatorContract = await BridgeValidators.new()
-    authorities = [accounts[1]];
     owner = accounts[0]
+    authorities = [accounts[1]]
     await validatorContract.initialize(1, authorities, owner)
   })
+  
   describe('#initialize', async() => {
+  
     beforeEach(async () => {
       homeContract = await HomeBridge.new()
     })
+  
     it('sets variables', async () => {
+      // Before initialize
       ZERO_ADDRESS.should.be.equal(await homeContract.validatorContract())
       '0'.should.be.bignumber.equal(await homeContract.deployedAtBlock())
       '0'.should.be.bignumber.equal(await homeContract.homeDailyLimit())
       '0'.should.be.bignumber.equal(await homeContract.maxPerTx())
       false.should.be.equal(await homeContract.isInitialized())
+      // Initialize
       await homeContract.initialize(validatorContract.address, '3', '2', '1', gasPrice, requireBlockConfirmations).should.be.fulfilled;
       true.should.be.equal(await homeContract.isInitialized())
       validatorContract.address.should.be.equal(await homeContract.validatorContract());
@@ -34,6 +41,7 @@ contract('HomeBridge', async (accounts) => {
       '2'.should.be.bignumber.equal(await homeContract.maxPerTx())
       '1'.should.be.bignumber.equal(await homeContract.minPerTx())
     })
+
     it('cant set maxPerTx > homeDailyLimit', async () => {
       false.should.be.equal(await homeContract.isInitialized())
       await homeContract.initialize(validatorContract.address, '1', '2', '1', gasPrice, requireBlockConfirmations).should.be.rejectedWith(ERROR_MSG);
@@ -52,14 +60,17 @@ contract('HomeBridge', async (accounts) => {
       "2".should.be.bignumber.equal(await finalContract.maxPerTx())
       "1".should.be.bignumber.equal(await finalContract.minPerTx())
     })
+
   })
 
   describe('#fallback', async () => {
+
     beforeEach(async () => {
       homeContract = await HomeBridge.new()
       await homeContract.initialize(validatorContract.address, '3', '2', '1', gasPrice, requireBlockConfirmations)
     })
-    it('should accept POA', async () => {
+
+    it('should accept SENI', async () => {
       const currentDay = await homeContract.getCurrentDay()
       '0'.should.be.bignumber.equal(await homeContract.totalSpentPerDay(currentDay))
       const {logs} = await homeContract.sendTransaction({
@@ -106,7 +117,6 @@ contract('HomeBridge', async (accounts) => {
         from: accounts[1],
         value: 1
       }).should.be.rejectedWith(ERROR_MSG)
-
     })
 
     it('should not let to deposit less than minPerTx', async () => {
@@ -126,8 +136,11 @@ contract('HomeBridge', async (accounts) => {
         value: newMinPerTx - 1
       }).should.be.rejectedWith(ERROR_MSG)
     })
+
   })
+
   describe('#withdraw', async () => {
+
     beforeEach(async () => {
       homeContract = await HomeBridge.new()
       const oneEther = web3.toBigNumber(web3.toWei(1, "ether"));
@@ -139,6 +152,7 @@ contract('HomeBridge', async (accounts) => {
         value: halfEther
       }).should.be.fulfilled
     })
+
     it('should allow to withdraw', async () => {
       var recipientAccount = accounts[3];
       const balanceBefore = await web3.eth.getBalance(recipientAccount)
@@ -161,6 +175,7 @@ contract('HomeBridge', async (accounts) => {
       homeBalanceAfter.should.be.bignumber.equal(homeBalanceBefore.sub(value))
       true.should.be.equal(await homeContract.withdraws(transactionHash))
     })
+
     it('should allow second withdraw with different transactionHash but same recipient and value', async ()=> {
       var recipientAccount = accounts[3];
       const balanceBefore = await web3.eth.getBalance(recipientAccount)
@@ -207,8 +222,8 @@ contract('HomeBridge', async (accounts) => {
       var vrs = signatureToVRS(signature);
       false.should.be.equal(await homeContract.withdraws(transactionHash))
       await homeContract.withdraw([vrs.v], [vrs.r], [vrs.s], message).should.be.rejectedWith(ERROR_MSG)
-
     })
+
     it('should not allow second withdraw (replay attack) with same transactionHash but different recipient', async () => {
       var recipientAccount = accounts[3];
       const balanceBefore = await web3.eth.getBalance(recipientAccount)
@@ -229,10 +244,13 @@ contract('HomeBridge', async (accounts) => {
       true.should.be.equal(await homeContract.withdraws(transactionHash))
       await homeContract.withdraw([vrs.v], [vrs.r], [vrs.s], message2).should.be.rejectedWith(ERROR_MSG)
     })
+
   })
 
   describe('#withdraw with 2 minimum signatures', async () => {
+
     let multisigValidatorContract, twoAuthorities, ownerOfValidatorContract, homeContractWithMultiSignatures
+
     beforeEach(async () => {
       multisigValidatorContract = await BridgeValidators.new()
       twoAuthorities = [accounts[0], accounts[1]];
@@ -247,8 +265,8 @@ contract('HomeBridge', async (accounts) => {
         value: halfEther
       }).should.be.fulfilled
     })
-    it('withdraw should fail if not enough signatures are provided', async () => {
 
+    it('withdraw should fail if not enough signatures are provided', async () => {
       var recipientAccount = accounts[4];
       const balanceBefore = await web3.eth.getBalance(recipientAccount)
       const homeBalanceBefore = await web3.eth.getBalance(homeContractWithMultiSignatures.address)
@@ -275,8 +293,8 @@ contract('HomeBridge', async (accounts) => {
       balanceAfter.should.be.bignumber.equal(balanceBefore.add(value))
       homeBalanceAfter.should.be.bignumber.equal(homeBalanceBefore.sub(value))
       true.should.be.equal(await homeContractWithMultiSignatures.withdraws(transactionHash))
-
     })
+
     it('withdraw should fail if duplicate signature is provided', async () => {
       var recipientAccount = accounts[4];
       const balanceBefore = await web3.eth.getBalance(recipientAccount)
@@ -291,7 +309,9 @@ contract('HomeBridge', async (accounts) => {
       false.should.be.equal(await homeContractWithMultiSignatures.withdraws(transactionHash))
       await homeContractWithMultiSignatures.withdraw([vrs.v, vrs.v], [vrs.r, vrs.r], [vrs.s, vrs.s], message).should.be.rejectedWith(ERROR_MSG)
     })
+
   })
+  
   describe('#setting limits', async () => {
     let homeContract;
     beforeEach(async () => {
@@ -312,4 +332,5 @@ contract('HomeBridge', async (accounts) => {
       await homeContract.setMinPerTx(2, {from: owner}).should.be.rejectedWith(ERROR_MSG);
     })
   })
+  
 })

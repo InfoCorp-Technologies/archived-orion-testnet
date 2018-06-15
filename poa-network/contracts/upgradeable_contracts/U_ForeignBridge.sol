@@ -25,7 +25,7 @@ contract ForeignBridge is BasicBridge {
 
     function initialize(
         address _validatorContract,
-        address _erc20token,
+        address _token,
         uint256 _foreignDailyLimit,
         uint256 _maxPerTx,
         uint256 _minPerTx,
@@ -33,11 +33,12 @@ contract ForeignBridge is BasicBridge {
         uint256 _requiredBlockConfirmations
     ) public returns(bool) {
         require(!isInitialized());
+        require(_token != address(0));
         require(_validatorContract != address(0));
         require(_minPerTx > 0 && _maxPerTx > _minPerTx && _foreignDailyLimit > _maxPerTx);
         require(_foreignGasPrice > 0);
+        addressStorage[keccak256("erc20token")] = _token;
         addressStorage[keccak256("validatorContract")] = _validatorContract;
-        setErc20token(_erc20token);
         uintStorage[keccak256("foreignDailyLimit")] = _foreignDailyLimit;
         uintStorage[keccak256("deployedAtBlock")] = block.number;
         uintStorage[keccak256("maxPerTx")] = _maxPerTx;
@@ -54,6 +55,11 @@ contract ForeignBridge is BasicBridge {
         erc20token().transferFrom(msg.sender, this, _value);
         emit Withdraw(msg.sender, _value, gasPriceForCompensationAtHomeSide());
         return true;
+    }
+    
+    function setErc20token(address _token) external onlyOwner {
+        require(_token != address(0));
+        addressStorage[keccak256("erc20token")] = _token;
     }
 
     function setMaxPerTx(uint256 _maxPerTx) external onlyOwner {
@@ -270,11 +276,6 @@ contract ForeignBridge is BasicBridge {
 
     function setTotalSpentPerDay(uint256 _day, uint256 _value) private {
         uintStorage[keccak256("totalSpentPerDay", _day)] = _value;
-    }
-
-    function setErc20token(address _token) private {
-        require(_token != address(0));
-        addressStorage[keccak256("erc20token")] = _token;
     }
 
     function setInitialize(bool _status) private {

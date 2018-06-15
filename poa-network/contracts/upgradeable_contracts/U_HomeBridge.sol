@@ -48,6 +48,11 @@ contract HomeBridge is EternalStorage, BasicBridge {
         }
     }
 
+    function setGasLimitWithdrawRelay(uint256 _gas) external onlyOwner {
+        uintStorage[keccak256("gasLimitWithdrawRelay")] = _gas;
+        emit GasConsumptionLimitsUpdated(_gas);
+    }    
+
     function gasLimitWithdrawRelay() public view returns(uint256) {
         return uintStorage[keccak256("gasLimitWithdrawRelay")];
     }
@@ -66,11 +71,6 @@ contract HomeBridge is EternalStorage, BasicBridge {
 
     function withdraws(bytes32 _withdraw) public view returns(bool) {
         return boolStorage[keccak256("withdraws", _withdraw)];
-    }
-
-    function setGasLimitWithdrawRelay(uint256 _gas) external onlyOwner {
-        uintStorage[keccak256("gasLimitWithdrawRelay")] = _gas;
-        emit GasConsumptionLimitsUpdated(_gas);
     }
 
     function withdraw(uint8[] _vs, bytes32[] _rs, bytes32[] _ss, bytes _message) external {

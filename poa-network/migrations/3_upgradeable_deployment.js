@@ -1,4 +1,3 @@
-const POA20 = artifacts.require("./POA20.sol");
 const BridgeValidators = artifacts.require("./BridgeValidators.sol");
 const HomeBridge = artifacts.require("./HomeBridge.sol");
 const ForeignBridge = artifacts.require("./ForeignBridge.sol");
@@ -14,17 +13,13 @@ module.exports = async function(deployer, network, accounts) {
     const MAX_AMOUNT_PER_TX = process.env.MAX_AMOUNT_PER_TX || '100000000000000000' // 0.1 ether
     const MIN_AMOUNT_PER_TX = process.env.MIN_AMOUNT_PER_TX || '10000000000000000' // 0.01 ether
     const HOME_REQUIRED_BLOCK_CONFIRMATIONS = process.env.HOME_REQUIRED_BLOCK_CONFIRMATIONS || '1'
-    const HOME_GAS_PRICE = process.env.HOME_GAS_PRICE || '1000000000';
+    const HOME_GAS_PRICE = process.env.HOME_GAS_PRICE || '100000000000000000';
     const FOREIGN_REQUIRED_BLOCK_CONFIRMATIONS = process.env.FOREIGN_REQUIRED_BLOCK_CONFIRMATIONS || '8';
     const FOREIGN_GAS_PRICE = process.env.FOREIGN_GAS_PRICE || '1000000000';
 
     console.log('storage for home validators')
     await deployer.deploy(EternalStorageProxy, {from: PROXY_OWNER});
     const storageBridgeValidators = await EternalStorageProxy.deployed()
-
-    console.log('deploying token')
-    await deployer.deploy(POA20, "POA ERC20 on Foundation", "POA20", 18)
-    const erc677token = await POA20.deployed()
 
     console.log('deploying validators')
     await deployer.deploy(BridgeValidators);
@@ -75,7 +70,7 @@ module.exports = async function(deployer, network, accounts) {
     var foreignBridgeWeb3 = web3.eth.contract(ForeignBridge.abi);
     var foreignBridgeWeb3Instance = foreignBridgeWeb3.at(foreignBridgeImplementation.address);
     var initializeDataForeign = foreignBridgeWeb3Instance.initialize
-      .getData(storageBridgeValidators.address, erc677token.address, foreignDailyLimit, MAX_AMOUNT_PER_TX, MIN_AMOUNT_PER_TX, FOREIGN_GAS_PRICE, FOREIGN_REQUIRED_BLOCK_CONFIRMATIONS);
+      .getData(storageBridgeValidators.address, '0xAa3E272E3bfd016Fa239725a6d059004A344319d', foreignDailyLimit, MAX_AMOUNT_PER_TX, MIN_AMOUNT_PER_TX, FOREIGN_GAS_PRICE, FOREIGN_REQUIRED_BLOCK_CONFIRMATIONS);
     await foreignBridgeUpgradeable.upgradeTo('1', foreignBridgeImplementation.address, {from: PROXY_OWNER});
 
     await web3.eth.sendTransaction({
@@ -86,13 +81,12 @@ module.exports = async function(deployer, network, accounts) {
       gas: 4700000
     })
 
-    await erc677token.transferOwnership(foreignBridgeUpgradeable.address)
     console.log('all is done', `
     validators: ${VALIDATORS}
     Owner: ${PROXY_OWNER}
     Foreign Bridge: ${foreignBridgeUpgradeable.address}
     Home Bridge: ${homeBridgeUpgradeable.address}
-    POA20: ${erc677token.address}`)
+    SENC: ${'0xAa3E272E3bfd016Fa239725a6d059004A344319d'}`)
   }
 
 };

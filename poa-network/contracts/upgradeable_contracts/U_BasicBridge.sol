@@ -7,10 +7,6 @@ contract BasicBridge is EternalStorage {
     
     event GasPriceChanged(uint256 gasPrice);
     event RequiredBlockConfirmationChanged(uint256 requiredBlockConfirmations);
-    
-    function validatorContract() public view returns(IBridgeValidators) {
-        return IBridgeValidators(addressStorage[keccak256("validatorContract")]);
-    }
 
     modifier onlyValidator() {
         require(validatorContract().isValidator(msg.sender));
@@ -20,6 +16,15 @@ contract BasicBridge is EternalStorage {
     modifier onlyOwner() {
         require(validatorContract().owner() == msg.sender);
         _;
+    }
+
+    function setValidatorContract(address _validatorContract) external onlyOwner {
+        require(_validatorContract != address(0));
+        addressStorage[keccak256("validatorContract")] = _validatorContract;
+    }
+
+    function validatorContract() public view returns(IBridgeValidators) {
+        return IBridgeValidators(addressStorage[keccak256("validatorContract")]);
     }
 
     function setGasPrice(uint256 _gasPrice) public onlyOwner {
