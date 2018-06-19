@@ -9,7 +9,6 @@ const requireBlockConfirmations = 8;
 const gasPrice = Web3Utils.toWei('100000000', 'gwei');
 
 contract('HomeBridge', async (accounts) => {
-
   let homeContract, validatorContract, authorities, owner;
   
   before(async () => {
@@ -20,7 +19,6 @@ contract('HomeBridge', async (accounts) => {
   })
   
   describe('#initialize', async() => {
-  
     beforeEach(async () => {
       homeContract = await HomeBridge.new()
     })
@@ -60,11 +58,9 @@ contract('HomeBridge', async (accounts) => {
       "2".should.be.bignumber.equal(await finalContract.maxPerTx())
       "1".should.be.bignumber.equal(await finalContract.minPerTx())
     })
-
   })
 
   describe('#fallback', async () => {
-
     beforeEach(async () => {
       homeContract = await HomeBridge.new()
       await homeContract.initialize(validatorContract.address, '3', '2', '1', gasPrice, requireBlockConfirmations)
@@ -136,11 +132,9 @@ contract('HomeBridge', async (accounts) => {
         value: newMinPerTx - 1
       }).should.be.rejectedWith(ERROR_MSG)
     })
-
   })
 
   describe('#withdraw', async () => {
-
     beforeEach(async () => {
       homeContract = await HomeBridge.new()
       const oneEther = web3.toBigNumber(web3.toWei(1, "ether"));
@@ -244,11 +238,9 @@ contract('HomeBridge', async (accounts) => {
       true.should.be.equal(await homeContract.withdraws(transactionHash))
       await homeContract.withdraw([vrs.v], [vrs.r], [vrs.s], message2).should.be.rejectedWith(ERROR_MSG)
     })
-
   })
 
   describe('#withdraw with 2 minimum signatures', async () => {
-
     let multisigValidatorContract, twoAuthorities, ownerOfValidatorContract, homeContractWithMultiSignatures
 
     beforeEach(async () => {
@@ -309,15 +301,16 @@ contract('HomeBridge', async (accounts) => {
       false.should.be.equal(await homeContractWithMultiSignatures.withdraws(transactionHash))
       await homeContractWithMultiSignatures.withdraw([vrs.v, vrs.v], [vrs.r, vrs.r], [vrs.s, vrs.s], message).should.be.rejectedWith(ERROR_MSG)
     })
-
   })
   
   describe('#setting limits', async () => {
     let homeContract;
+
     beforeEach(async () => {
       homeContract = await HomeBridge.new()
       await homeContract.initialize(validatorContract.address, '3', '2', '1', gasPrice, requireBlockConfirmations)
     })
+
     it('#setMaxPerTx allows to set only to owner and cannot be more than daily limit', async () => {
       await homeContract.setMaxPerTx(2, {from: authorities[0]}).should.be.rejectedWith(ERROR_MSG);
       await homeContract.setMaxPerTx(2, {from: owner}).should.be.fulfilled;
@@ -332,5 +325,4 @@ contract('HomeBridge', async (accounts) => {
       await homeContract.setMinPerTx(2, {from: owner}).should.be.rejectedWith(ERROR_MSG);
     })
   })
-  
 })

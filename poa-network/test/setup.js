@@ -7,4 +7,4 @@ require('chai')
 
 exports.ERROR_MSG = 'VM Exception while processing transaction: revert';
 exports.ERROR_MSG_OPCODE = 'VM Exception while processing transaction: invalid opcode';
-exports.ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
+exports.ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
