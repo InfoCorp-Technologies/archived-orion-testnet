@@ -1,6 +1,6 @@
 pragma solidity ^0.4.23;
 
-import "../validator-contracts/ImmediateSetCallOperation.sol";
+import "../validator-contracts/ImmediateSet.sol";
 
 contract Operations {
 
@@ -9,7 +9,7 @@ contract Operations {
 		uint8 track;
 		uint24 semver;
 		bool critical;
-		mapping (bytes32 => bytes32) checksum;      // platform -> checksum
+		mapping (bytes32 => bytes32) checksum;
 	}
 
 	struct Build {
@@ -18,12 +18,11 @@ contract Operations {
 	}
 
 	struct Client {
-		address owner;
-		bool required;
+		bool isClient;
 		uint index;
 		mapping (bytes32 => Release) release;
 		mapping (uint8 => bytes32) current;
-		mapping (bytes32 => Build) build;       // checksum -> Build
+		mapping (bytes32 => Build) build;
 	}
 
 	enum Status {
@@ -38,12 +37,12 @@ contract Operations {
 		bool hard;
 		bool ratified;
 		uint requiredCount;
-		mapping (bytes32 => Status) status;
+		mapping (address => Status) status;
 	}
 
 	struct Transaction {
 		uint requiredCount;
-		mapping (bytes32 => Status) status;
+		mapping (address => Status) status;
 		address to;
 		bytes data;
 		uint value;
@@ -54,41 +53,38 @@ contract Operations {
 	uint32 public clientsRequired;
 	uint32 public latestFork;
 	uint32 public proposedFork;
-	address public grandOwner = msg.sender;
+	address public owner = msg.sender;
 	address[] clientOwnerList;
 	
 	mapping (uint32 => Fork) public fork;
-	mapping (bytes32 => Client) public client;
-	mapping (address => bytes32) public clientOwner;
+	mapping (address => Client) public client;
 	mapping (bytes32 => Transaction) public proxy;
 
 	event Received(address indexed from, uint value, bytes data);
-	event TransactionProposed(bytes32 indexed client, bytes32 indexed txid, address indexed to, bytes data, uint value, uint gas);
-	event TransactionConfirmed(bytes32 indexed client, bytes32 indexed txid);
-	event TransactionRejected(bytes32 indexed client, bytes32 indexed txid);
+	event TransactionProposed(address indexed client, bytes32 indexed txid, address indexed to, bytes data, uint value, uint gas);
+	event TransactionConfirmed(address indexed client, bytes32 indexed txid);
+	event TransactionRejected(address indexed client, bytes32 indexed txid);
 	event TransactionRelayed(bytes32 indexed txid, bool success);
-	event ForkProposed(bytes32 indexed client, uint32 indexed number, string indexed name, bytes32 spec, bool hard);
-	event ForkAcceptedBy(bytes32 indexed client, uint32 indexed number);
-	event ForkRejectedBy(bytes32 indexed client, uint32 indexed number);
+	event ForkProposed(address indexed client, uint32 indexed number, string indexed name, bytes32 spec, bool hard);
+	event ForkAcceptedBy(address indexed client, uint32 indexed number);
+	event ForkRejectedBy(address indexed client, uint32 indexed number);
 	event ForkRejected(uint32 indexed forkNumber);
 	event ForkRatified(uint32 indexed forkNumber);
-	event ReleaseAdded(bytes32 indexed client, uint32 indexed forkBlock, bytes32 release, uint8 track, uint24 semver, bool indexed critical);
-	event ChecksumAdded(bytes32 indexed client, bytes32 indexed release, bytes32 indexed platform, bytes32 checksum);
-	event ClientAdded(bytes32 client, address owner);
-	event ClientRemoved(bytes32 indexed client);
-	event ClientOwnerChanged(bytes32 indexed client, address indexed old, address indexed now);
-	event ClientRequiredChanged(bytes32 indexed client, bool now);
+	event ReleaseAdded(address indexed client, uint32 indexed forkBlock, bytes32 release, uint8 track, uint24 semver, bool indexed critical);
+	event ChecksumAdded(address indexed client, bytes32 indexed release, bytes32 indexed platform, bytes32 checksum);
+	event ClientAdded(address client);
+	event ClientRemoved(address indexed client);
+	event ClientRequiredChanged(address indexed client, bool now);
 	event OwnerChanged(address old, address now);
 
 	constructor(Validator _validator) public {
 	    require(_validator != address(0));
 	    validator = _validator;
+	    validator.setOperation(this, msg.sender);
 	    address[] memory validators = validator.getValidators();
 	    for (uint i = 0; i < validators.length; i++) {
-	        bytes32 cliendId = bytes32(i+1);
 	        clientOwnerList.push(validators[i]);
-	        clientOwner[validators[i]] = cliendId;
-	        client[cliendId] = Client(validators[i], true, i);
+	        client[validators[i]] = Client(true, i);
 	        clientsRequired++;
 	    }
 	}
@@ -103,165 +99,113 @@ contract Operations {
 
 	// Functions for client owners
 
-	function proposeTransaction(bytes32 _txid, address _to, bytes _data, uint _value, uint _gas) only_required_client_owner only_when_no_proxy(_txid) public returns (uint txSuccess) {
-		bytes32 newClient = clientOwner[msg.sender];
+	function proposeTransaction(bytes32 _txid, address _to, bytes _data, uint _value, uint _gas) only_client_owner only_when_no_proxy(_txid) public returns (uint txSuccess) {
 		proxy[_txid] = Transaction(1, _to, _data, _value, _gas);
-		proxy[_txid].status[newClient] = Status.Accepted;
+		proxy[_txid].status[msg.sender] = Status.Accepted;
 		txSuccess = checkProxy(_txid);
-		emit TransactionProposed(newClient, _txid, _to, _data, _value, _gas);
+		emit TransactionProposed(msg.sender, _txid, _to, _data, _value, _gas);
 	}
 
-	function confirmTransaction(bytes32 _txid) only_required_client_owner only_when_proxy(_txid) only_when_proxy_undecided(_txid) public returns (uint txSuccess) {
-		bytes32 newClient = clientOwner[msg.sender];
-		proxy[_txid].status[newClient] = Status.Accepted;
+	function confirmTransaction(bytes32 _txid) only_client_owner only_when_proxy(_txid) only_when_proxy_undecided(_txid) public returns (uint txSuccess) {
+		proxy[_txid].status[msg.sender] = Status.Accepted;
 		proxy[_txid].requiredCount += 1;
 		txSuccess = checkProxy(_txid);
-		emit TransactionConfirmed(newClient, _txid);
+		emit TransactionConfirmed(msg.sender, _txid);
 	}
 
-	function rejectTransaction(bytes32 _txid) only_required_client_owner only_when_proxy(_txid) only_when_proxy_undecided(_txid) public {
+	function rejectTransaction(bytes32 _txid) only_client_owner only_when_proxy(_txid) only_when_proxy_undecided(_txid) public {
 		delete proxy[_txid];
-		emit TransactionRejected(clientOwner[msg.sender], _txid);
+		emit TransactionRejected(msg.sender, _txid);
 	}
 
 	function proposeFork(uint32 _number, string _name, bool _hard, bytes32 _spec) only_client_owner only_when_none_proposed public {
 		fork[_number] = Fork(_name, _spec, _hard, false, 0);
 		proposedFork = _number;
-		emit ForkProposed(clientOwner[msg.sender], _number, _name, _spec, _hard);
+		emit ForkProposed(msg.sender, _number, _name, _spec, _hard);
 	}
 
 	function acceptFork() only_when_proposed only_undecided_client_owner public {
-		bytes32 newClient = clientOwner[msg.sender];
-		fork[proposedFork].status[newClient] = Status.Accepted;
-		emit ForkAcceptedBy(newClient, proposedFork);
-		noteAccepted(newClient);
+		fork[proposedFork].status[msg.sender] = Status.Accepted;
+		emit ForkAcceptedBy(msg.sender, proposedFork);
+		noteAccepted(msg.sender);
 	}
 
 	function rejectFork() only_when_proposed only_undecided_client_owner only_unratified public {
-		bytes32 newClient = clientOwner[msg.sender];
-		fork[proposedFork].status[newClient] = Status.Rejected;
-		emit ForkRejectedBy(newClient, proposedFork);
-		noteRejected(newClient);
-	}
-
-	function setClientOwner(address _newOwner) only_client_owner public {
-		bytes32 newClient = clientOwner[msg.sender];
-		clientOwner[msg.sender] = "";
-		clientOwner[_newOwner] = newClient;
-		client[newClient].owner = _newOwner;
-		emit ClientOwnerChanged(newClient, msg.sender, _newOwner);
+		fork[proposedFork].status[msg.sender] = Status.Rejected;
+		emit ForkRejectedBy(msg.sender, proposedFork);
+		noteRejected(msg.sender);
 	}
 
 	function addRelease(bytes32 _release, uint32 _forkBlock, uint8 _track, uint24 _semver, bool _critical) only_client_owner public {
-		bytes32 newClient = clientOwner[msg.sender];
-		client[newClient].release[_release] = Release(_forkBlock, _track, _semver, _critical);
-		client[newClient].current[_track] = _release;
-		emit ReleaseAdded(newClient, _forkBlock, _release, _track, _semver, _critical);
+		client[msg.sender].release[_release] = Release(_forkBlock, _track, _semver, _critical);
+		client[msg.sender].current[_track] = _release;
+		emit ReleaseAdded(msg.sender, _forkBlock, _release, _track, _semver, _critical);
 	}
 
 	function addChecksum(bytes32 _release, bytes32 _platform, bytes32 _checksum) only_client_owner public {
-		bytes32 newClient = clientOwner[msg.sender];
-		client[newClient].build[_checksum] = Build(_release, _platform);
-		client[newClient].release[_release].checksum[_platform] = _checksum;
-		emit ChecksumAdded(newClient, _release, _platform, _checksum);
+		client[msg.sender].build[_checksum] = Build(_release, _platform);
+		client[msg.sender].release[_release].checksum[_platform] = _checksum;
+		emit ChecksumAdded(msg.sender, _release, _platform, _checksum);
 	}
 
 	// Admin functions
 
-	function addClient(bytes32 _client, address _owner, bool _require) only_client_owner public {
-	    require(client[_client].owner == address(0));
-	    require(clientOwner[_owner] == 0);
-		client[_client] = Client(_owner, false, clientOwnerList.length);
-		clientOwner[_owner] = _client;
-		clientOwnerList.push(_owner);
-		setClientRequired(_client, _require);
-		emit ClientAdded(_client, _owner);
-	}
-	
-	function addClient(bytes32 _client, address _owner, bool _require, address sender) only_sender_client_owner(sender) public {
-	    require(client[_client].owner == address(0));
-	    require(clientOwner[_owner] == 0);
-		client[_client] = Client(_owner, false, clientOwnerList.length);
-		clientOwner[_owner] = _client;
-		clientOwnerList.push(_owner);
-		setClientRequired(_client, _require, sender);
-		emit ClientAdded(_client, _owner);
+	function addClient(address _client, address sender) public 
+	    only_sender_client_owner(sender) 
+	{
+	    require(!client[_client].isClient);
+		client[_client].index = clientOwnerList.length;
+		clientOwnerList.push(_client);
+		setIsClient(_client, true, sender);
+		emit ClientAdded(_client);
 	}
 
-	function removeClient(bytes32 _client) only_client_owner public {
-		setClientRequired(_client, false);
+	function removeClient(address _client, address sender) public 
+	    only_sender_client_owner(sender) 
+	{
+		setIsClient(_client, false, sender);
 		uint index = client[_client].index;
-		address removedClient = client[_client].owner;
 		address lastClient = clientOwnerList[clientOwnerList.length - 1];
-		clientOwner[removedClient] = "";
 		clientOwnerList[index] = lastClient;
 		clientOwnerList.length--;
-		client[clientOwner[lastClient]].index = index;
+		client[lastClient].index = index;
 		delete client[_client];
 		emit ClientRemoved(_client);
 	}
 	
-	function removeClient(bytes32 _client, address sender) only_sender_client_owner(sender) public {
-		setClientRequired(_client, false, sender);
-		uint index = client[_client].index;
-		address removedClient = client[_client].owner;
-		address lastClient = clientOwnerList[clientOwnerList.length - 1];
-		clientOwner[removedClient] = "";
-		clientOwnerList[index] = lastClient;
-		clientOwnerList.length--;
-		client[clientOwner[lastClient]].index = index;
-		delete client[_client];
-		emit ClientRemoved(_client);
-	}
-
-	function resetClientOwner(bytes32 _client, address _newOwner) only_owner public {
-		address old = client[_client].owner;
-		emit ClientOwnerChanged(_client, old, _newOwner);
-		clientOwner[old] = "";
-		clientOwner[_newOwner] = _client;
-		client[_client].owner = _newOwner;
-	}
-
-	function setClientRequired(bytes32 _client, bool _require) only_client_owner when_changing_required(_client, _require) public {
-		emit ClientRequiredChanged(_client, _require);
-		client[_client].required = _require;
-		clientsRequired = _require ? clientsRequired + 1 : (clientsRequired - 1);
-		checkFork();
-	}
-	
-	function setClientRequired(bytes32 _client, bool _require, address sender) only_sender_client_owner(sender) when_changing_required(_client, _require) internal {
-		emit ClientRequiredChanged(_client, _require);
-		client[_client].required = _require;
-		clientsRequired = _require ? clientsRequired + 1 : (clientsRequired - 1);
+	function setIsClient(address _client, bool _isClient, address sender) only_sender_client_owner(sender) when_changing_required(_client, _isClient) internal {
+		emit ClientRequiredChanged(_client, _isClient);
+		client[_client].isClient = _isClient;
+		clientsRequired = _isClient ? clientsRequired + 1 : (clientsRequired - 1);
 		checkFork();
 	}
 
 	function setOwner(address _newOwner) only_owner public {
-		emit OwnerChanged(grandOwner, _newOwner);
-		grandOwner = _newOwner;
+		emit OwnerChanged(owner, _newOwner);
+		owner = _newOwner;
 	}
 
 	// Getters
 
-	function isLatest(bytes32 _client, bytes32 _release) constant public returns (bool) {
+	function isLatest(address _client, bytes32 _release) constant public returns (bool) {
 		return latestInTrack(_client, track(_client, _release)) == _release;
 	}
 
-	function track(bytes32 _client, bytes32 _release) constant public returns (uint8) {
+	function track(address _client, bytes32 _release) constant public returns (uint8) {
 		return client[_client].release[_release].track;
 	}
 
-	function latestInTrack(bytes32 _client, uint8 _track) constant public returns (bytes32) {
+	function latestInTrack(address _client, uint8 _track) constant public returns (bytes32) {
 		return client[_client].current[_track];
 	}
 
-	function build(bytes32 _client, bytes32 _checksum) constant public returns (bytes32 o_release, bytes32 o_platform) {
+	function build(address _client, bytes32 _checksum) constant public returns (bytes32 o_release, bytes32 o_platform) {
 		Build memory b = client[_client].build[_checksum];
 		o_release = b.release;
 		o_platform = b.platform;
 	}
 
-	function release(bytes32 _client, bytes32 _release) constant public returns (uint32 o_forkBlock, uint8 o_track, uint24 o_semver, bool o_critical) {
+	function release(address _client, bytes32 _release) constant public returns (uint32 o_forkBlock, uint8 o_track, uint24 o_semver, bool o_critical) {
 		Release memory b = client[_client].release[_release];
 		o_forkBlock = b.forkBlock;
 		o_track = b.track;
@@ -269,18 +213,18 @@ contract Operations {
 		o_critical = b.critical;
 	}
 
-	function checksum(bytes32 _client, bytes32 _release, bytes32 _platform) constant public returns (bytes32) {
+	function checksum(address _client, bytes32 _release, bytes32 _platform) constant public returns (bytes32) {
 		return client[_client].release[_release].checksum[_platform];
 	}
 
 	// Internals
 
-	function noteAccepted(bytes32 _client) internal when_required(_client) {
+	function noteAccepted(address _client) internal when_is_client(_client) {
 		fork[proposedFork].requiredCount += 1;
 		checkFork();
 	}
 
-	function noteRejected(bytes32 _client) internal when_required(_client) {
+	function noteRejected(address _client) internal when_is_client(_client) {
 		emit ForkRejected(proposedFork);
 		delete fork[proposedFork];
 		proposedFork = 0;
@@ -307,25 +251,21 @@ contract Operations {
 	// Modifiers
 
 	modifier only_owner { 
-	    require(grandOwner == msg.sender); 
+	    require(owner == msg.sender); 
 	    _; 
 	}
 	
 	modifier only_sender_client_owner(address sender) { 
 	    require(msg.sender == address(validator));
-	    require(clientOwner[sender] != 0); 
+	    require(client[sender].isClient); 
 	    _; 
 	}
 	
 	modifier only_client_owner { 
-	    require(clientOwner[msg.sender] != 0); 
+	    require(client[msg.sender].isClient); 
 	    _; 
 	}
 	
-	modifier only_required_client_owner { 
-	    require(client[clientOwner[msg.sender]].required); 
-	    _; 
-	}
 	
 	modifier only_ratified{ 
 	    require(!fork[proposedFork].ratified); 
@@ -338,9 +278,8 @@ contract Operations {
 	}
 	
 	modifier only_undecided_client_owner {
-		bytes32 newClient = clientOwner[msg.sender];
-		require(newClient != 0);
-		require(fork[proposedFork].status[newClient] == Status.Undecided);
+		require(msg.sender != address(0));
+		require(fork[proposedFork].status[msg.sender] == Status.Undecided);
 		_;
 	}
 	
@@ -365,11 +304,11 @@ contract Operations {
 	}
 	
 	modifier only_when_proxy_undecided(bytes32 _txid) { 
-	    require(proxy[_txid].status[clientOwner[msg.sender]] == Status.Undecided); 
+	    require(proxy[_txid].status[msg.sender] == Status.Undecided); 
 	    _; }
 
-	modifier when_required(bytes32 _client) { 
-	    if (client[_client].required) 
+	modifier when_is_client(address _client) { 
+	    if (client[_client].isClient) 
 	    _; 
 	}
 	
@@ -378,8 +317,8 @@ contract Operations {
 	    _; 
 	}
 	
-	modifier when_changing_required(bytes32 _client, bool _r) { 
-	    if (client[_client].required != _r) 
+	modifier when_changing_required(address _client, bool _r) { 
+	    if (client[_client].isClient != _r) 
 	    _; 
 	}
 	
