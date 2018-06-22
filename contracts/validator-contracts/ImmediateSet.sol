@@ -8,8 +8,6 @@ contract Validator {
     address[] private validatorArr;
     address[] private pendingArr = [
         0x574366e84f74f2e913aD9A6782CE6Ac8022e16EB
-        , 
-        0xca35b7d915458ef540ade6068dfe2f44e8fa733c
     ];
     bool private operation_set = false;
     bool public finalized = true;
