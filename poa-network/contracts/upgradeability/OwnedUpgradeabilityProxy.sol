@@ -8,7 +8,6 @@ import "./UpgradeabilityOwnerStorage.sol";
  * @dev This contract combines an upgradeability proxy with basic authorization control functionalities
  */
 contract OwnedUpgradeabilityProxy is UpgradeabilityOwnerStorage, UpgradeabilityProxy {
-    
   /**
   * @dev Event to show ownership has been transferred
   * @param previousOwner representing the address of the previous owner

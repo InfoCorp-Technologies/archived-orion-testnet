@@ -5,7 +5,6 @@ pragma solidity ^0.4.23;
  * @dev This contract holds all the necessary state variables to support the upgrade functionality
  */
 contract UpgradeabilityStorage {
-    
     // Version name of the current implementation
     uint256 internal _version;
 

@@ -1,7 +1,6 @@
 pragma solidity ^0.4.23;
 import "../IBridgeValidators.sol";
 
-
 library Message {
     // function uintToString(uint256 inputValue) internal pure returns (string) {
     //     // figure out the length of the resulting string
@@ -36,7 +35,6 @@ library Message {
     // offset 32: 20 bytes :: address - recipient address
     // offset 52: 32 bytes :: uint256 - value
     // offset 84: 32 bytes :: bytes32 - transaction hash
-    // offset 116: 32 bytes :: uint256 - home gas price
 
     // bytes 1 to 32 are 0 because message length is stored as little endian.
     // mload always reads 32 bytes.
@@ -62,7 +60,11 @@ library Message {
     }
 
     function isMessageValid(bytes _msg) internal pure returns(bool) {
-        return _msg.length == 116;
+        return _msg.length == requiredMessageLength();
+    }
+
+    function requiredMessageLength() public pure returns(uint256) {
+        return 84;
     }
 
     function recoverAddressFromSignedMessage(bytes signature, bytes message) internal pure returns (address) {
@@ -81,8 +83,8 @@ library Message {
 
     function hashMessage(bytes message) internal pure returns (bytes32) {
         bytes memory prefix = "\x19Ethereum Signed Message:\n";
-        // message is always 116 length
-        string memory msgLength = "116";
+        // message is always 84 length
+        string memory msgLength = "84";
         return keccak256(prefix, msgLength, message);
     }
 

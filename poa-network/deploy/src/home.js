@@ -1,23 +1,27 @@
 const Web3Utils = require('web3-utils')
 require('dotenv').config({
-  path: __dirname + '/../env'
+  path: __dirname + '/../.env'
 });
 
 const assert = require('assert');
 
 const { deployContract, sendRawTx } = require('./deploymentUtils');
-const { web3Home, deploymentPrivateKey, HOME_RPC_URL } = require('./web3');
+const { 
+  web3Home, 
+  deploymentPrivateKey, 
+  HOME_GAS_PRICE 
+} = require('./web3');
 
 const EternalStorageProxy = require('../../build/contracts/EternalStorageProxy.json');
 const BridgeValidators = require('../../build/contracts/BridgeValidators.json')
 const HomeBridge = require('../../build/contracts/HomeBridge.json')
 
 const VALIDATORS = process.env.VALIDATORS.split(" ")
-const HOME_GAS_PRICE = Web3Utils.toWei(process.env.HOME_GAS_PRICE, 'gwei');
 
 const {
   DEPLOYMENT_ACCOUNT_ADDRESS,
   REQUIRED_NUMBER_OF_VALIDATORS,
+  HOME_RPC_URL,
   HOME_OWNER_MULTISIG,
   HOME_UPGRADEABLE_ADMIN_VALIDATORS,
   HOME_UPGRADEABLE_ADMIN_BRIDGE,
@@ -31,16 +35,16 @@ async function deployHome() {
   let homeNonce = await web3Home.eth.getTransactionCount(DEPLOYMENT_ACCOUNT_ADDRESS);
   console.log('========================================')
   console.log('deploying HomeBridge')
-  console.log('========================================\n')
+  console.log('========================================')
 
-  console.log('\ndeploying storage for home validators')
+  console.log('\n\ndeploying storage for home validators')
   const storageValidatorsHome = await deployContract(EternalStorageProxy, [], { from: DEPLOYMENT_ACCOUNT_ADDRESS, nonce: homeNonce })
-  console.log('[Home] BridgeValidators Storage: ', storageValidatorsHome.options.address)
+  console.log('\n[Home] BridgeValidators Storage: ', storageValidatorsHome.options.address)
   homeNonce++;
 
   console.log('\ndeploying implementation for home validators')
   let bridgeValidatorsHome = await deployContract(BridgeValidators, [], { from: DEPLOYMENT_ACCOUNT_ADDRESS, nonce: homeNonce })
-  console.log('[Home] BridgeValidators Implementation: ', bridgeValidatorsHome.options.address)
+  console.log('\n[Home] BridgeValidators Implementation: ', bridgeValidatorsHome.options.address)
   homeNonce++;
 
   console.log('\nhooking up eternal storage to BridgeValidators')
@@ -56,8 +60,8 @@ async function deployHome() {
   assert.equal(txUpgradeToBridgeVHome.status, '0x1', 'Transaction Failed');
   homeNonce++;
 
-  console.log('\ninitializing Home Bridge Validators with following parameters:\n')
-  console.log(`REQUIRED_NUMBER_OF_VALIDATORS: ${REQUIRED_NUMBER_OF_VALIDATORS}, VALIDATORS: ${VALIDATORS}`)
+  console.log('\ninitializing Home Bridge Validators with following parameters:')
+  console.log(`\nREQUIRED_NUMBER_OF_VALIDATORS: ${REQUIRED_NUMBER_OF_VALIDATORS}, VALIDATORS: ${VALIDATORS}`)
   bridgeValidatorsHome.options.address = storageValidatorsHome.options.address
   const initializeData = await bridgeValidatorsHome.methods.initialize(
     REQUIRED_NUMBER_OF_VALIDATORS, VALIDATORS, HOME_OWNER_MULTISIG
@@ -91,12 +95,12 @@ async function deployHome() {
   console.log('\ndeploying homeBridge storage')
   const homeBridgeStorage = await deployContract(EternalStorageProxy, [], { from: DEPLOYMENT_ACCOUNT_ADDRESS, nonce: homeNonce })
   homeNonce++;
-  console.log('[Home] HomeBridge Storage: ', homeBridgeStorage.options.address)
+  console.log('\n[Home] HomeBridge Storage: ', homeBridgeStorage.options.address)
 
-  console.log('\ndeploying homeBridge implementation\n')
+  console.log('\ndeploying homeBridge implementation')
   const homeBridgeImplementation = await deployContract(HomeBridge, [], { from: DEPLOYMENT_ACCOUNT_ADDRESS, nonce: homeNonce })
   homeNonce++;
-  console.log('[Home] HomeBridge Implementation: ', homeBridgeImplementation.options.address)
+  console.log('\n[Home] HomeBridge Implementation: ', homeBridgeImplementation.options.address)
 
   console.log('\nhooking up HomeBridge storage to HomeBridge implementation')
   const upgradeToHomeBridgeData = await homeBridgeStorage.methods.upgradeTo('1', homeBridgeImplementation.options.address)
@@ -125,7 +129,7 @@ async function deployHome() {
   homeNonce++;
 
   console.log('\ninitializing Home Bridge with following parameters:')
-  console.log(`Home Validators: ${storageValidatorsHome.options.address},
+  console.log(`\nHome Validators: ${storageValidatorsHome.options.address},
   HOME_DAILY_LIMIT : ${HOME_DAILY_LIMIT} which is ${Web3Utils.fromWei(HOME_DAILY_LIMIT)} in eth,
   HOME_MAX_AMOUNT_PER_TX: ${HOME_MAX_AMOUNT_PER_TX} which is ${Web3Utils.fromWei(HOME_MAX_AMOUNT_PER_TX)} in eth,
   HOME_MIN_AMOUNT_PER_TX: ${HOME_MIN_AMOUNT_PER_TX} which is ${Web3Utils.fromWei(HOME_MIN_AMOUNT_PER_TX)} in eth,
@@ -165,4 +169,5 @@ async function deployHome() {
   }
 
 }
+
 module.exports = deployHome;
