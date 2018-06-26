@@ -5,7 +5,7 @@ const ForeignBridge = artifacts.require("ForeignBridge.sol");
 const BridgeValidators = artifacts.require("BridgeValidators.sol");
 
 const {ERROR_MSG, ZERO_ADDRESS} = require('./setup');
-const {createMessage, sign} = require('./helpers/helpers');
+const {createMessage, sign, signatureToVRS} = require('./helpers/helpers');
 
 const requireBlockConfirmations = 8;
 const oneEther = web3.toBigNumber(web3.toWei(1, "ether"));
@@ -27,10 +27,9 @@ const getEvents = function(contract, filter) {
       event.stopWatching();
   });
 }
-
 contract('ForeignBridge', async (accounts) => {
   let validatorContract, authorities, owner, token;
-  
+
   before(async () => {
     validatorContract = await BridgeValidators.new()
     owner = accounts[0]
@@ -45,7 +44,7 @@ contract('ForeignBridge', async (accounts) => {
 
       ZERO_ADDRESS.should.be.equal(await foreignBridge.validatorContract())
       '0'.should.be.bignumber.equal(await foreignBridge.deployedAtBlock())
-      '0'.should.be.bignumber.equal(await foreignBridge.foreignDailyLimit())
+      '0'.should.be.bignumber.equal(await foreignBridge.dailyLimit())
       '0'.should.be.bignumber.equal(await foreignBridge.maxPerTx())
       false.should.be.equal(await foreignBridge.isInitialized())
       await foreignBridge.initialize(validatorContract.address, token.address, oneEther, halfEther, minPerTx, gasPrice, requireBlockConfirmations);
@@ -53,318 +52,224 @@ contract('ForeignBridge', async (accounts) => {
       true.should.be.equal(await foreignBridge.isInitialized())
       validatorContract.address.should.be.equal(await foreignBridge.validatorContract());
       (await foreignBridge.deployedAtBlock()).should.be.bignumber.above(0);
-      oneEther.should.be.bignumber.equal(await foreignBridge.foreignDailyLimit())
+      oneEther.should.be.bignumber.equal(await foreignBridge.dailyLimit())
       halfEther.should.be.bignumber.equal(await foreignBridge.maxPerTx())
       minPerTx.should.be.bignumber.equal(await foreignBridge.minPerTx())
     })
   })
 
   describe('#deposit', async () => {
-    let foreignBridge;
-    const recipient = accounts[5];
 
     beforeEach(async () => {
+      foreignBridge = await ForeignBridge.new()
+      token = await SENC.new();
+      await token.unpause();
+      await foreignBridge.initialize(validatorContract.address, token.address, oneEther, halfEther, minPerTx, gasPrice, requireBlockConfirmations);
+      oneEther.should.be.bignumber.equal(await foreignBridge.dailyLimit());
+    })
+
+    it('should allow to deposit', async () => {
+      var recipientAccount = accounts[3];
+      const balanceBefore = await token.balanceOf(recipientAccount)
+      var homeGasPrice = web3.toBigNumber(0);
+      var value = web3.toBigNumber(web3.toWei(0.25, "ether"));
+      await token.mint(foreignBridge.address, value);
+      var transactionHash = "0x1045bfe274b88120a6b1e5d01b5ec00ab5d01098346e90e7c7a3c9b8f0181c80";
+      var message = createMessage(recipientAccount, value, transactionHash, homeGasPrice);
+      var signature = await sign(authorities[0], message)
+      var vrs = signatureToVRS(signature);
+      false.should.be.equal(await foreignBridge.deposits(transactionHash))
+      const {logs} = await foreignBridge.deposit([vrs.v], [vrs.r], [vrs.s], message).should.be.fulfilled
+      logs[0].event.should.be.equal("Deposit")
+      logs[0].args.recipient.should.be.equal(recipientAccount)
+      logs[0].args.value.should.be.bignumber.equal(value)
+      logs[0].args.transactionHash.should.be.equal(transactionHash);
+
+      const balanceAfter = await token.balanceOf(recipientAccount);
+      balanceAfter.should.be.bignumber.equal(balanceBefore.add(value))
+      true.should.be.equal(await foreignBridge.deposits(transactionHash))
+    })
+    
+    it('should allow second deposit with different transactionHash but same recipient and value', async ()=> {
+      var recipientAccount = accounts[3];
+      const balanceBefore = await token.balanceOf(recipientAccount)
+      // tx 1
+      var value = web3.toBigNumber(web3.toWei(0.25, "ether"));
+      await token.mint(foreignBridge.address, value);
+      var homeGasPrice = web3.toBigNumber(0);
+      var transactionHash = "0x35d3818e50234655f6aebb2a1cfbf30f59568d8a4ec72066fac5a25dbe7b8121";
+      var message = createMessage(recipientAccount, value, transactionHash, homeGasPrice);
+      var signature = await sign(authorities[0], message)
+      var vrs = signatureToVRS(signature);
+      false.should.be.equal(await foreignBridge.deposits(transactionHash))
+      await foreignBridge.deposit([vrs.v], [vrs.r], [vrs.s], message).should.be.fulfilled
+      // tx 2
+      var transactionHash2 = "0x77a496628a776a03d58d7e6059a5937f04bebd8ba4ff89f76dd4bb8ba7e291ee";
+      var message2 = createMessage(recipientAccount, value, transactionHash2, homeGasPrice);
+      var signature2 = await sign(authorities[0], message2)
+      var vrs2 = signatureToVRS(signature2);
+      await token.mint(foreignBridge.address, value);
+      false.should.be.equal(await foreignBridge.deposits(transactionHash2))
+      const {logs} = await foreignBridge.deposit([vrs2.v], [vrs2.r], [vrs2.s], message2).should.be.fulfilled
+
+      logs[0].event.should.be.equal("Deposit")
+      logs[0].args.recipient.should.be.equal(recipientAccount)
+      logs[0].args.value.should.be.bignumber.equal(value)
+      logs[0].args.transactionHash.should.be.equal(transactionHash2);
+      const balanceAfter = await token.balanceOf(recipientAccount)
+      balanceAfter.should.be.bignumber.equal(balanceBefore.add(value.mul(2)))
+      true.should.be.equal(await foreignBridge.deposits(transactionHash))
+      true.should.be.equal(await foreignBridge.deposits(transactionHash2))
+    })
+
+    it('should not allow second deposit (replay attack) with same transactionHash but different recipient', async () => {
+      var recipientAccount = accounts[3];
+      const balanceBefore = await token.balanceOf(recipientAccount)
+      // tx 1
+      var value = web3.toBigNumber(web3.toWei(0.5, "ether"));
+      var homeGasPrice = web3.toBigNumber(0);
+      var transactionHash = "0x35d3818e50234655f6aebb2a1cfbf30f59568d8a4ec72066fac5a25dbe7b8121";
+      var message = createMessage(recipientAccount, value, transactionHash, homeGasPrice);
+      var signature = await sign(authorities[0], message)
+      var vrs = signatureToVRS(signature);
+      false.should.be.equal(await foreignBridge.deposits(transactionHash))
+      await token.mint(foreignBridge.address, value);
+      await foreignBridge.deposit([vrs.v], [vrs.r], [vrs.s], message).should.be.fulfilled
+      const balanceAfter = await token.balanceOf(recipientAccount)
+      balanceAfter.should.be.bignumber.equal(balanceBefore.add(value))
+      // tx 2
+      var message2 = createMessage(accounts[4], value, transactionHash, homeGasPrice);
+      var signature2 = await sign(authorities[0], message2)
+      var vrs = signatureToVRS(signature2);
+      true.should.be.equal(await foreignBridge.deposits(transactionHash))
+      await foreignBridge.deposit([vrs.v], [vrs.r], [vrs.s], message2).should.be.rejectedWith(ERROR_MSG)
+    })
+ 
+  })
+
+  describe('#deposit with 2 minimum signatures', async () => {
+
+    let multisigValidatorContract, twoAuthorities, ownerOfValidatorContract, foreignBridgeWithMultiSignatures
+    
+    beforeEach(async () => {
+      multisigValidatorContract = await BridgeValidators.new()
+      token = await SENC.new();
+      await token.unpause();
+      twoAuthorities = [accounts[0], accounts[1]];
+      ownerOfValidatorContract = accounts[3]
+      const halfEther = web3.toBigNumber(web3.toWei(0.5, "ether"));
+      await multisigValidatorContract.initialize(2, twoAuthorities, ownerOfValidatorContract, {from: ownerOfValidatorContract})
+      foreignBridgeWithMultiSignatures = await ForeignBridge.new()
+      const oneEther = web3.toBigNumber(web3.toWei(1, "ether"));
+      await foreignBridgeWithMultiSignatures.initialize(multisigValidatorContract.address, token.address, oneEther, halfEther, minPerTx, gasPrice, requireBlockConfirmations, {from: ownerOfValidatorContract});
+    })
+    
+    it('deposit should fail if not enough signatures are provided', async () => {
+      var recipientAccount = accounts[4];
+      const balanceBefore = await token.balanceOf(recipientAccount)
+      // msg 1
+      var value = web3.toBigNumber(web3.toWei(0.5, "ether"));
+      var homeGasPrice = web3.toBigNumber(0);
+      var transactionHash = "0x35d3818e50234655f6aebb2a1cfbf30f59568d8a4ec72066fac5a25dbe7b8121";
+      var message = createMessage(recipientAccount, value, transactionHash, homeGasPrice);
+      var signature = await sign(twoAuthorities[0], message)
+      var vrs = signatureToVRS(signature);
+      false.should.be.equal(await foreignBridgeWithMultiSignatures.deposits(transactionHash))
+      await token.mint(foreignBridgeWithMultiSignatures.address, value);
+      await foreignBridgeWithMultiSignatures.deposit([vrs.v], [vrs.r], [vrs.s], message).should.be.rejectedWith(ERROR_MSG)
+      // msg 2
+      var signature2 = await sign(twoAuthorities[1], message)
+      var vrs2 = signatureToVRS(signature2);
+      const {logs} = await foreignBridgeWithMultiSignatures.deposit([vrs.v, vrs2.v], [vrs.r, vrs2.r], [vrs.s, vrs2.s], message).should.be.fulfilled;
+
+      logs[0].event.should.be.equal("Deposit")
+      logs[0].args.recipient.should.be.equal(recipientAccount)
+      logs[0].args.value.should.be.bignumber.equal(value)
+      logs[0].args.transactionHash.should.be.equal(transactionHash);
+      const balanceAfter = await token.balanceOf(recipientAccount)
+      balanceAfter.should.be.bignumber.equal(balanceBefore.add(value))
+      true.should.be.equal(await foreignBridgeWithMultiSignatures.deposits(transactionHash))
+    })
+    
+    it('deposit should fail if duplicate signature is provided', async () => {
+      var recipientAccount = accounts[4];
+      const balanceBefore = await token.balanceOf(recipientAccount)
+      // msg 1
+      var value = web3.toBigNumber(web3.toWei(0.5, "ether"));
+      var homeGasPrice = web3.toBigNumber(0);
+      var transactionHash = "0x35d3818e50234655f6aebb2a1cfbf30f59568d8a4ec72066fac5a25dbe7b8121";
+      var message = createMessage(recipientAccount, value, transactionHash, homeGasPrice);
+      var signature = await sign(twoAuthorities[0], message)
+      var vrs = signatureToVRS(signature);
+      false.should.be.equal(await foreignBridgeWithMultiSignatures.deposits(transactionHash))
+      await token.mint(foreignBridgeWithMultiSignatures.address, value);
+      await foreignBridgeWithMultiSignatures.deposit([vrs.v, vrs.v], [vrs.r, vrs.r], [vrs.s, vrs.s], message).should.be.rejectedWith(ERROR_MSG)
+      balanceBefore.should.be.bignumber.equal(await token.balanceOf(recipientAccount));
+    })
+
+  })
+
+  describe('#onTokenTransfer', async () => {
+
+    it('can only be called if user before call approve', async ()=> {
+      const user = accounts[4]
       token = await SENC.new();
       await token.unpause();
       foreignBridge = await ForeignBridge.new();
       await foreignBridge.initialize(validatorContract.address, token.address, oneEther, halfEther, minPerTx, gasPrice, requireBlockConfirmations);
+      await token.mint(user, halfEther).should.be.fulfilled;
+      await foreignBridge.onTokenTransfer(halfEther, {from: user}).should.be.rejectedWith(ERROR_MSG);
+      await token.approve(foreignBridge.address, halfEther, {from: user}).should.be.fulfilled;
+      await foreignBridge.onTokenTransfer(halfEther, {from: user}).should.be.fulfilled;
+      '0'.should.be.bignumber.equal(await token.balanceOf(user));
+      halfEther.should.be.bignumber.equal(await token.balanceOf(foreignBridge.address));
     })
 
-    it('should allow validator to deposit', async () => {
-      const value = halfEther;
-      await token.mint(foreignBridge.address, value); 
-      const transactionHash = "0x806335163828a8eda675cff9c84fa6e6c7cf06bb44cc6ec832e42fe789d01415";
-      const {logs} = await foreignBridge.deposit(recipient, value, transactionHash, {from: authorities[0]})
-      logs[0].event.should.be.equal("SignedForDeposit");
-      logs[0].args.should.be.deep.equal({
-        signer: authorities[0],
-        transactionHash
-      });
-      logs[1].event.should.be.equal("Deposit");
-      logs[1].args.should.be.deep.equal({
-        recipient,
-        value,
-        transactionHash
-      })
-      halfEther.should.be.bignumber.equal(await token.balanceOf(recipient));
-
-      const msgHash = Web3Utils.soliditySha3(recipient, value, transactionHash);
-      const senderHash = Web3Utils.soliditySha3(authorities[0], msgHash)
-      true.should.be.equal(await foreignBridge.depositsSigned(senderHash))
-    })
-
-    it('test with 2 signatures required', async () => {
-      let validatorContractWith2Signatures = await BridgeValidators.new()
-      let authoritiesTwoAccs = [accounts[1], accounts[2], accounts[3]];
-      let ownerOfValidators = accounts[0]
-      await validatorContractWith2Signatures.initialize(2, authoritiesTwoAccs, ownerOfValidators)
-
-      let tokenSENC = await SENC.new();
-      await tokenSENC.unpause();
-
-      let foreignBridgeWithTwoSigs = await ForeignBridge.new();
-      await foreignBridgeWithTwoSigs.initialize(validatorContractWith2Signatures.address, tokenSENC.address, oneEther, halfEther, minPerTx, gasPrice, requireBlockConfirmations);
-
-      const value = oneEther;
-      await tokenSENC.mint(foreignBridgeWithTwoSigs.address, value);
-
-      const transactionHash = "0x806335163828a8eda675cff9c84fa6e6c7cf06bb44cc6ec832e42fe789d01415";
-      const {logs} = await foreignBridgeWithTwoSigs.deposit(recipient, value, transactionHash, {from: authoritiesTwoAccs[0]}).should.be.fulfilled;
-      logs[0].event.should.be.equal("SignedForDeposit");
-      logs[0].args.should.be.deep.equal({
-        signer: authoritiesTwoAccs[0],
-        transactionHash
-      });
-      '0'.should.be.bignumber.equal(await tokenSENC.balanceOf(recipient));
- 
-      const secondDeposit = await foreignBridgeWithTwoSigs.deposit(recipient, value, transactionHash, {from: authoritiesTwoAccs[1]}).should.be.fulfilled;
-      secondDeposit.logs[1].event.should.be.equal("Deposit");
-      secondDeposit.logs[1].args.should.be.deep.equal({
-        recipient,
-        value,
-        transactionHash
-      })
-      
-      const thirdDeposit = await foreignBridgeWithTwoSigs.deposit(recipient, value, transactionHash, {from: authoritiesTwoAccs[2]}).should.be.rejectedWith(ERROR_MSG);
-      oneEther.should.be.bignumber.equal(await tokenSENC.balanceOf(recipient));
-    })
-
-    it('should not allow to double submit', async () => {
-      const value = oneEther;
-      await token.mint(foreignBridge.address, value); 
-      const transactionHash = "0x806335163828a8eda675cff9c84fa6e6c7cf06bb44cc6ec832e42fe789d01415";
-      await foreignBridge.deposit(recipient, value, transactionHash, {from: authorities[0]}).should.be.fulfilled;
-      await foreignBridge.deposit(recipient, value, transactionHash, {from: authorities[0]}).should.be.rejectedWith(ERROR_MSG);
-    })
-
-    it('should not allow non-authorities to execute deposit', async () => {
-      const value = oneEther;
-      const transactionHash = "0x806335163828a8eda675cff9c84fa6e6c7cf06bb44cc6ec832e42fe789d01415";
-      await foreignBridge.deposit(recipient, value, transactionHash, {from: accounts[7]}).should.be.rejectedWith(ERROR_MSG);
-    })
-
-    it('doesnt allow to mint if requiredSignatures has changed', async () => {
-      let validatorContractWith2Signatures = await BridgeValidators.new()
-      let authoritiesTwoAccs = [accounts[1], accounts[2], accounts[3]];
-      let ownerOfValidators = accounts[0]
-      await validatorContractWith2Signatures.initialize(2, authoritiesTwoAccs, ownerOfValidators)
-
-      let tokenSENC = await SENC.new();
-      await tokenSENC.unpause();
-
-      let foreignBridgeWithTwoSigs = await ForeignBridge.new();
-      await foreignBridgeWithTwoSigs.initialize(validatorContractWith2Signatures.address, tokenSENC.address, oneEther, halfEther, minPerTx, gasPrice, requireBlockConfirmations);
-
-      const value = oneEther;
-      await tokenSENC.mint(foreignBridgeWithTwoSigs.address, value);
-
-      const transactionHash = "0x806335163828a8eda675cff9c84fa6e6c7cf06bb44cc6ec832e42fe789d01415";
-      const {logs} = await foreignBridgeWithTwoSigs.deposit(recipient, value, transactionHash, {from: authoritiesTwoAccs[0]}).should.be.fulfilled;
-      logs[0].event.should.be.equal("SignedForDeposit");
-      logs[0].args.should.be.deep.equal({
-        signer: authorities[0],
-        transactionHash
-      });
-      '0'.should.be.bignumber.equal(await tokenSENC.balanceOf(recipient));
-
-      const secondDeposit = await foreignBridgeWithTwoSigs.deposit(recipient, value, transactionHash, {from: authoritiesTwoAccs[1]}).should.be.fulfilled;
-      secondDeposit.logs[1].event.should.be.equal("Deposit");
-      secondDeposit.logs[1].args.should.be.deep.equal({
-        recipient,
-        value,
-        transactionHash
-      })
-      oneEther.should.be.bignumber.equal(await tokenSENC.balanceOf(recipient));
-      
-      await validatorContractWith2Signatures.setRequiredSignatures(3).should.be.fulfilled;
-      const thirdDeposit = await foreignBridgeWithTwoSigs.deposit(recipient, value, transactionHash, {from: authoritiesTwoAccs[2]}).should.be.rejectedWith(ERROR_MSG);
-      oneEther.should.be.bignumber.equal(await tokenSENC.balanceOf(recipient));
-    })
-
-    it('attack when decreasing requiredSignatures', async () => {
-      let validatorContractWith2Signatures = await BridgeValidators.new()
-      let authoritiesTwoAccs = [accounts[1], accounts[2], accounts[3]];
-      let ownerOfValidators = accounts[0]
-      await validatorContractWith2Signatures.initialize(2, authoritiesTwoAccs, ownerOfValidators)
-
-      let tokenSENC = await SENC.new();
-      await tokenSENC.unpause();
-
-      let foreignBridgeWithTwoSigs = await ForeignBridge.new();
-      await foreignBridgeWithTwoSigs.initialize(validatorContractWith2Signatures.address, tokenSENC.address, oneEther, halfEther, minPerTx, gasPrice, requireBlockConfirmations);
-
-      const value = oneEther;
-      await tokenSENC.mint(foreignBridgeWithTwoSigs.address, value);
-
-      const transactionHash = "0x806335163828a8eda675cff9c84fa6e6c7cf06bb44cc6ec832e42fe789d01415";
-      const {logs} = await foreignBridgeWithTwoSigs.deposit(recipient, value, transactionHash, {from: authoritiesTwoAccs[0]}).should.be.fulfilled;
-      logs[0].event.should.be.equal("SignedForDeposit");
-      logs[0].args.should.be.deep.equal({
-        signer: authorities[0],
-        transactionHash
-      });
-      '0'.should.be.bignumber.equal(await tokenSENC.balanceOf(recipient));
-
-      await validatorContractWith2Signatures.setRequiredSignatures(1).should.be.fulfilled;
-      const secondDeposit = await foreignBridgeWithTwoSigs.deposit(recipient, value, transactionHash, {from: authoritiesTwoAccs[1]}).should.be.fulfilled;
-      const thirdDeposit = await foreignBridgeWithTwoSigs.deposit(recipient, value, transactionHash, {from: authoritiesTwoAccs[2]}).should.be.rejectedWith(ERROR_MSG);
-      secondDeposit.logs[1].event.should.be.equal("Deposit");
-      secondDeposit.logs[1].args.should.be.deep.equal({
-        recipient,
-        value,
-        transactionHash
-      })
-      oneEther.should.be.bignumber.equal(await tokenSENC.balanceOf(recipient));
-    })
-  })
-
-  describe('#onTokenTransfer', async () => {
     it('should only let to send within maxPerTx limit', async () => {
-      const owner = accounts[3]
       const user = accounts[4]
       const valueMoreThanLimit = halfEther.add(1);
-      
-      token = await SENC.new({from: owner});
-      await token.unpause({from: owner});
-      await token.mint(user, oneEther.add(1), {from: owner}).should.be.fulfilled;
-      
+      token = await SENC.new();
+      await token.unpause();
       foreignBridge = await ForeignBridge.new();
       await foreignBridge.initialize(validatorContract.address, token.address, oneEther, halfEther, minPerTx, gasPrice, requireBlockConfirmations);
-      
+      await token.mint(user, oneEther.add(1)).should.be.fulfilled;
+      await token.approve(foreignBridge.address, valueMoreThanLimit, {from: user}).should.be.fulfilled;
       await foreignBridge.onTokenTransfer(valueMoreThanLimit, {from: user}).should.be.rejectedWith(ERROR_MSG);
       oneEther.add(1).should.be.bignumber.equal(await token.balanceOf(user));
-      
-      await token.approve(foreignBridge.address, halfEther, {from: user});
+      await token.approve(foreignBridge.address, halfEther, {from: user}).should.be.fulfilled;
       await foreignBridge.onTokenTransfer(halfEther, {from: user}).should.be.fulfilled;
       valueMoreThanLimit.should.be.bignumber.equal(await token.balanceOf(user));
-      
-      await token.approve(foreignBridge.address, halfEther, {from: user});
+      await token.approve(foreignBridge.address, halfEther, {from: user}).should.be.fulfilled;
       await foreignBridge.onTokenTransfer(halfEther, {from: user}).should.be.fulfilled;
       '1'.should.be.bignumber.equal(await token.balanceOf(user));
-      
-      await token.approve(foreignBridge.address, '1', {from: user});  
       await foreignBridge.onTokenTransfer('1', {from: user}).should.be.rejectedWith(ERROR_MSG);
     })
 
     it('should not let to withdraw less than minPerTx', async () => {
-      const owner = accounts[3]
       const user = accounts[4]
       const valueLessThanMinPerTx = minPerTx.sub(1);
-      
-      token = await SENC.new({from: owner});
-      await token.unpause({from: owner});
-      await token.mint(user, oneEther, {from: owner}).should.be.fulfilled;
-      
+      token = await SENC.new();
+      await token.unpause();
       foreignBridge = await ForeignBridge.new();
       await foreignBridge.initialize(validatorContract.address, token.address, oneEther, halfEther, minPerTx, gasPrice, requireBlockConfirmations);
-      
+      await token.mint(user, oneEther).should.be.fulfilled;
+      await token.approve(foreignBridge.address, valueLessThanMinPerTx, {from: user}).should.be.fulfilled;
       await foreignBridge.onTokenTransfer(valueLessThanMinPerTx, {from: user}).should.be.rejectedWith(ERROR_MSG);
       oneEther.should.be.bignumber.equal(await token.balanceOf(user));
-      
-      await token.approve(foreignBridge.address, minPerTx, {from: user});
+      await token.approve(foreignBridge.address, minPerTx, {from: user}).should.be.fulfilled;
       await foreignBridge.onTokenTransfer(minPerTx, {from: user}).should.be.fulfilled;
       oneEther.sub(minPerTx).should.be.bignumber.equal(await token.balanceOf(user));
     })
-  })
 
-  describe('#submitSignature', async () => {
-    let validatorContractWith2Signatures, authoritiesTwoAccs, ownerOfValidators, token, foreignBridgeWithTwoSigs;
-
-    beforeEach(async () => {
-      validatorContractWith2Signatures = await BridgeValidators.new()
-      authoritiesTwoAccs = [accounts[1], accounts[2], accounts[3]];
-      ownerOfValidators = accounts[0]
-      await validatorContractWith2Signatures.initialize(2, authoritiesTwoAccs, ownerOfValidators)
-      token = await SENC.new();
-      await token.unpause();
-      foreignBridgeWithTwoSigs = await ForeignBridge.new();
-      await foreignBridgeWithTwoSigs.initialize(validatorContractWith2Signatures.address, token.address, oneEther, halfEther, minPerTx, gasPrice, requireBlockConfirmations);
-    })
-
-    it('allows a validator to submit a signature', async () => {
-      var recipientAccount = accounts[8]
-      var value = web3.toBigNumber(web3.toWei(0.5, "ether"));
-      var homeGasPrice = web3.toBigNumber(0);
-      var transactionHash = "0x1045bfe274b88120a6b1e5d01b5ec00ab5d01098346e90e7c7a3c9b8f0181c80";
-      var message = createMessage(recipientAccount, value, transactionHash, homeGasPrice);
-      var signature = await sign(authoritiesTwoAccs[0], message)
-      const {logs} = await foreignBridgeWithTwoSigs.submitSignature(signature, message, {from: authorities[0]}).should.be.fulfilled;
-      logs[0].event.should.be.equal('SignedForWithdraw')
-      const msgHashFromLog = logs[0].args.messageHash
-      const signatureFromContract = await foreignBridgeWithTwoSigs.signature(msgHashFromLog, 0);
-      const messageFromContract = await foreignBridgeWithTwoSigs.message(msgHashFromLog);
-      signature.should.be.equal(signatureFromContract);
-      messageFromContract.should.be.equal(messageFromContract);
-      const hashMsg = Web3Utils.soliditySha3(message);
-      const hashSenderMsg = Web3Utils.soliditySha3(authorities[0], hashMsg)
-      true.should.be.equal(await foreignBridgeWithTwoSigs.messagesSigned(hashSenderMsg));
-    })
-
-    it('when enough requiredSignatures are collected, CollectedSignatures event is emitted', async () => {
-      var recipientAccount = accounts[8]
-      var value = web3.toBigNumber(web3.toWei(0.5, "ether"));
-      var homeGasPrice = web3.toBigNumber(0);
-      var transactionHash = "0x1045bfe274b88120a6b1e5d01b5ec00ab5d01098346e90e7c7a3c9b8f0181c80";
-      var message = createMessage(recipientAccount, value, transactionHash, homeGasPrice);
-      var signature = await sign(authoritiesTwoAccs[0], message)
-      var signature2 = await sign(authoritiesTwoAccs[1], message)
-      '2'.should.be.bignumber.equal(await validatorContractWith2Signatures.requiredSignatures());
-      await foreignBridgeWithTwoSigs.submitSignature(signature, message, {from: authorities[0]}).should.be.fulfilled;
-      await foreignBridgeWithTwoSigs.submitSignature(signature, message, {from: authorities[0]}).should.be.rejectedWith(ERROR_MSG);
-      await foreignBridgeWithTwoSigs.submitSignature(signature, message, {from: authorities[1]}).should.be.rejectedWith(ERROR_MSG);
-      const {logs} = await foreignBridgeWithTwoSigs.submitSignature(signature2, message, {from: authorities[1]}).should.be.fulfilled;
-      logs.length.should.be.equal(2)
-      logs[1].event.should.be.equal('CollectedSignatures')
-      logs[1].args.authorityResponsibleForRelay.should.be.equal(authorities[1])
-    })
-
-    it('attack when increasing requiredSignatures', async () => {
-      var recipientAccount = accounts[8]
-      var value = web3.toBigNumber(web3.toWei(0.5, "ether"));
-      var homeGasPrice = web3.toBigNumber(0);
-      var transactionHash = "0x1045bfe274b88120a6b1e5d01b5ec00ab5d01098346e90e7c7a3c9b8f0181c80";
-      var message = createMessage(recipientAccount, value, transactionHash, homeGasPrice);
-      var signature = await sign(authoritiesTwoAccs[0], message)
-      var signature2 = await sign(authoritiesTwoAccs[1], message)
-      var signature3 = await sign(authoritiesTwoAccs[2], message)
-      '2'.should.be.bignumber.equal(await validatorContractWith2Signatures.requiredSignatures());
-      await foreignBridgeWithTwoSigs.submitSignature(signature, message, {from: authoritiesTwoAccs[0]}).should.be.fulfilled;
-      await foreignBridgeWithTwoSigs.submitSignature(signature, message, {from: authoritiesTwoAccs[0]}).should.be.rejectedWith(ERROR_MSG);
-      await foreignBridgeWithTwoSigs.submitSignature(signature, message, {from: authoritiesTwoAccs[1]}).should.be.rejectedWith(ERROR_MSG);
-      const {logs} = await foreignBridgeWithTwoSigs.submitSignature(signature2, message, {from: authoritiesTwoAccs[1]}).should.be.fulfilled;
-      logs.length.should.be.equal(2)
-      logs[1].event.should.be.equal('CollectedSignatures')
-      logs[1].args.authorityResponsibleForRelay.should.be.equal(authorities[1])
-      await validatorContractWith2Signatures.setRequiredSignatures(3).should.be.fulfilled;
-      '3'.should.be.bignumber.equal(await validatorContractWith2Signatures.requiredSignatures());
-      const attackerTx = await foreignBridgeWithTwoSigs.submitSignature(signature3, message, {from: authoritiesTwoAccs[2]}).should.be.rejectedWith(ERROR_MSG);
-    })
-
-    it('attack when decreasing requiredSignatures', async () => {
-      var recipientAccount = accounts[8]
-      var value = web3.toBigNumber(web3.toWei(0.5, "ether"));
-      var homeGasPrice = web3.toBigNumber(0);
-      var transactionHash = "0x1045bfe274b88120a6b1e5d01b5ec00ab5d01098346e90e7c7a3c9b8f0181c80";
-      var message = createMessage(recipientAccount, value, transactionHash, homeGasPrice);
-      var signature = await sign(authoritiesTwoAccs[0], message)
-      var signature2 = await sign(authoritiesTwoAccs[1], message)
-      var signature3 = await sign(authoritiesTwoAccs[2], message)
-      '2'.should.be.bignumber.equal(await validatorContractWith2Signatures.requiredSignatures());
-      await foreignBridgeWithTwoSigs.submitSignature(signature, message, {from: authoritiesTwoAccs[0]}).should.be.fulfilled;
-      await validatorContractWith2Signatures.setRequiredSignatures(1).should.be.fulfilled;
-      '1'.should.be.bignumber.equal(await validatorContractWith2Signatures.requiredSignatures());
-      const {logs} = await foreignBridgeWithTwoSigs.submitSignature(signature2, message, {from: authoritiesTwoAccs[1]}).should.be.fulfilled;
-      logs.length.should.be.equal(2)
-      logs[1].event.should.be.equal('CollectedSignatures')
-      logs[1].args.authorityResponsibleForRelay.should.be.equal(authorities[1])
-    })
   })
 
   describe('#setting limits', async () => {
+
     let foreignBridge;
 
     beforeEach(async () => {
       token = await SENC.new();
+      await token.unpause();
       foreignBridge = await ForeignBridge.new();
       await foreignBridge.initialize(validatorContract.address, token.address, oneEther, halfEther, minPerTx, gasPrice, requireBlockConfirmations);
     })
@@ -374,7 +279,7 @@ contract('ForeignBridge', async (accounts) => {
       await foreignBridge.setMaxPerTx(halfEther, {from: owner}).should.be.fulfilled;
       await foreignBridge.setMaxPerTx(oneEther, {from: owner}).should.be.rejectedWith(ERROR_MSG);
     })
-    
+
     it('#setMinPerTx allows to set only to owner and cannot be more than daily limit and should be less than maxPerTx', async () => {
       await foreignBridge.setMinPerTx(minPerTx, {from: authorities[0]}).should.be.rejectedWith(ERROR_MSG);
       await foreignBridge.setMinPerTx(minPerTx, {from: owner}).should.be.fulfilled;
@@ -383,37 +288,26 @@ contract('ForeignBridge', async (accounts) => {
   })
 
   describe('#claimTokens', async () => {
-    it('can claim tokens from foreign', async () => {
+    it('can send erc20', async () => {
       const owner = accounts[0];
-      
       token = await SENC.new();
+      await token.unpause();
       foreignBridge = await ForeignBridge.new();
       await foreignBridge.initialize(validatorContract.address, token.address, oneEther, halfEther, minPerTx, gasPrice, requireBlockConfirmations);
-      
+
       let tokenSecond = await SENC.new();
       await tokenSecond.unpause();
 
       await tokenSecond.mint(accounts[0], halfEther).should.be.fulfilled;
       halfEther.should.be.bignumber.equal(await tokenSecond.balanceOf(accounts[0]))
-
       await tokenSecond.transfer(foreignBridge.address, halfEther);
       '0'.should.be.bignumber.equal(await tokenSecond.balanceOf(accounts[0]))
       halfEther.should.be.bignumber.equal(await tokenSecond.balanceOf(foreignBridge.address))
-      
+
       await foreignBridge.claimTokens(tokenSecond.address, accounts[3], {from: owner});
       '0'.should.be.bignumber.equal(await tokenSecond.balanceOf(foreignBridge.address))
       halfEther.should.be.bignumber.equal(await tokenSecond.balanceOf(accounts[3]))
     })
   })
 
-  describe('#isAlreadyProcessed', async () => {
-    it('returns ', async () => {
-      foreignBridge = await ForeignBridge.new();
-      const bn = new web3.BigNumber(2).pow(255);
-      const processedNumbers = [bn.add(1).toString(10), bn.add(100).toString(10)];
-      true.should.be.equal(await foreignBridge.isAlreadyProcessed(processedNumbers[0]));
-      true.should.be.equal(await foreignBridge.isAlreadyProcessed(processedNumbers[1]));
-      false.should.be.equal(await foreignBridge.isAlreadyProcessed(10));
-    })
-  })
 })
