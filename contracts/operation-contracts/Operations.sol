@@ -278,7 +278,7 @@ contract Operations {
 	}
 	
 	modifier only_undecided_client_owner {
-		require(msg.sender != address(0));
+		require(msg.sender != 0x0);
 		require(fork[proposedFork].status[msg.sender] == Status.Undecided);
 		_;
 	}

@@ -104,7 +104,7 @@ contract ERC820Registry {
         } else {
             interfaces[newAddr][iHash] = interfaces[oldAddr][iHash];
         }
-        interfaces[oldAddr][iHash] = Implementer(address(0), "");
+        interfaces[oldAddr][iHash] = Implementer(0x0, "");
     }
 
     /// ERC165 Specific
