@@ -11,7 +11,7 @@ contract Oracle is Ownable {
     }
     
     uint currentId;
-    address public bridge = 0xCA35b7d915458EF540aDe6068dFe2F44E8fa733c;
+    address public bridge = 0x6415CB729a27e9b69891dadaFcbBCae21e5B6F9C;
     
     mapping(bytes => string) apiMap;
     mapping(uint => QueryInfo) queryMap;
@@ -21,8 +21,8 @@ contract Oracle is Ownable {
 
     constructor() public {
         apiMap["user"] = "http://104.211.59.231/user/";
-        apiMap["attestator"] = "http://104.211.59.231/attestator";
-        apiMap["livestock"] = "http://104.211.59.231/livestock";
+        apiMap["attestator"] = "http://104.211.59.231/attestator/";
+        apiMap["livestock"] = "http://104.211.59.231/livestock/";
     }
 
     function __callback(uint myid, string result) public {
@@ -56,6 +56,10 @@ contract Oracle is Ownable {
     function setAPI(string _name, string _api) external onlyOwner {
         bytes memory interfaces = bytes(_name);
         apiMap[interfaces] = _api;
+    }
+    
+    function setBridge(address _bridge) external onlyOwner {
+        bridge = _bridge;
     }
     
     function strConcat(string _a, string _b) internal pure returns (string) {
