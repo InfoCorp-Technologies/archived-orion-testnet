@@ -6,6 +6,9 @@ base_path="./base-path"
 [account]
 password = ["password.txt"]
 
+[dapps]
+disable = true
+
 [ui]
 disable = true
 
@@ -26,5 +29,5 @@ port = 8547
 
 [misc]
 logging = "own_tx=trace"
-log_file = "parity.log"
+log_file = "parity-rpc.log"
 color = true
