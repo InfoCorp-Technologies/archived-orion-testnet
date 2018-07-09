@@ -4,8 +4,8 @@ let contractAddress = config.contract.address;
 
 let async = require('async');
 let request = require('request');
-let web3;
 
+let web3;
 console.log('\nInitializing web3 ...');
 let Web3 = require('web3');
 if (typeof web3 !== 'undefined') {
@@ -14,6 +14,10 @@ if (typeof web3 !== 'undefined') {
 else {
     web3 = new Web3(new Web3.providers.WebsocketProvider(config.host));
 }
+
+let forge = require('node-forge');
+let encrypter = require('./encrypter');
+let rsaKeys = require('./config/rsaKeys');
 
 function foo() {
     async.waterfall([
@@ -30,7 +34,7 @@ function foo() {
                 callback(null, contract, queryId, url);
             });
 
-            console.log('Trigger a function ...');
+            console.log('Trigger a query ...');
         },
         (contract, queryId, url, callback) => {
             console.log('\n2. Retrieving data from the multichain ...');
@@ -41,8 +45,7 @@ function foo() {
                     foo();
                 } else {
                     if (result.statusCode === 200 && data.ErrorCode === 200) {
-                        console.log(JSON.stringify(data.result));
-                        callback(null, contract, queryId, JSON.stringify(data));
+                        callback(null, contract, queryId, JSON.stringify(data.result));
                     } else {
                         console.log(`ERROR: ${result.statusCode}`);
                         foo();
@@ -52,8 +55,33 @@ function foo() {
         },
         (contract, myid, string) => {
             console.log('\n3. Triggering __callback() ...');
+            console.log(string);
+            let key = forge.random.getBytesSync(16);
+            let iv = forge.random.getBytesSync(16);
+            let encryptedData = encrypter.aesEncrypt(key, iv, string); // AES-128
 
-            triggerMethod(contract, '__callback', [myid, string], config.executer.address, config.executer.privkey, (result) => {
+            let publicKey = forge.pki.publicKeyFromPem(rsaKeys.publicKeyPem);
+            let encryptedKey = encrypter.rsaEncrypt(publicKey, key);
+            let encryptedIv = encrypter.rsaEncrypt(publicKey, iv);
+
+            let jsonData = {
+                key: encryptedKey,
+                iv: encryptedIv,
+                data: encryptedData
+            };
+
+            let jsonDataStr = JSON.stringify(jsonData);
+
+            let fs = require("fs");
+            fs.writeFile("./jsonDataStr.json", jsonDataStr, function(err) {
+                if(err) {
+                    return console.log(err);
+                }
+
+                console.log("The file was saved!");
+            });
+
+            triggerMethod(contract, '__callback', [myid, jsonDataStr], config.executer.address, config.executer.privkey, (result) => {
                 if (result === true) {
                     console.log('Callbacked successfully');
                 } else {
@@ -68,7 +96,7 @@ function foo() {
 foo();
 
 function triggerMethod(contract, method, params, from, privkey, callback) {
-    console.log(`[${contract.options.address}] triggering method [${method}] with params [${params}] from account [${from}]`);
+    console.log(`[${contract.options.address}] triggering method [${method}] with ${params.length} params from account [${from}]`);
     let call = contract.methods[method](...params);
     let tx = {
         from: from,
