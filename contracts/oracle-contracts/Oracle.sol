@@ -14,10 +14,10 @@ contract Oracle is Ownable {
     address public bridge = 0x6415CB729a27e9b69891dadaFcbBCae21e5B6F9C;
     
     mapping(bytes => string) apiMap;
-    mapping(uint => QueryInfo) queryMap;
+    mapping(bytes32 => QueryInfo) queryMap;
 
-    event Query(uint queryid, string url);
-    event Result(uint queryid, address user);
+    event Query(bytes32 queryid, string url, string pubkey);
+    event Result(bytes32 queryid, address user);
 
     constructor() public {
         apiMap["user"] = "http://104.211.59.231/user/";
@@ -25,12 +25,12 @@ contract Oracle is Ownable {
         apiMap["livestock"] = "http://104.211.59.231/livestock/";
     }
 
-    function __callback(uint myid, string result) public {
-        require(queryMap[myid].isWaiting);
+    function __callback(bytes32 _queryid, string _result) public {
+        require(queryMap[_queryid].isWaiting);
         require(msg.sender == bridge);
-        queryMap[myid].isWaiting = false;
-        queryMap[myid].result = result;
-        emit Result(myid, queryMap[myid].caller);
+        queryMap[_queryid].isWaiting = false;
+        queryMap[_queryid].result = _result;
+        emit Result(_queryid, queryMap[_queryid].caller);
     }
     
     function api(string name) view external returns(string) {
@@ -38,19 +38,18 @@ contract Oracle is Ownable {
         return apiMap[interfaces];
     }
     
-    function query(string name, string walletaddress) external {
+    function query(string name, string input, string pubkey) external {
         bytes memory interfaces = bytes(name);
-        string memory url = strConcat(apiMap[interfaces], walletaddress);
+        string memory url = strConcat(apiMap[interfaces], input);
+        bytes32 idHash = keccak256(currentId);
+        queryMap[idHash].caller = msg.sender;
+        queryMap[idHash].isWaiting = true;
         currentId++;
-        queryMap[currentId].caller = msg.sender;
-        queryMap[currentId].isWaiting = true;
-        emit Query(currentId, url);
+        emit Query(idHash, url, pubkey);
     }
     
-    function result(uint myid) view external returns(string) {
-        require(queryMap[myid].caller == msg.sender);
-        require(!queryMap[myid].isWaiting);
-        return queryMap[myid].result;
+    function result(bytes32 _queryid) view external returns(string) {
+        return queryMap[_queryid].result;
     }
     
     function setAPI(string _name, string _api) external onlyOwner {
