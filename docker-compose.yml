@@ -1,0 +1,18 @@
+version: '3'
+services:
+  sentinel-chain-node:
+    build:
+      context: .
+      dockerfile: Dockerfile
+#      restart: unless-stopped
+    environment:
+#      - NODE_NAME=${NODE_NAME}
+      - NODE_TYPE=${NODE_TYPE}
+    ports:
+      - 8545:8545
+      - 8180:8180
+      - 8546:8546
+      - 30303:30303
+    volumes:
+      - ./:/data
+    command: --jsonrpc-interface 0.0.0.0 --ui-interface 0.0.0.0
