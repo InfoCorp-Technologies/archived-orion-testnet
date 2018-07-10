@@ -44,7 +44,6 @@ contract Oraclize is usingOraclize {
     }
     
     function result(bytes32 queryid) view external returns(string) {
-        require(queryMap[queryid].caller == msg.sender);
         return queryMap[queryid].result;
     }
     

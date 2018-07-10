@@ -31,6 +31,7 @@ function foo() {
             }, (error, result) => {
                 let queryId = result.returnValues[0];
                 let url = result.returnValues[1];
+                let pubkey = result.returnValues[2]
                 callback(null, contract, queryId, url);
             });
 
@@ -39,7 +40,7 @@ function foo() {
         (contract, queryId, url, callback) => {
             console.log('\n2. Retrieving data from the multichain ...');
 
-            request.get(url, {json: true}, (err, result, data) => {
+            request.get(url, { json: true }, (err, result, data) => {
                 if (err) {
                     console.log('ERROR: Cannot retrieve bridge data!!!');
                     foo();
@@ -56,25 +57,33 @@ function foo() {
         (contract, myid, string) => {
             console.log('\n3. Triggering __callback() ...');
             console.log(string);
-            let key = forge.random.getBytesSync(16);
-            let iv = forge.random.getBytesSync(16);
-            let encryptedData = encrypter.aesEncrypt(key, iv, string); // AES-128
 
-            let publicKey = forge.pki.publicKeyFromPem(rsaKeys.publicKeyPem);
-            let encryptedKey = encrypter.rsaEncrypt(publicKey, key);
-            let encryptedIv = encrypter.rsaEncrypt(publicKey, iv);
+            var args = process.argv.slice(2);
+            var jsonDataStr;
 
-            let jsonData = {
-                key: encryptedKey,
-                iv: encryptedIv,
-                data: encryptedData
-            };
+            if (args != null && args == 1) {
+                let key = forge.random.getBytesSync(16);
+                let iv = forge.random.getBytesSync(16);
+                let encryptedData = encrypter.aesEncrypt(key, iv, string); // AES-128
 
-            let jsonDataStr = JSON.stringify(jsonData);
+                let publicKey = forge.pki.publicKeyFromPem(rsaKeys.publicKeyPem);
+                let encryptedKey = encrypter.rsaEncrypt(publicKey, key);
+                let encryptedIv = encrypter.rsaEncrypt(publicKey, iv);
+
+                let jsonData = {
+                    key: encryptedKey,
+                    iv: encryptedIv,
+                    data: encryptedData
+                };
+
+                jsonDataStr = JSON.stringify(jsonData);
+            } else {
+                jsonDataStr = string;
+            }
 
             let fs = require("fs");
-            fs.writeFile("./jsonDataStr.json", jsonDataStr, function(err) {
-                if(err) {
+            fs.writeFile("./jsonDataStr.json", jsonDataStr, function (err) {
+                if (err) {
                     return console.log(err);
                 }
 
