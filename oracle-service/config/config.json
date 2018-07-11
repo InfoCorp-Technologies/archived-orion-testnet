@@ -1,7 +1,7 @@
 {
   "host": "ws://localhost:8546",
   "contract": {
-    "address": "0x4f13AaBfc173fe3D8C919eFDebAA55A3358eBdE5"
+    "address": "0x3Bf052edD3aB4d40A39bA7BEe8bC492f3F214981"
   },
   "query": {
     "name": "attestator",

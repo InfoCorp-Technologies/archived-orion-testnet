@@ -19,7 +19,7 @@ contract Oraclize is usingOraclize {
         apiMap["user"] = "http://104.211.59.231/user/";
         apiMap["attestator"] = "http://104.211.59.231/attestator/";
         apiMap["livestock"] = "http://104.211.59.231/livestock/";
-        OAR = OraclizeAddrResolverI(address(0xA536fBAdb9658A980cf36f2b6F0ff075612C9BBc));
+        OAR = OraclizeAddrResolverI(0x67F4cd1E091BF7BE2813f88b302a23A3D1aFC5FE);
         oraclize_setCustomGasPrice(1000000000);
     }
 
