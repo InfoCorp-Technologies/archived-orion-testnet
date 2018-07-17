@@ -9,8 +9,8 @@ pragma solidity ^0.4.18;
 // The MIT Licence.
 // ----------------------------------------------------------------------------
 
-import "./zeppelin-solidity/contracts/token/ERC20/PausableToken.sol";
-import "./zeppelin-solidity/contracts/math/SafeMath.sol";
+import "github.com/openzeppelin/openzeppelin-solidity/contracts/token/ERC20/PausableToken.sol";
+import "github.com/openzeppelin/openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "./SencTokenConfig.sol";
 import "./Salvageable.sol";
 

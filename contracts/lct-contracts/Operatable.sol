@@ -12,9 +12,8 @@ pragma solidity ^0.4.18;
 
 import "github.com/openzeppelin/openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "github.com/openzeppelin/openzeppelin-solidity/contracts/ownership/Ownable.sol";
-import "./OperatableBasic.sol";
 
-contract Operatable is Ownable, OperatableBasic {
+contract Operatable is Ownable {
     address public primaryOperator;
     address public secondaryOperator;
 
@@ -23,7 +22,7 @@ contract Operatable is Ownable, OperatableBasic {
         _;
     }
 
-    function Operatable() public {
+    constructor() public {
         primaryOperator = owner;
         secondaryOperator = owner;
     }
