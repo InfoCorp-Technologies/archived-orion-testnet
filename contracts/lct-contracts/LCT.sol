@@ -5,7 +5,7 @@ import 'github.com/openzeppelin/openzeppelin-solidity/contracts/token/ERC20/Deta
 import './Salvageable.sol';
 import './Whitelist.sol';
 
-contract LCT is DetailedERC20, MintableToken, Salvageable{
+contract LCT is DetailedERC20, MintableToken {
     
     Whitelist public whitelist;
     
