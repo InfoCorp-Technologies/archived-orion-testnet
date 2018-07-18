@@ -14,6 +14,7 @@ import "github.com/openzeppelin/openzeppelin-solidity/contracts/token/ERC20/ERC2
 import "github.com/openzeppelin/openzeppelin-solidity/contracts/ownership/Ownable.sol";
 
 contract Operatable is Ownable {
+    
     address public primaryOperator;
     address public secondaryOperator;
 
@@ -33,13 +34,5 @@ contract Operatable is Ownable {
 
     function setSecondaryOperator (address addr) public onlyOwner {
         secondaryOperator = addr;
-    }
-
-    function isPrimaryOperator(address addr) public view returns (bool) {
-        return (addr == primaryOperator);
-    }
-
-    function isSecondaryOperator(address addr) public view returns (bool) {
-        return (addr == secondaryOperator);
     }
 }
