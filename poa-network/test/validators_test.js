@@ -3,15 +3,13 @@ const EternalStorageProxy = artifacts.require("EternalStorageProxy.sol");
 const {ERROR_MSG, ZERO_ADDRESS} = require('./setup');
 
 contract('BridgeValidators', async (accounts) => {
-  let token
-  let owner = accounts[0]
-  const user = accounts[1];
 
   beforeEach(async () => {
     bridgeValidators = await BridgeValidators.new();
   })
 
   describe('#initialize', async () => {
+
     it('sets values', async () => {
       // function initialize(uint256 _requiredSignatures, address[] _initialValidators, address _owner) public {
       '0x0000000000000000000000000000000000000000'.should.be.equal(await bridgeValidators.owner())
@@ -30,10 +28,11 @@ contract('BridgeValidators', async (accounts) => {
       accounts[2].should.be.equal(await bridgeValidators.owner())
       '2'.should.be.bignumber.equal(await bridgeValidators.validatorCount())
     })
+
   })
 
-
   describe('#addValidator', async () => {
+
     let owner = accounts[2];
     let validators = [accounts[0], accounts[1]];
     let requiredSignatures = 2;
@@ -45,7 +44,6 @@ contract('BridgeValidators', async (accounts) => {
 
     it('adds validator', async () => {
       let newValidator = accounts[3];
-
       false.should.be.equal(await bridgeValidators.isValidator(newValidator))
       await bridgeValidators.addValidator(newValidator, {from: validators[0]}).should.be.rejectedWith(ERROR_MSG)
       const {logs} = await bridgeValidators.addValidator(newValidator, {from: owner}).should.be.fulfilled
@@ -61,9 +59,11 @@ contract('BridgeValidators', async (accounts) => {
       await bridgeValidators.addValidator(ZERO_ADDRESS, {from: owner}).should.be.rejectedWith(ERROR_MSG)
       '2'.should.be.bignumber.equal(await bridgeValidators.validatorCount())
     })
+
   })
 
   describe('#removeValidator', async () => {
+
     let owner = accounts[2];
     let validators = [accounts[0], accounts[1], accounts[3]];
     let requiredSignatures = 2;
@@ -102,9 +102,11 @@ contract('BridgeValidators', async (accounts) => {
       await bridgeValidators.removeValidator(ZERO_ADDRESS, {from: owner}).should.be.rejectedWith(ERROR_MSG)
       '3'.should.be.bignumber.equal(await bridgeValidators.validatorCount())
     })
+
   })
 
   describe('#setRequiredSignatures', async () => {
+
     let owner = accounts[2];
     let validators = [accounts[0], accounts[1], accounts[3]];
     let requiredSignatures = 2;
@@ -128,9 +130,11 @@ contract('BridgeValidators', async (accounts) => {
       await bridgeValidators.setRequiredSignatures(newReqSig, {from: owner}).should.be.rejectedWith(ERROR_MSG)
       requiredSignatures.should.be.bignumber.equal(await bridgeValidators.requiredSignatures());
     })
+
   })
-  
+
   describe('#upgradable', async () => {
+
     it('can be upgraded via upgradeToAndCall', async () => {
       let storageProxy = await EternalStorageProxy.new().should.be.fulfilled;
       let required_signatures = 2;
@@ -147,5 +151,7 @@ contract('BridgeValidators', async (accounts) => {
       owner.should.be.equal(await finalContract.owner())
       validators.length.should.be.bignumber.equal(await finalContract.validatorCount())
     })
+
   })
+  
 })

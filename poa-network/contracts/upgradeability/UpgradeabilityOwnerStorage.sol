@@ -5,7 +5,6 @@ pragma solidity ^0.4.23;
  * @dev This contract keeps track of the upgradeability owner
  */
 contract UpgradeabilityOwnerStorage {
-    
     // Owner of the contract
     address private _upgradeabilityOwner;
 

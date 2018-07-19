@@ -8,7 +8,6 @@ import "./UpgradeabilityStorage.sol";
  * @dev This contract represents a proxy where the implementation address to which it will delegate can be upgraded
  */
 contract UpgradeabilityProxy is Proxy, UpgradeabilityStorage {
-    
     /**
     * @dev This event will be emitted every time the implementation gets upgraded
     * @param version representing the version name of the upgraded implementation
