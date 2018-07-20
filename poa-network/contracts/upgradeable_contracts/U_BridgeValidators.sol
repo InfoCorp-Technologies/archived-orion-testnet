@@ -2,9 +2,8 @@ pragma solidity ^0.4.23;
 
 import "./Ownable.sol";
 import "../IBridgeValidators.sol";
-import "../libraries/SafeMath.sol";
 import "../upgradeability/EternalStorage.sol";
-
+import "github.com/openzeppelin/openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 contract BridgeValidators is IBridgeValidators, EternalStorage, Ownable {
 
@@ -14,7 +13,7 @@ contract BridgeValidators is IBridgeValidators, EternalStorage, Ownable {
     event RequiredSignaturesChanged (uint256 requiredSignatures);
 
     function initialize(uint256 _requiredSignatures, address[] _initialValidators, address _owner)
-      public returns(bool)
+        public returns(bool)
     {
         require(!isInitialized());
         require(_owner != address(0));

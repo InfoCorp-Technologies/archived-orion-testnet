@@ -2,7 +2,7 @@ pragma solidity ^0.4.23;
 
 import "../IBridgeValidators.sol";
 import "../upgradeability/EternalStorage.sol";
-import "../libraries/SafeMath.sol";
+import "github.com/openzeppelin/openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 contract BasicBridge is EternalStorage {
 
