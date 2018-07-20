@@ -1,9 +1,9 @@
 pragma solidity ^0.4.23;
 
-import "../libraries/SafeMath.sol";
-import "../libraries/Message.sol";
-import "./U_BasicBridge.sol";
 import "github.com/openzeppelin/openzeppelin-solidity/contracts/token/ERC20/ERC20.sol"; 
+import "github.com/openzeppelin/openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "../Message.sol";
+import "./U_BasicBridge.sol";
 
 
 contract ForeignBridge is BasicBridge {

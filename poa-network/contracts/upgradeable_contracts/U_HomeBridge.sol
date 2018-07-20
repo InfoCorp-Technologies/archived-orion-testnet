@@ -1,9 +1,8 @@
 pragma solidity ^0.4.23;
-import "../libraries/SafeMath.sol";
-import "../libraries/Message.sol";
+import "github.com/openzeppelin/openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "./U_BasicBridge.sol";
+import "../Message.sol";
 import "../upgradeability/EternalStorage.sol";
-
 
 contract HomeBridge is EternalStorage, BasicBridge {
     using SafeMath for uint256;

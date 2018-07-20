@@ -1,6 +1,6 @@
 pragma solidity ^0.4.20;
 
-import "../Ownable.sol";
+import "github.com/openzeppelin/openzeppelin-solidity/contracts/ownership/Ownable.sol";
 
 contract Oracle is Ownable {
     
@@ -11,13 +11,13 @@ contract Oracle is Ownable {
     }
     
     uint currentId;
-    address public bridge = 0x6415CB729a27e9b69891dadaFcbBCae21e5B6F9C;
+    address public oracle = 0x6415CB729a27e9b69891dadaFcbBCae21e5B6F9C;
     
-    mapping(bytes => string) apiMap;
+    mapping(string => string) apiMap;
     mapping(bytes32 => QueryInfo) queryMap;
 
     event Query(bytes32 queryid, string url, string pubkey);
-    event Result(bytes32 queryid, address user);
+    event Result(bytes32 queryid, address caller);
 
     constructor() public {
         apiMap["user"] = "http://104.211.59.231/user/";
@@ -27,20 +27,18 @@ contract Oracle is Ownable {
 
     function __callback(bytes32 _queryid, string _result) public {
         require(queryMap[_queryid].isWaiting);
-        require(msg.sender == bridge);
+        require(msg.sender == oracle);
         queryMap[_queryid].isWaiting = false;
         queryMap[_queryid].result = _result;
         emit Result(_queryid, queryMap[_queryid].caller);
     }
     
     function api(string name) view external returns(string) {
-        bytes memory interfaces = bytes(name);
-        return apiMap[interfaces];
+        return apiMap[name];
     }
     
     function query(string name, string input, string pubkey) external {
-        bytes memory interfaces = bytes(name);
-        string memory url = strConcat(apiMap[interfaces], input);
+        string memory url = strConcat(apiMap[name], input);
         bytes32 idHash = keccak256(currentId);
         queryMap[idHash].caller = msg.sender;
         queryMap[idHash].isWaiting = true;
@@ -53,12 +51,11 @@ contract Oracle is Ownable {
     }
     
     function setAPI(string _name, string _api) external onlyOwner {
-        bytes memory interfaces = bytes(_name);
-        apiMap[interfaces] = _api;
+        apiMap[_name] = _api;
     }
     
-    function setBridge(address _bridge) external onlyOwner {
-        bridge = _bridge;
+    function setOracle(address _oracle) external onlyOwner {
+        oracle = _oracle;
     }
     
     function strConcat(string _a, string _b) internal pure returns (string) {

@@ -1,17 +1,21 @@
 pragma solidity ^0.4.23;
 
 import 'github.com/openzeppelin/openzeppelin-solidity/contracts/token/ERC20/MintableToken.sol';
+import 'github.com/openzeppelin/openzeppelin-solidity/contracts/token/ERC20/BurnableToken.sol';
 import 'github.com/openzeppelin/openzeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol';
-import './Salvageable.sol';
 import './Whitelist.sol';
+import './SentinelExchange.sol';
 
-contract LCT is DetailedERC20, MintableToken {
+contract LCToken is DetailedERC20, MintableToken, BurnableToken {
     
+    SentinelExchange public sentinelExchange;
     Whitelist public whitelist;
     
     modifier canTransfer(address _from, address _to) {
         require(whitelist.isWhitelist(_from));
-        require(whitelist.isWhitelist(_to));
+        if (_to != address(sentinelExchange)) {
+            require(whitelist.isWhitelist(_to));
+        }
         _;
     }
     
