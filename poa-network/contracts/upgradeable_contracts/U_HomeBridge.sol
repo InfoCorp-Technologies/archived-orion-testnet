@@ -1,34 +1,36 @@
 pragma solidity ^0.4.23;
-import "github.com/openzeppelin/openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "../libraries/SafeMath.sol";
+import "../libraries/Message.sol";
 import "./U_BasicBridge.sol";
-import "../Message.sol";
 import "../upgradeability/EternalStorage.sol";
 
+
 contract HomeBridge is EternalStorage, BasicBridge {
+
     using SafeMath for uint256;
     event GasConsumptionLimitsUpdated(uint256 gas);
     event Deposit (address recipient, uint256 value);
     event Withdraw (address recipient, uint256 value, bytes32 transactionHash);
-    event DailyLimit(uint256 newLimit);
+    event SignedForDeposit(address indexed signer, bytes32 messageHash);
+    event SignedForWithdraw(address indexed signer, bytes32 transactionHash);
+    event CollectedSignatures(address authorityResponsibleForRelay, bytes32 messageHash, uint256 NumberOfCollectedSignatures);
 
-    function initialize (
+    function initialize(
         address _validatorContract,
-        uint256 _homeDailyLimit,
+        uint256 _dailyLimit,
         uint256 _maxPerTx,
         uint256 _minPerTx,
         uint256 _homeGasPrice,
         uint256 _requiredBlockConfirmations
-    ) public
-      returns(bool)
-    {
+    ) public returns(bool) {
         require(!isInitialized());
         require(_validatorContract != address(0));
         require(_homeGasPrice > 0);
         require(_requiredBlockConfirmations > 0);
-        require(_minPerTx > 0 && _maxPerTx > _minPerTx && _homeDailyLimit > _maxPerTx);
+        require(_minPerTx > 0 && _maxPerTx > _minPerTx && _dailyLimit > _maxPerTx);
         addressStorage[keccak256("validatorContract")] = _validatorContract;
         uintStorage[keccak256("deployedAtBlock")] = block.number;
-        uintStorage[keccak256("homeDailyLimit")] = _homeDailyLimit;
+        uintStorage[keccak256("dailyLimit")] = _dailyLimit;
         uintStorage[keccak256("maxPerTx")] = _maxPerTx;
         uintStorage[keccak256("minPerTx")] = _minPerTx;
         uintStorage[keccak256("gasPrice")] = _homeGasPrice;
@@ -47,91 +49,128 @@ contract HomeBridge is EternalStorage, BasicBridge {
         }
     }
 
-    function setGasLimitWithdrawRelay(uint256 _gas) external onlyOwner {
-        uintStorage[keccak256("gasLimitWithdrawRelay")] = _gas;
-        emit GasConsumptionLimitsUpdated(_gas);
-    }    
+    function withdraw(address _recipient, uint256 _value, bytes32 _transactionHash) external onlyValidator {
+        bytes32 hashMsg = keccak256(_recipient, _value, _transactionHash);
+        bytes32 hashSender = keccak256(msg.sender, hashMsg);
+        // Duplicated deposits
+        require(!withdrawalsSigned(hashSender));
+        setWithdrawalsSigned(hashSender, true);
 
-    function gasLimitWithdrawRelay() public view returns(uint256) {
-        return uintStorage[keccak256("gasLimitWithdrawRelay")];
+        uint256 signed = numWithdrawalsSigned(hashMsg);
+        require(!isAlreadyProcessed(signed));
+        // the check above assumes that the case when the value could be overflew will not happen in the addition operation below
+        signed = signed + 1;
+
+        setNumWithdrawalsSigned(hashMsg, signed);
+
+        emit SignedForWithdraw(msg.sender, _transactionHash);
+
+        if (signed >= requiredSignatures()) {
+            // If the bridge contract does not own enough tokens to transfer
+            // it will couse funds lock on the home side of the bridge
+            setNumWithdrawalsSigned(hashMsg, markAsProcessed(signed));
+            _recipient.transfer(_value);
+            emit Withdraw(_recipient, _value, _transactionHash);
+        }
     }
 
-    function deployedAtBlock() public view returns(uint256) {
-        return uintStorage[keccak256("deployedAtBlock")];
+    function numWithdrawalsSigned(bytes32 _withdrawal) public view returns(uint256) {
+        return uintStorage[keccak256("numWithdrawalsSigned", _withdrawal)];
     }
 
-    function homeDailyLimit() public view returns(uint256) {
-        return uintStorage[keccak256("homeDailyLimit")];
+    function setWithdrawalsSigned(bytes32 _withdrawal, bool _status) private {
+        boolStorage[keccak256("withdrawalsSigned", _withdrawal)] = _status;
     }
 
-    function totalSpentPerDay(uint256 _day) public view returns(uint256) {
-        return uintStorage[keccak256("totalSpentPerDay", _day)];
+    function setNumWithdrawalsSigned(bytes32 _withdrawal, uint256 _number) private {
+        uintStorage[keccak256("numWithdrawalsSigned", _withdrawal)] = _number;
     }
 
-    function withdraws(bytes32 _withdraw) public view returns(bool) {
-        return boolStorage[keccak256("withdraws", _withdraw)];
+    function withdrawalsSigned(bytes32 _withdrawal) public view returns(bool) {
+        return boolStorage[keccak256("withdrawalsSigned", _withdrawal)];
     }
 
-    function withdraw(uint8[] _vs, bytes32[] _rs, bytes32[] _ss, bytes _message) external {
-        Message.hasEnoughValidSignatures(_message, _vs, _rs, _ss, validatorContract());
-        address recipient;
-        uint256 amount;
-        bytes32 txHash;
-        (recipient, amount, txHash) = Message.parseMessage(_message);
-        require(!withdraws(txHash));
-        setWithdraws(txHash, true);
+    function submitSignature(bytes _signature, bytes _message) external onlyValidator {
+        // ensure that `signature` is really `message` signed by `msg.sender`
+        require(Message.isMessageValid(_message));
+        require(msg.sender == Message.recoverAddressFromSignedMessage(_signature, _message));
+        bytes32 hashMsg = keccak256(_message);
+        bytes32 hashSender = keccak256(msg.sender, hashMsg);
 
-        // pay out recipient
-        recipient.transfer(amount);
+        uint256 signed = numMessagesSigned(hashMsg);
+        require(!isAlreadyProcessed(signed));
+        // the check above assumes that the case when the value could be overflew will 
+        // not happen in the addition operation below.
+        signed = signed + 1;
+        if (signed > 1) {
+            // Duplicated signatures
+            require(!messagesSigned(hashSender));
+        } else {
+            setMessages(hashMsg, _message);
+        }
+        setMessagesSigned(hashSender, true);
 
-        emit Withdraw(recipient, amount, txHash);
+        bytes32 signIdx = keccak256(hashMsg, (signed-1));
+        setSignatures(signIdx, _signature);
+
+        setNumMessagesSigned(hashMsg, signed);
+
+        emit SignedForDeposit(msg.sender, hashMsg);
+
+        uint256 reqSigs = requiredSignatures();
+        if (signed >= reqSigs) {
+            setNumMessagesSigned(hashMsg, markAsProcessed(signed));
+            emit CollectedSignatures(msg.sender, hashMsg, reqSigs);
+        }
     }
 
-    function setHomeDailyLimit(uint256 _homeDailyLimit) external onlyOwner {
-        uintStorage[keccak256("homeDailyLimit")] = _homeDailyLimit;
-        emit DailyLimit(_homeDailyLimit);
+    function setMessagesSigned(bytes32 _hash, bool _status) private {
+        boolStorage[keccak256("messagesSigned", _hash)] = _status;
     }
 
-    function setMaxPerTx(uint256 _maxPerTx) external onlyOwner {
-        require(_maxPerTx < homeDailyLimit());
-        uintStorage[keccak256("maxPerTx")] = _maxPerTx;
+    function signature(bytes32 _hash, uint256 _index) public view returns (bytes) {
+        bytes32 signIdx = keccak256(_hash, _index);
+        return signatures(signIdx);
     }
 
-    function setMinPerTx(uint256 _minPerTx) external onlyOwner {
-        require(_minPerTx < homeDailyLimit() && _minPerTx < maxPerTx());
-        uintStorage[keccak256("minPerTx")] = _minPerTx;
+    function messagesSigned(bytes32 _message) public view returns(bool) {
+        return boolStorage[keccak256("messagesSigned", _message)];
     }
 
-    function minPerTx() public view returns(uint256) {
-        return uintStorage[keccak256("minPerTx")];
+    function messages(bytes32 _hash) private view returns(bytes) {
+        return bytesStorage[keccak256("messages", _hash)];
     }
 
-    function getCurrentDay() public view returns(uint256) {
-        return now / 1 days;
+    function signatures(bytes32 _hash) private view returns(bytes) {
+        return bytesStorage[keccak256("signatures", _hash)];
     }
 
-    function maxPerTx() public view returns(uint256) {
-        return uintStorage[keccak256("maxPerTx")];
+    function setSignatures(bytes32 _hash, bytes _signature) private {
+        bytesStorage[keccak256("signatures", _hash)] = _signature;
     }
 
-    function withinLimit(uint256 _amount) public view returns(bool) {
-        uint256 nextLimit = totalSpentPerDay(getCurrentDay()).add(_amount);
-        return homeDailyLimit() >= nextLimit && _amount <= maxPerTx() && _amount >= minPerTx();
+    function setMessages(bytes32 _hash, bytes _message) private {
+        bytesStorage[keccak256("messages", _hash)] = _message;
     }
 
-    function isInitialized() public view returns(bool) {
-        return boolStorage[keccak256("isInitialized")];
+    function message(bytes32 _hash) public view returns (bytes) {
+        return messages(_hash);
     }
 
-    function setTotalSpentPerDay(uint256 _day, uint256 _value) private {
-        uintStorage[keccak256("totalSpentPerDay", _day)] = _value;
+    function setNumMessagesSigned(bytes32 _message, uint256 _number) private {
+        uintStorage[keccak256("numMessagesSigned", _message)] = _number;
     }
 
-    function setWithdraws(bytes32 _withdraw, bool _status) private {
-        boolStorage[keccak256("withdraws", _withdraw)] = _status;
+    function markAsProcessed(uint256 _v) private pure returns(uint256) {
+        return _v | 2 ** 255;
     }
 
-    function setInitialize(bool _status) private {
-        boolStorage[keccak256("isInitialized")] = _status;
+    function isAlreadyProcessed(uint256 _number) public pure returns(bool) {
+        return _number & 2**255 == 2**255;
     }
+
+    function numMessagesSigned(bytes32 _message) public view returns(uint256) {
+        return uintStorage[keccak256("numMessagesSigned", _message)];
+    }
+
 }

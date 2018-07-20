@@ -1,24 +1,28 @@
 const Web3Utils = require('web3-utils')
 require('dotenv').config({
-  path: __dirname + '/../env'
+  path: __dirname + '/../.env'
 });
 
 const assert = require('assert');
 
 const { deployContract, sendRawTx } = require('./deploymentUtils');
-const { web3Foreign, deploymentPrivateKey, FOREIGN_RPC_URL } = require('./web3');
+const { 
+  web3Foreign, 
+  deploymentPrivateKey, 
+  FOREIGN_GAS_PRICE 
+} = require('./web3');
 
 const EternalStorageProxy = require('../../build/contracts/EternalStorageProxy.json');
 const BridgeValidators = require('../../build/contracts/BridgeValidators.json')
 const ForeignBridge = require('../../build/contracts/ForeignBridge.json')
 
 const VALIDATORS = process.env.VALIDATORS.split(" ")
-const FOREIGN_GAS_PRICE = Web3Utils.toWei(process.env.FOREIGN_GAS_PRICE, 'gwei');
 const NETWORK = 'foreign';
 
 const {
   DEPLOYMENT_ACCOUNT_ADDRESS,
   REQUIRED_NUMBER_OF_VALIDATORS,
+  FOREIGN_RPC_URL,
   FOREIGN_OWNER_MULTISIG,
   FOREIGN_UPGRADEABLE_ADMIN_VALIDATORS,
   FOREIGN_UPGRADEABLE_ADMIN_BRIDGE,
@@ -33,17 +37,17 @@ async function deployForeign() {
   let foreignNonce = await web3Foreign.eth.getTransactionCount(DEPLOYMENT_ACCOUNT_ADDRESS);
   console.log('========================================')
   console.log('deploying ForeignBridge')
-  console.log('========================================\n')
+  console.log('========================================')
 
-  console.log('deploying storage for foreign validators')
+  console.log('\ndeploying storage for foreign validators')
   const storageValidatorsForeign = await deployContract(EternalStorageProxy, [], { from: DEPLOYMENT_ACCOUNT_ADDRESS, network: NETWORK, nonce: foreignNonce })
   foreignNonce++;
-  console.log('[Foreign] BridgeValidators Storage: ', storageValidatorsForeign.options.address)
+  console.log('\n[Foreign] BridgeValidators Storage: ', storageValidatorsForeign.options.address)
 
   console.log('\ndeploying implementation for foreign validators')
   let bridgeValidatorsForeign = await deployContract(BridgeValidators, [], { from: DEPLOYMENT_ACCOUNT_ADDRESS, network: NETWORK, nonce: foreignNonce })
   foreignNonce++;
-  console.log('[Foreign] BridgeValidators Implementation: ', bridgeValidatorsForeign.options.address)
+  console.log('\n[Foreign] BridgeValidators Implementation: ', bridgeValidatorsForeign.options.address)
 
   console.log('\nhooking up eternal storage to BridgeValidators')
   const upgradeToBridgeVForeignData = await storageValidatorsForeign.methods.upgradeTo('1', bridgeValidatorsForeign.options.address)
@@ -59,8 +63,8 @@ async function deployForeign() {
   assert.equal(txUpgradeToBridgeVForeign.status, '0x1', 'Transaction Failed');
   foreignNonce++;
 
-  console.log('\ninitializing Foreign Bridge Validators with following parameters:\n')
-  console.log(`REQUIRED_NUMBER_OF_VALIDATORS: ${REQUIRED_NUMBER_OF_VALIDATORS}, VALIDATORS: ${VALIDATORS}`)
+  console.log('\ninitializing Foreign Bridge Validators with following parameters:')
+  console.log(`\nREQUIRED_NUMBER_OF_VALIDATORS: ${REQUIRED_NUMBER_OF_VALIDATORS}, VALIDATORS: ${VALIDATORS}`)
   bridgeValidatorsForeign.options.address = storageValidatorsForeign.options.address
   const initializeForeignData = await bridgeValidatorsForeign.methods.initialize(
     REQUIRED_NUMBER_OF_VALIDATORS, VALIDATORS, FOREIGN_OWNER_MULTISIG
@@ -97,12 +101,12 @@ async function deployForeign() {
   console.log('\ndeploying foreignBridge storage')
   const foreignBridgeStorage = await deployContract(EternalStorageProxy, [], { from: DEPLOYMENT_ACCOUNT_ADDRESS, network: NETWORK, nonce: foreignNonce })
   foreignNonce++;
-  console.log('[Foreign] ForeignBridge Storage: ', foreignBridgeStorage.options.address)
+  console.log('\n[Foreign] ForeignBridge Storage: ', foreignBridgeStorage.options.address)
 
   console.log('\ndeploying foreignBridge implementation')
   const foreignBridgeImplementation = await deployContract(ForeignBridge, [], { from: DEPLOYMENT_ACCOUNT_ADDRESS, network: NETWORK, nonce: foreignNonce })
   foreignNonce++;
-  console.log('[Foreign] ForeignBridge Implementation: ', foreignBridgeImplementation.options.address)
+  console.log('\n[Foreign] ForeignBridge Implementation: ', foreignBridgeImplementation.options.address)
 
   console.log('\nhooking up ForeignBridge storage to ForeignBridge implementation')
   const upgradeToForeignBridgeData = await foreignBridgeStorage.methods.upgradeTo('1', foreignBridgeImplementation.options.address)
@@ -119,7 +123,7 @@ async function deployForeign() {
   foreignNonce++;
 
   console.log('\ninitializing Foreign Bridge with following parameters:')
-  console.log(`Foreign Validators: ${storageValidatorsForeign.options.address},
+  console.log(`\nForeign Validators: ${storageValidatorsForeign.options.address},
   FOREIGN_DAILY_LIMIT : ${FOREIGN_DAILY_LIMIT} which is ${Web3Utils.fromWei(FOREIGN_DAILY_LIMIT)} in eth,
   FOREIGN_MAX_AMOUNT_PER_TX: ${FOREIGN_MAX_AMOUNT_PER_TX} which is ${Web3Utils.fromWei(FOREIGN_MAX_AMOUNT_PER_TX)} in eth,
   FOREIGN_MIN_AMOUNT_PER_TX: ${FOREIGN_MIN_AMOUNT_PER_TX} which is ${Web3Utils.fromWei(FOREIGN_MIN_AMOUNT_PER_TX)} in eth
@@ -138,20 +142,6 @@ async function deployForeign() {
   });
   assert.equal(txInitializeBridge.status, '0x1', 'Transaction Failed');
   foreignNonce++;
-
-  /*   console.log('transferring ownership of POA20 token to foreignBridge contract')
-    const txOwnershipData = await poa20foreign.methods.transferOwnership(foreignBridgeStorage.options.address)
-            .encodeABI({from: DEPLOYMENT_ACCOUNT_ADDRESS})
-    const txOwnership = await sendRawTx({
-      data: txOwnershipData,
-      nonce: foreignNonce,
-      to: FOREIGN_SENC_ADDRESS,
-      privateKey: deploymentPrivateKey,
-      url: FOREIGN_RPC_URL,
-      network: NETWORK
-    });
-    assert.equal(txOwnership.status, '0x1', 'Transaction Failed');
-    foreignNonce++; */
 
   const bridgeOwnershipData = await foreignBridgeStorage.methods.transferProxyOwnership(FOREIGN_UPGRADEABLE_ADMIN_BRIDGE)
     .encodeABI({ from: DEPLOYMENT_ACCOUNT_ADDRESS });

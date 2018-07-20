@@ -1,26 +1,24 @@
 pragma solidity ^0.4.23;
 
-import "github.com/openzeppelin/openzeppelin-solidity/contracts/ownership/Ownable.sol";
-import "github.com/openzeppelin/openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "./Ownable.sol";
 import "../IBridgeValidators.sol";
+import "../libraries/SafeMath.sol";
 import "../upgradeability/EternalStorage.sol";
 
+
 contract BridgeValidators is IBridgeValidators, EternalStorage, Ownable {
-    
+
     using SafeMath for uint256;
     event ValidatorAdded (address validator);
     event ValidatorRemoved (address validator);
     event RequiredSignaturesChanged (uint256 requiredSignatures);
 
-    function initialize(
-        uint256 _requiredSignatures, 
-        address[] _initialValidators, 
-        address _owner)
-        public returns(bool)
+    function initialize(uint256 _requiredSignatures, address[] _initialValidators, address _owner)
+      public returns(bool)
     {
         require(!isInitialized());
         require(_owner != address(0));
-        transferOwnership(_owner);
+        setOwner(_owner);
         require(_requiredSignatures != 0);
         require(_initialValidators.length >= _requiredSignatures);
         for (uint256 i = 0; i < _initialValidators.length; i++) {
