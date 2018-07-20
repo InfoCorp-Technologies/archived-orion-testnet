@@ -1,0 +1,33 @@
+[parity]
+chain = "sentinel.json"
+identity = "sentinel-main"
+base_path="./base-path"
+
+[account]
+password = ["password.txt"]
+
+[dapps]
+disable = true
+
+[ui]
+disable = true
+
+[network]
+discovery = true
+reserved_peers = "nodes.txt"
+port = 30304
+
+[rpc]
+interface = "0.0.0.0"
+cors = ["all"]
+hosts = ["all"]
+port = 8787
+apis = ["safe"]
+
+[websockets]
+port = 8547
+
+[misc]
+logging = "own_tx=trace"
+log_file = "parity-rpc.log"
+color = true
