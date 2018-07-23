@@ -13,16 +13,20 @@ contract LCToken is DetailedERC20, MintableToken, BurnableToken {
     
     modifier canTransfer(address _from, address _to) {
         require(whitelist.isWhitelist(_from));
-        if (_to != address(sentinelExchange)) {
-            require(whitelist.isWhitelist(_to));
-        }
+        require(whitelist.isWhitelist(_to));
         _;
     }
     
-    constructor(string _name, string _symbol, uint8 _decimals, address _whitelist)
+    constructor(
+        string _name, 
+        string _symbol, 
+        uint8 _decimals, 
+        Whitelist _whitelist, 
+        SentinelExchange _exchange)
         public DetailedERC20(_name, _symbol, _decimals) 
     { 
-        whitelist = Whitelist(_whitelist);
+        whitelist = _whitelist;
+        sentinelExchange = _exchange;
     }
     
     function transfer(address _to, uint256 _value) 
@@ -35,5 +39,18 @@ contract LCToken is DetailedERC20, MintableToken, BurnableToken {
         public canTransfer(_from, _to) returns (bool) 
     {
         super.transferFrom(_from, _to, _value);
+    }
+    
+    function exchange(uint256 _value) public {
+        super.transfer(sentinelExchange, _value);
+        sentinelExchange.exchangeLct(symbol, _value, msg.sender);
+    }
+    
+    function setWhitelist(Whitelist _whitelist) external onlyOwner {
+        whitelist = _whitelist;
+    }
+    
+    function setSentinelExchange(SentinelExchange _exchange) external onlyOwner {
+        sentinelExchange = _exchange;
     }
 }

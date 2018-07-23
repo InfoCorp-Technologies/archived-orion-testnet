@@ -55,7 +55,7 @@ function foo() {
             });
         },
         (contract, myid, string) => {
-            console.log('\n3. Triggering __callback() ...');
+            console.log('\n3. Triggering callback() ...');
             console.log(string);
 
             var args = process.argv.slice(2);
@@ -90,7 +90,7 @@ function foo() {
                 console.log("The file was saved!");
             });
 
-            triggerMethod(contract, '__callback', [myid, jsonDataStr], config.executer.address, config.executer.privkey, (result) => {
+            triggerMethod(contract, 'callback', [myid, jsonDataStr], config.executer.address, config.executer.privkey, (result) => {
                 if (result === true) {
                     console.log('Callbacked successfully');
                 } else {

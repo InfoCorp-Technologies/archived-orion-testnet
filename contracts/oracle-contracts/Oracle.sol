@@ -6,7 +6,6 @@ contract Oracle is Ownable {
     
     struct QueryInfo {
         bool isWaiting;
-        address caller;
         string result;
     }
     
@@ -16,21 +15,14 @@ contract Oracle is Ownable {
     mapping(string => string) apiMap;
     mapping(bytes32 => QueryInfo) queryMap;
 
+    event SetAPI(string name, string API);
     event Query(bytes32 queryid, string url, string pubkey);
-    event Result(bytes32 queryid, address caller);
+    event Result(bytes32 queryid, string result);
 
     constructor() public {
-        apiMap["user"] = "http://104.211.59.231/user/";
-        apiMap["attestator"] = "http://104.211.59.231/attestator/";
-        apiMap["livestock"] = "http://104.211.59.231/livestock/";
-    }
-
-    function __callback(bytes32 _queryid, string _result) public {
-        require(queryMap[_queryid].isWaiting);
-        require(msg.sender == oracle);
-        queryMap[_queryid].isWaiting = false;
-        queryMap[_queryid].result = _result;
-        emit Result(_queryid, queryMap[_queryid].caller);
+        setAPI("user", "http://104.211.59.231/user/");
+        setAPI("attestator", "http://104.211.59.231/attestator/");
+        setAPI("livestock", "http://104.211.59.231/livestock/");
     }
     
     function api(string name) view external returns(string) {
@@ -40,18 +32,26 @@ contract Oracle is Ownable {
     function query(string name, string input, string pubkey) external {
         string memory url = strConcat(apiMap[name], input);
         bytes32 idHash = keccak256(currentId);
-        queryMap[idHash].caller = msg.sender;
         queryMap[idHash].isWaiting = true;
         currentId++;
         emit Query(idHash, url, pubkey);
+    }
+    
+    function callback(bytes32 _queryid, string _result) public {
+        require(queryMap[_queryid].isWaiting);
+        require(msg.sender == oracle);
+        queryMap[_queryid].isWaiting = false;
+        queryMap[_queryid].result = _result;
+        emit Result(_queryid, _result);
     }
     
     function result(bytes32 _queryid) view external returns(string) {
         return queryMap[_queryid].result;
     }
     
-    function setAPI(string _name, string _api) external onlyOwner {
+    function setAPI(string _name, string _api) public onlyOwner {
         apiMap[_name] = _api;
+        emit SetAPI(_name, _api);
     }
     
     function setOracle(address _oracle) external onlyOwner {
