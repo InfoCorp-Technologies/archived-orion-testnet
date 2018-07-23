@@ -1,0 +1,10 @@
+{
+  "host": "ws://localhost:8546",
+  "contract": {
+    "address": "0x646EDD4Fa91bae7DB77992bcafb2B757e7372425"
+  },
+  "executer": {
+    "address": "0x6415cb729a27e9b69891dadafcbbcae21e5b6f9c",
+    "privkey": "0xe42a402291dfaa427e87c669b790949ed6b307e6e4af01eb8a9af3c4c369cb22"
+  }
+}
