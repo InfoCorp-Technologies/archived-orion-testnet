@@ -22,8 +22,7 @@ function handlePendingRequests(callback) {
         toBlock: 'latest'
     }).then(async exchanges => {
         for (let i = 0; i < exchanges.length; i++) {
-            let result = await handlePendingExchange(exchanges[i]); // execute sequently to guarantee there is enough gas
-            console.log(result);
+            await handlePendingExchange(exchanges[i]); // execute sequently to guarantee there is enough gas
         }
         callback();
     });
@@ -35,7 +34,6 @@ async function handlePendingExchange(exchange) {
         let total = exchange.returnValues[1];
         let fromCurrency = exchange.returnValues[2];
         let toCurrency = exchange.returnValues[3];
-        console.log(exchangeId);
         contract.methods.checkPending(exchangeId).call().then(pending => {
             if (pending) {
                 console.log(`Handling pending request ${exchangeId} ...`);
@@ -44,6 +42,7 @@ async function handlePendingExchange(exchange) {
                         let value = total * data.rate;
                         triggerMethod(contract, '__callback', [exchangeId, value], config.executer.address, config.executer.privkey, (success) => {
                             if (success === true) {
+                                console.log('HANDLED SUCCESFULLY');
                                 resolve('HANDLED SUCCESFULLY');
                             } else {
                                 resolve('FAILED');
