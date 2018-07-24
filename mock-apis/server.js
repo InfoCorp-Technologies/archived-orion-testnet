@@ -2,7 +2,7 @@ const express = require('express');
 const app = express();
 let exchangeRates = require('./exchangeRates.json');
 
-app.get('/rates', (req, res) => {
+app.get('/rate', (req, res) => {
     console.log(req.query);
     let from = req.query.from;
     let to = req.query.to;

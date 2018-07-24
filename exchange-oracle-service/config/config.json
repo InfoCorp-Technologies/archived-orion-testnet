@@ -1,7 +1,8 @@
 {
   "host": "ws://localhost:8546",
+  "rateEndpoint": "http://localhost:65221/rate",
   "contract": {
-    "address": "0x646EDD4Fa91bae7DB77992bcafb2B757e7372425"
+    "address": "0xEf2A13Ef5484F8EB20555F0E01abea2732DB6ED6"
   },
   "executer": {
     "address": "0x6415cb729a27e9b69891dadafcbbcae21e5b6f9c",
