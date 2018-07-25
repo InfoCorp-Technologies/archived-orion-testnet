@@ -22,8 +22,7 @@ function handlePendingRequests(callback) {
         toBlock: 'latest'
     }).then(async exchanges => {
         for (let i = 0; i < exchanges.length; i++) {
-            let result = await handlePendingExchange(exchanges[i]); // execute sequently to guarantee there is enough gas
-            console.log(result);
+            await handlePendingExchange(exchanges[i]); // execute sequently to guarantee there is enough gas
         }
         callback();
     });
@@ -31,20 +30,19 @@ function handlePendingRequests(callback) {
 
 async function handlePendingExchange(exchange) {
     return new Promise(resolve => {
-        let exchangeTxId = exchange.transactionHash;
         let exchangeId = exchange.returnValues[0];
         let total = exchange.returnValues[1];
         let fromCurrency = exchange.returnValues[2];
         let toCurrency = exchange.returnValues[3];
-        let endpoint = exchange.returnValues[4];
         contract.methods.checkPending(exchangeId).call().then(pending => {
             if (pending) {
-                console.log(`Handling pending transaction: ${exchangeTxId} of exchange ${exchangeId} ...`);
-                request.get(endpoint, {qs: {from: fromCurrency, to: toCurrency}, json: true}, (err, result, data) => {
+                console.log(`Handling pending request ${exchangeId} ...`);
+                request.get(config.rateEndpoint, {qs: {from: fromCurrency, to: toCurrency}, json: true}, (err, result, data) => {
                     if (result.statusCode === 200 && data.rate !== -1) {
                         let value = total * data.rate;
-                        triggerMethod(contract, '__callback', [exchangeTxId, exchangeId, value], config.executer.address, config.executer.privkey, (success) => {
+                        triggerMethod(contract, '__callback', [exchangeId, value], config.executer.address, config.executer.privkey, (success) => {
                             if (success === true) {
+                                console.log('HANDLED SUCCESFULLY');
                                 resolve('HANDLED SUCCESFULLY');
                             } else {
                                 resolve('FAILED');
@@ -60,10 +58,9 @@ async function handlePendingExchange(exchange) {
             }
         });
     });
+}
 
-};
-
-function foo() {
+function listenRequests() {
     async.waterfall([
         (callback) => {
             console.log('\n1. Setting up contract and event listeners ...');
@@ -71,53 +68,51 @@ function foo() {
                 fromBlock: 0,
                 toBlock: 'latest'
             }, (error, result) => {
-                let exchangeTxId = result.transactionHash;
                 let exchangeId = result.returnValues[0];
                 let total = result.returnValues[1];
                 let fromCurrency = result.returnValues[2];
                 let toCurrency = result.returnValues[3];
-                let endpoint = result.returnValues[4];
 
-                callback(null, contract, exchangeTxId, exchangeId, total, fromCurrency, toCurrency, endpoint);
+                callback(null, contract, exchangeId, total, fromCurrency, toCurrency);
             });
 
             console.log('Trigger an exchange ...');
         },
-        (contract, exchangeTxId, exchangeId, total, fromCurrency, toCurrency, endpoint, callback) => {
+        (contract, exchangeId, total, fromCurrency, toCurrency, callback) => {
             console.log(`\n2. Retrieving the rate ${fromCurrency}/${toCurrency} ...`);
 
-            request.get(endpoint, {qs: {from: fromCurrency, to: toCurrency}, json: true}, (err, result, data) => {
+            request.get(config.rateEndpoint, {qs: {from: fromCurrency, to: toCurrency}, json: true}, (err, result, data) => {
                 if (err) {
                     console.log('ERROR: Cannot retrieve the rate!!!');
-                    foo();
+                    listenRequests();
                 } else {
                     if (result.statusCode === 200 && data.rate !== -1) {
                         console.log(`The ${fromCurrency}/${toCurrency} rate is ${data.rate}`);
                         let value = total * data.rate;
-                        callback(null, contract, exchangeTxId, exchangeId, value);
+                        callback(null, contract, exchangeId, value);
                     } else {
                         console.log(`ERROR: ${result.statusCode}`);
-                        foo();
+                        listenRequests();
                     }
                 }
             });
         },
-        (contract, exchangeTxId, exchangeId, value) => {
-            console.log('\n3. Triggering __callback() ...');
+        (contract, exchangeId, value) => {
+            console.log('\n3. Triggering callback() ...');
 
-            triggerMethod(contract, '__callback', [exchangeTxId, exchangeId, value], config.executer.address, config.executer.privkey, (success) => {
+            triggerMethod(contract, '__callback', [exchangeId, value], config.executer.address, config.executer.privkey, (success) => {
                 if (success === true) {
                     console.log('Callbacked successfully');
                 } else {
                     console.log(success);
                 }
-                foo(); // loop itself
+                listenRequests(); // loop itself
             });
         }
     ]);
 }
 
-handlePendingRequests(foo);
+handlePendingRequests(listenRequests);
 
 function triggerMethod(contract, method, params, from, privkey, callback) {
     let call = contract.methods[method](...params);

@@ -1,4 +1,4 @@
-pragma solidity ^0.4.0;
+pragma solidity ^0.4.24;
 
 import "../Ownable.sol";
 
@@ -15,12 +15,11 @@ contract ExchangeOracle is Ownable {
     mapping(uint => ExchangeInfo) exchangeMap; // exchangeId => exchangeInfo
 
     constructor() public {
-        endpoint = "http://localhost:65221/rates";
         countId = 0;
     }
 
-    event Exchange(uint exchangeId, uint total, string fromCurrency, string toCurrency, string endpoint);
-    event Result(bytes32 txId, uint exchangeId, uint value);
+    event Exchange(uint exchangeId, uint total, string fromCurrency, string toCurrency);
+    event Result(uint exchangeId, uint value);
 
     function getNumberOfExchanges() public view returns (uint) {
         return countId;
@@ -33,15 +32,15 @@ contract ExchangeOracle is Ownable {
     function exchange(uint total, string fromCurrency, string toCurrency) public {
         exchangeMap[countId].isWaiting = true;
         exchangeMap[countId].caller = msg.sender;
+        emit Exchange(countId, total, fromCurrency, toCurrency);
         countId++;
-        emit Exchange(countId, total, fromCurrency, toCurrency, endpoint);
     }
 
-    function __callback(bytes32 txId, uint exchangeId, uint result) public {
+    function __callback(uint exchangeId, uint result) public {
         exchangeMap[exchangeId].isWaiting = false;
         exchangeMap[exchangeId].caller = msg.sender;
         exchangeMap[exchangeId].result = result;
-        emit Result(txId, exchangeId, result);
+        emit Result(exchangeId, result);
     }
 
 }
