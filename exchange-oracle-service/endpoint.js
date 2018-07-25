@@ -37,7 +37,7 @@ async function handlePendingExchange(exchange) {
         contract.methods.checkPending(exchangeId).call().then(pending => {
             if (pending) {
                 console.log(`Handling pending request ${exchangeId} ...`);
-                request.get(config.rateEndpoint, {qs: {from: fromCurrency, to: toCurrency}, json: true}, (err, result, data) => {
+                request.get(config.rateEndpoint, { qs: { from: fromCurrency, to: toCurrency }, json: true }, (err, result, data) => {
                     if (result.statusCode === 200 && data.rate !== -1) {
                         let value = total * data.rate;
                         triggerMethod(contract, '__callback', [exchangeId, value], config.executer.address, config.executer.privkey, (success) => {
@@ -81,7 +81,7 @@ function listenRequests() {
         (contract, exchangeId, total, fromCurrency, toCurrency, callback) => {
             console.log(`\n2. Retrieving the rate ${fromCurrency}/${toCurrency} ...`);
 
-            request.get(config.rateEndpoint, {qs: {from: fromCurrency, to: toCurrency}, json: true}, (err, result, data) => {
+            request.get(config.rateEndpoint, { qs: { from: fromCurrency, to: toCurrency }, json: true }, (err, result, data) => {
                 if (err) {
                     console.log('ERROR: Cannot retrieve the rate!!!');
                     listenRequests();
@@ -100,7 +100,7 @@ function listenRequests() {
         (contract, exchangeId, value) => {
             console.log('\n3. Triggering callback() ...');
 
-            triggerMethod(contract, '__callback', [exchangeId, value], config.executer.address, config.executer.privkey, (success) => {
+            triggerMethod(contract, 'callback', [exchangeId, value], config.executer.address, config.executer.privkey, (success) => {
                 if (success === true) {
                     console.log('Callbacked successfully');
                 } else {

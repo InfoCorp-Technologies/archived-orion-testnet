@@ -24,7 +24,7 @@ contract SentinelExchange is Ownable {
     event Currency(string name, address indexed addr);
     event Exchange(bytes32 exchangeId, uint value, string sellCurrency, string getCurrency);
     event Success(bytes32 indexed exchangeId, uint indexed value);
-    event Fail(bytes32 indexed exchangeId);
+    event Fail(bytes32 indexed exchangeId, uint indexed value);
     
     modifier isCurrency(string _currency) {
         require(currencyMap[_currency] != 0);
@@ -79,7 +79,7 @@ contract SentinelExchange is Ownable {
                 emit Success(_exchangeId, _value);
             } else {
                 LCToken(currencyMap[info.sellCurrency]).transferFromOwner(info.sender, info.value);
-                emit Fail(_exchangeId);
+                emit Fail(_exchangeId, _value);
             }
         }
     }
