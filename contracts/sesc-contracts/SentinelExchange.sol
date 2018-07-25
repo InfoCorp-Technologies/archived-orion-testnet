@@ -2,17 +2,27 @@ pragma solidity ^0.4.23;
 
 import "github.com/openzeppelin/openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import './LCToken.sol';
+import './Whitelist.sol';
 
 contract SentinelExchange is Ownable {
     
+    struct ExchangeInfo {
+        bool isWaiting;
+        address sender;
+        uint value;
+        string sellCurrency;
+        string getCurrency;
+    }
+    
     uint currentId;
+    Whitelist public whitelist;
     address public oracle = 0x6415CB729a27e9b69891dadaFcbBCae21e5B6F9C;
     
     mapping(string => address) currencyMap;
-    mapping(bytes32 => bool) exchangeMap;
+    mapping(bytes32 => ExchangeInfo) public exchangeMap;
     
-    event Currency(string indexed name, address indexed addr);
-    event Exchange(bytes32 exchangeId, address sender, string indexed sellCurrency, uint indexed value, string indexed getCurrency);
+    event Currency(string name, address indexed addr);
+    event Exchange(bytes32 exchangeId, uint value, string sellCurrency, string getCurrency);
     event Success(bytes32 indexed exchangeId, uint indexed value);
     event Fail(bytes32 indexed exchangeId);
     
@@ -21,57 +31,56 @@ contract SentinelExchange is Ownable {
         _;
     }
     
-    function exchangeSeni(string _currency) payable 
-        external isCurrency(_currency) 
-    {
-        bytes32 idHash = keccak256(currentId);
-        exchangeMap[idHash] = true;
-        currentId++;
-        emit Exchange(idHash, msg.sender, "SENI", msg.value, _currency);
+    constructor(Whitelist _whitelist) public {
+        whitelist = _whitelist;
     }
     
-    function exchangeLct(string _currency, uint _value, address sender) 
+    function startExchange(
+        address sender, 
+        uint value, 
+        string sellCurrency, 
+        string getCurrency) internal 
+    {
+        require(value > 0);
+        bytes32 idHash = keccak256(currentId);
+        exchangeMap[idHash].isWaiting = true;
+        exchangeMap[idHash].sender = sender;
+        exchangeMap[idHash].value = value;
+        exchangeMap[idHash].sellCurrency = sellCurrency;
+        exchangeMap[idHash].getCurrency = getCurrency;
+        currentId++;
+        emit Exchange(idHash, value, sellCurrency, getCurrency);
+    }
+    
+    function exchangeSeni(string _currency) payable external isCurrency(_currency) {
+        require(whitelist.isWhitelist(msg.sender));
+        startExchange(msg.sender, msg.value, "SENI", _currency);
+    }
+    
+    function exchangeLct(string _currency, address _sender, uint _value) 
         external isCurrency(_currency) 
     {
         require(msg.sender == currencyMap[_currency]);
-        bytes32 idHash = keccak256(currentId);
-        exchangeMap[idHash] = true;
-        currentId++;
-        emit Exchange(idHash, sender, _currency, _value, "SENI");
+        startExchange(_sender, _value, _currency, "SENI");
     }
     
-    function callbackLct(
-        bytes32 _exchangeId, 
-        address _sender, 
-        string _currency, 
-        uint _value) 
-        external isCurrency(_currency)
-    {
-        require(exchangeMap[_exchangeId]);
+    function callback(bytes32 _exchangeId, uint _value) external {
+        ExchangeInfo memory info = exchangeMap[_exchangeId];
+        require(info.isWaiting);
         require(msg.sender == oracle);
-        exchangeMap[_exchangeId] = false;
-        LCToken(currencyMap[_currency]).mint(_sender, _value);
-        emit Success(_exchangeId, _value);
-    }
-    
-    function callbackSeni(
-        bytes32 _exchangeId, 
-        address _sender, 
-        uint _seni, 
-        string _currency, 
-        uint _lct) 
-        external isCurrency(_currency)
-    {
-        require(exchangeMap[_exchangeId]);
-        require(msg.sender == oracle);
-        exchangeMap[_exchangeId] = false;
-        if (_sender.balance > _seni) {
-            _sender.transfer(_seni);
-            LCToken(currencyMap[_currency]).burn(_lct);
-            emit Success(_exchangeId, _seni);
+        exchangeMap[_exchangeId].isWaiting = false;
+        if (keccak256(info.getCurrency) != keccak256("SENI")) {
+            LCToken(currencyMap[info.getCurrency]).mint(info.sender, _value);
+            emit Success(_exchangeId, _value);
         } else {
-            LCToken(currencyMap[_currency]).transfer(_sender, _lct);
-            emit Fail(_exchangeId);
+            if (address(this).balance >= _value) {
+                info.sender.transfer(_value);
+                LCToken(currencyMap[info.sellCurrency]).burn(info.value);
+                emit Success(_exchangeId, _value);
+            } else {
+                LCToken(currencyMap[info.sellCurrency]).transferFromOwner(info.sender, info.value);
+                emit Fail(_exchangeId);
+            }
         }
     }
     

@@ -8,7 +8,6 @@ import './SentinelExchange.sol';
 
 contract LCToken is DetailedERC20, MintableToken, BurnableToken {
     
-    SentinelExchange public sentinelExchange;
     Whitelist public whitelist;
     
     modifier canTransfer(address _from, address _to) {
@@ -24,9 +23,9 @@ contract LCToken is DetailedERC20, MintableToken, BurnableToken {
         Whitelist _whitelist, 
         SentinelExchange _exchange)
         public DetailedERC20(_name, _symbol, _decimals) 
-    { 
+    {
         whitelist = _whitelist;
-        sentinelExchange = _exchange;
+        owner = _exchange;
     }
     
     function transfer(address _to, uint256 _value) 
@@ -41,16 +40,18 @@ contract LCToken is DetailedERC20, MintableToken, BurnableToken {
         super.transferFrom(_from, _to, _value);
     }
     
+    function transferFromOwner(address _to, uint _value) external onlyOwner {
+        require(whitelist.isWhitelist(_to));
+        super.transfer(_to, _value);
+    }
+    
     function exchange(uint256 _value) public {
-        super.transfer(sentinelExchange, _value);
-        sentinelExchange.exchangeLct(symbol, _value, msg.sender);
+        require(whitelist.isWhitelist(msg.sender));
+        super.transfer(owner, _value);
+        SentinelExchange(owner).exchangeLct(symbol, msg.sender, _value);
     }
     
     function setWhitelist(Whitelist _whitelist) external onlyOwner {
         whitelist = _whitelist;
-    }
-    
-    function setSentinelExchange(SentinelExchange _exchange) external onlyOwner {
-        sentinelExchange = _exchange;
     }
 }
