@@ -2,7 +2,7 @@ pragma solidity ^0.4.24;
 
 import "../Ownable.sol";
 
-contract ExchangeOracle is Ownable {
+contract Exchange is Ownable {
 
     struct ExchangeInfo {
         bool isWaiting;
@@ -36,7 +36,7 @@ contract ExchangeOracle is Ownable {
         countId++;
     }
 
-    function __callback(uint exchangeId, uint result) public {
+    function callback(uint exchangeId, uint result) public {
         exchangeMap[exchangeId].isWaiting = false;
         exchangeMap[exchangeId].caller = msg.sender;
         exchangeMap[exchangeId].result = result;
