@@ -22,25 +22,25 @@ function handlePendingRequests(callback) {
         toBlock: 'latest'
     }).then(async exchanges => {
         for (let i = 0; i < exchanges.length; i++) {
-            await handlePendingExchange(exchanges[i]); // execute sequently to guarantee there is enough gas
+            await handlePendingRequest(exchanges[i]); // execute sequently to guarantee there is enough gas
         }
         callback();
     });
 }
 
-async function handlePendingExchange(exchange) {
+async function handlePendingRequest(exchange) {
     return new Promise(resolve => {
         let exchangeId = exchange.returnValues[0];
         let total = exchange.returnValues[1];
         let fromCurrency = exchange.returnValues[2];
         let toCurrency = exchange.returnValues[3];
-        contract.methods.checkPending(exchangeId).call().then(pending => {
-            if (pending) {
+        contract.methods.exchangeMap(exchangeId).call().then(isWaiting => {
+            if (isWaiting) {
                 console.log(`Handling pending request ${exchangeId} ...`);
                 request.get(config.rateEndpoint, { qs: { from: fromCurrency, to: toCurrency }, json: true }, (err, result, data) => {
                     if (result.statusCode === 200 && data.rate !== -1) {
                         let value = total * data.rate;
-                        triggerMethod(contract, '__callback', [exchangeId, value], config.executer.address, config.executer.privkey, (success) => {
+                        triggerMethod(contract, 'callback', [exchangeId, value], config.executer.address, config.executer.privkey, (success) => {
                             if (success === true) {
                                 console.log('HANDLED SUCCESFULLY');
                                 resolve('HANDLED SUCCESFULLY');
