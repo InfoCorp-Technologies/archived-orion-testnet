@@ -10,7 +10,7 @@ contract Oracle is Ownable {
     }
     
     uint currentId;
-    address public oracle = 0x6415CB729a27e9b69891dadaFcbBCae21e5B6F9C;
+    address public oracle = 0x00DC7B3229F23C975E0510FDb9cBcC4e695729Fd;
     
     mapping(string => string) apiMap;
     mapping(bytes32 => QueryInfo) queryMap;
