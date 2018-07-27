@@ -1,14 +1,14 @@
-let ExchangeOracle = artifacts.require('./contracts/exchange-contracts/ExchangeOracle');
+let Exchange = artifacts.require('./contracts/exchange-contracts/Exchange');
 let assert = require('chai').assert;
 let truffleAssert = require('truffle-assertions');
 
-contract('ExchangeOracle', async (accounts) => {
+contract('Exchange', async (accounts) => {
     let exchangeOracle;
     let ownerAccount = accounts[0];
     let executeAccount = accounts[1];
 
     beforeEach(async () => {
-        exchangeOracle = await ExchangeOracle.new({from: ownerAccount});
+        exchangeOracle = await Exchange.new({from: ownerAccount});
     });
 
     afterEach(async () => {
