@@ -4,4 +4,4 @@ base-path/
 base/
 nohup.out
 node_modules/
-/build
+build/

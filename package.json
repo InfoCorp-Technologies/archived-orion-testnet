@@ -28,7 +28,7 @@
     "lodash": "^4.17.4",
     "rimraf": "^2.6.2",
     "solc": "^0.4.23",
-    "solidity-coverage": "^0.4.9",
+    "solidity-coverage": "^0.4.15",
     "solium": "^1.0.5",
     "truffle": "^4.0.4"
   },

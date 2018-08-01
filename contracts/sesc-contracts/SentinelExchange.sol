@@ -1,6 +1,6 @@
 pragma solidity ^0.4.23;
 
-import "github.com/openzeppelin/openzeppelin-solidity/contracts/ownership/Ownable.sol";
+import "zeppelin-solidity/contracts/ownership/Ownable.sol";
 import './LCToken.sol';
 import './Whitelist.sol';
 

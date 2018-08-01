@@ -23,7 +23,13 @@ module.exports = {
       network_id: 3,
       port: 8545,
       gas: 2900000
-    }
+    },
+    ganache: {
+      host: 'localhost',
+      port: 8545,
+      network_id: '*',
+      gasPrice: 1000000000
+    }    
   },
   mocha: {
     useColors: true

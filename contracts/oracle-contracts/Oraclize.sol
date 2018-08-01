@@ -1,6 +1,6 @@
 pragma solidity ^0.4.20;
 
-import "github.com/oraclize/ethereum-api/oraclizeAPI_0.5.sol";
+import "./OraclizeAPI.sol";
 
 contract Oraclize is usingOraclize {
     

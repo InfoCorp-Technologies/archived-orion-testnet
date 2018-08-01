@@ -1,8 +1,8 @@
 pragma solidity ^0.4.23;
 
-import 'github.com/openzeppelin/openzeppelin-solidity/contracts/token/ERC20/MintableToken.sol';
-import 'github.com/openzeppelin/openzeppelin-solidity/contracts/token/ERC20/BurnableToken.sol';
-import 'github.com/openzeppelin/openzeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol';
+import 'zeppelin-solidity/contracts/token/ERC20/MintableToken.sol';
+import 'zeppelin-solidity/contracts/token/ERC20/BurnableToken.sol';
+import 'zeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol';
 import './Whitelist.sol';
 import './SentinelExchange.sol';
 
