@@ -29,7 +29,7 @@ module.exports = {
       port: 8545,
       network_id: '*',
       gasPrice: 1000000000
-    }    
+    }
   },
   mocha: {
     useColors: true
