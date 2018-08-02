@@ -13,6 +13,7 @@
   },
   "author": "InfoCorp",
   "dependencies": {
+    "truffle-assertions": "^0.3.1",
     "truffle-flattener": "^1.2.5",
     "zeppelin-solidity": "^1.7.0"
   },
