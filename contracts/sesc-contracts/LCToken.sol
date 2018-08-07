@@ -48,7 +48,7 @@ contract LCToken is DetailedERC20, MintableToken, BurnableToken {
     function exchange(uint256 _value) public {
         require(whitelist.isWhitelist(msg.sender));
         super.transfer(owner, _value);
-        SentinelExchange(owner).exchangeLct(symbol, msg.sender, _value);
+        SentinelExchange(owner).exchangeLct(msg.sender, _value, symbol);
     }
     
     function setWhitelist(Whitelist _whitelist) external onlyOwner {

@@ -55,13 +55,15 @@ contract('SentinelExchange', async (accounts) => {
         let resultTx = await exchange.callback(exchangeId, value / 2, { from: oracle }).should.be.fulfilled;
         resultTx['logs'][0].event.should.be.equal("Success");
         (await token.balanceOf(whiteUser)).toNumber().should.be.equal(value / 2);
+        let exchangeInfo = await exchange.exchangeMap(exchangeId);
+        false.should.be.equal(exchangeInfo[0]);
     });
 
     describe('Whitelisted user must exchange 1 SENI to get 1 LCT.MMK first', function () {
         it('Whitelisted user exchange 0.5 LCT.MMK directly to Exchange contract to get SENI', async () => {
             let value = 1000000000000000000;
             await mintLCT(whiteUser, value);
-            await exchange.exchangeLct("LCT.MMK", whiteUser, value / 2, { from: whiteUser }).should.be.rejectedWith(ERROR_MSG);
+            await exchange.exchangeLct(whiteUser, value / 2, "LCT.MMK", { from: whiteUser }).should.be.rejectedWith(ERROR_MSG);
         });
 
         it('Whitelisted user exchange 0 LCT.MMK to get SENI', async () => {
