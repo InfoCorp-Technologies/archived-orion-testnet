@@ -1,4 +1,4 @@
-const { ERROR_MSG } = require('../setup');
+const { ERROR_MSG, ZERO_ADDRESS } = require('../setup');
 const Whitelist = artifacts.require("Whitelist.sol");
 const LCToken = artifacts.require("LCToken.sol");
 const SentinelExchange = artifacts.require("SentinelExchange.sol");
@@ -11,7 +11,7 @@ contract('SentinelExchange', async (accounts) => {
 
     beforeEach(async () => {
         whitelist = await Whitelist.new({ from: owner });
-        await whitelist.addWhitelist([whiteUser, whiteUser], { from: owner });
+        await whitelist.addWhitelist([whiteUser], { from: owner });
         exchange = await SentinelExchange.new(whitelist.address, { from: owner });
         token = await LCToken.new(
             "Local Currency Token Myanmar",
@@ -31,6 +31,25 @@ contract('SentinelExchange', async (accounts) => {
         let exchangeId = exchangeTx['logs'][0].args.exchangeId;
         let resultTx = await exchange.callback(exchangeId, _value, { from: oracle });
     }
+
+    it('Add/Remove currecy', async () => {
+        let otherToken = await LCToken.new(
+            "Local Currency Token ASD",
+            "LCT.ASD",
+            18,
+            whitelist.address,
+            exchange.address,
+            { from: owner });
+        const addTx =await exchange.setCurrency(otherToken.address, { from: owner }).should.be.fulfilled;
+        addTx['logs'][0].event.should.be.equal("CurrencyAdded");
+        (otherToken.address).should.be.equal(await exchange.currency("LCT.ASD"));
+        (exchange.address).should.be.equal(await otherToken.owner());
+        const rmTx = await exchange.removeCurrency("LCT.ASD", { from: owner }).should.be.fulfilled;
+        rmTx['logs'][0].event.should.be.equal("OwnershipTransferred");
+        rmTx['logs'][1].event.should.be.equal("CurrencyRemoved");
+        (ZERO_ADDRESS).should.be.equal(await exchange.currency("LCT.ASD"));
+        (owner).should.be.equal(await otherToken.owner());
+    });
 
     it('Whitelisted user exchange 1 SENI to get nonexistent currency (USD)', async () => {
         let value = 1000000000000000000;
