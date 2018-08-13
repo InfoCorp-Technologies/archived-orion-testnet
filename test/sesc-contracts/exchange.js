@@ -12,7 +12,7 @@ contract('SentinelExchange', async (accounts) => {
     beforeEach(async () => {
         whitelist = await Whitelist.new({ from: owner });
         await whitelist.addWhitelist([whiteUser], { from: owner });
-        exchange = await SentinelExchange.new(whitelist.address, { from: owner });
+        exchange = await SentinelExchange.new(whitelist.address, oracle, { from: owner });
         token = await LCToken.new(
             "Local Currency Token Myanmar",
             "LCT.MMK",
@@ -21,7 +21,6 @@ contract('SentinelExchange', async (accounts) => {
             exchange.address,
             { from: owner });
         await exchange.setCurrency(token.address);
-        await exchange.setOracle(oracle);
     })
 
     // Sentinel Exchange contract receive _value SENI to mint _value LCT.MMK  to _user
@@ -29,7 +28,7 @@ contract('SentinelExchange', async (accounts) => {
         let exchangeTx = await exchange.exchangeSeni(
             "LCT.MMK", { from: _user, value: _value });
         let exchangeId = exchangeTx['logs'][0].args.exchangeId;
-        let resultTx = await exchange.callback(exchangeId, _value, { from: oracle });
+        await exchange.callback(exchangeId, _value, { from: oracle });
     }
 
     it('Add/Remove currecy', async () => {

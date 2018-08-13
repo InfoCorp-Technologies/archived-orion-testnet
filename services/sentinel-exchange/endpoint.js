@@ -1,71 +1,27 @@
+let async = require('async');
+let request = require('request');
+let Web3 = require('web3');
+
 let contractAbi = require('./config/abi');
 let config = require('./config/config');
 let contractAddress = config.contract.address;
-
-let async = require('async');
-let request = require('request');
+let fromBlock = config.contract.fromBlock;
 
 let web3;
-let Web3 = require('web3');
 if (typeof web3 !== 'undefined') {
     web3 = new Web3(web3.currentProvider);
-}
-else {
+} else {
     web3 = new Web3(new Web3.providers.WebsocketProvider(config.host));
 }
 
 let contract = new web3.eth.Contract(contractAbi, contractAddress);
-
-function handlePendingRequests(callback) {
-    contract.getPastEvents('Exchange', {
-        fromBlock: 0,
-        toBlock: 'latest'
-    }).then(async exchanges => {
-        for (let i = 0; i < exchanges.length; i++) {
-            await handlePendingRequest(exchanges[i]); // execute sequently to guarantee there is enough gas
-        }
-        callback();
-    });
-}
-
-async function handlePendingRequest(exchange) {
-    return new Promise(resolve => {
-        let exchangeId = exchange.returnValues[0];
-        let total = exchange.returnValues[1];
-        let fromCurrency = exchange.returnValues[2];
-        let toCurrency = exchange.returnValues[3];
-        contract.methods.exchangeMap(exchangeId).call().then(isWaiting => {
-            if (isWaiting) {
-                console.log(`Handling pending request ${exchangeId} ...`);
-                request.get(config.rateEndpoint, { qs: { from: fromCurrency, to: toCurrency }, json: true }, (err, result, data) => {
-                    if (result.statusCode === 200 && data.rate !== -1) {
-                        let value = total * data.rate;
-                        triggerMethod(contract, 'callback', [exchangeId, value], config.executer.address, config.executer.privkey, (success) => {
-                            if (success === true) {
-                                console.log('HANDLED SUCCESFULLY');
-                                resolve('HANDLED SUCCESFULLY');
-                            } else {
-                                resolve('FAILED');
-                            }
-                        });
-                    } else {
-                        resolve(`ERROR: ${result.statusCode}`);
-                    }
-                });
-            }
-            else {
-                resolve('FAILED');
-            }
-        });
-    });
-}
 
 function listenRequests() {
     async.waterfall([
         (callback) => {
             console.log('\n1. Setting up contract and event listeners ...');
             contract.once('Exchange', {
-                fromBlock: 0,
+                fromBlock: fromBlock,
                 toBlock: 'latest'
             }, (error, result) => {
                 let exchangeId = result.returnValues[0];
@@ -112,8 +68,6 @@ function listenRequests() {
     ]);
 }
 
-handlePendingRequests(listenRequests);
-
 function triggerMethod(contract, method, params, from, privkey, callback) {
     let call = contract.methods[method](...params);
     let tx = {
@@ -141,3 +95,48 @@ function triggerMethod(contract, method, params, from, privkey, callback) {
         })
     })();
 }
+
+async function handlePendingRequest(exchange) {
+    return new Promise(resolve => {
+        let exchangeId = exchange.returnValues[0];
+        let total = exchange.returnValues[1];
+        let fromCurrency = exchange.returnValues[2];
+        let toCurrency = exchange.returnValues[3];
+        contract.methods.exchangeMap(exchangeId).call().then(info => {
+            if (info.isWaiting) {
+                console.log(`Handling pending request ${exchangeId} ...`);
+                request.get(config.rateEndpoint, { qs: { from: fromCurrency, to: toCurrency }, json: true }, (err, result, data) => {
+                    if (result.statusCode === 200 && data.rate !== -1) {
+                        let value = total * data.rate;
+                        triggerMethod(contract, 'callback', [exchangeId, value], config.executer.address, config.executer.privkey, (success) => {
+                            if (success === true) {
+                                console.log('HANDLED SUCCESFULLY');
+                                resolve('HANDLED SUCCESFULLY');
+                            } else {
+                                resolve('FAILED');
+                            }
+                        });
+                    } else {
+                        resolve(`ERROR: ${result.statusCode}`);
+                    }
+                });
+            } else {
+                resolve('ALREADY PROCESSED');
+            }
+        });
+    });
+}
+
+function handleRequests(callback) {
+    contract.getPastEvents('Exchange', {
+        fromBlock: fromBlock,
+        toBlock: 'latest'
+    }).then(async exchanges => {
+        for (let i = 0; i < exchanges.length; i++) {
+            await handlePendingRequest(exchanges[i]); // execute sequently to guarantee there is enough gas
+        }
+        callback();
+    });
+}
+
+handleRequests(listenRequests);

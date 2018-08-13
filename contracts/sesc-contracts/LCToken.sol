@@ -21,21 +21,20 @@ contract LCToken is DetailedERC20, MintableToken, BurnableToken {
         string _symbol,
         uint8 _decimals,
         Whitelist _whitelist,
-        SentinelExchange _exchange)
-        public DetailedERC20(_name, _symbol, _decimals)
-    {
+        SentinelExchange _exchange
+    ) public DetailedERC20(_name, _symbol, _decimals) {
         whitelist = _whitelist;
         owner = _exchange;
     }
 
     function transfer(address _to, uint256 _value)
-        public canTransfer(msg.sender, _to) returns (bool)
+      public canTransfer(msg.sender, _to) returns (bool)
     {
         super.transfer(_to, _value);
     }
 
     function transferFrom(address _from, address _to, uint256 _value)
-        public canTransfer(_from, _to) returns (bool)
+      public canTransfer(_from, _to) returns (bool)
     {
         super.transferFrom(_from, _to, _value);
     }

@@ -1,6 +1,7 @@
 pragma solidity ^0.4.23;
 
 import "zeppelin-solidity/contracts/ownership/Ownable.sol";
+import "zeppelin-solidity/contracts/token/ERC20/ERC20Basic.sol";
 import "./LCToken.sol";
 import "./Whitelist.sol";
 
@@ -18,7 +19,7 @@ contract SentinelExchange is Ownable {
     }
 
     uint256 public currentId;
-    address public oracle = 0x6415CB729a27e9b69891dadaFcbBCae21e5B6F9C;
+    address public oracle;
     Whitelist public whitelist;
 
     mapping(string => address) currencyMap;
@@ -31,12 +32,14 @@ contract SentinelExchange is Ownable {
     event Fail(bytes32 indexed exchangeId, uint256 indexed value);
 
     modifier isCurrency(string _currency) {
-        require(currencyMap[_currency] != address(0));
+        require(currencyMap[_currency] != address(0), "Currency address must be different from 0x0");
         _;
     }
 
-    constructor(Whitelist _whitelist) public {
+    constructor(Whitelist _whitelist, address _oracle) public {
+        require(_oracle != address(0), "Oracle address must be different from 0x0");
         whitelist = _whitelist;
+        oracle = _oracle;
     }
 
     function startExchange(
@@ -45,7 +48,7 @@ contract SentinelExchange is Ownable {
         string sellCurrency,
         string getCurrency
     ) internal {
-        require(value > 0);
+        require(value > 0, "Value not be zero");
         bytes32 idHash = keccak256(currentId);
         exchangeMap[idHash].isWaiting = true;
         exchangeMap[idHash].sender = sender;
@@ -61,7 +64,7 @@ contract SentinelExchange is Ownable {
      * @param _currency specify the symbol of the LCToken
      */
     function exchangeSeni(string _currency) external payable isCurrency(_currency) {
-        require(whitelist.isWhitelist(msg.sender));
+        require(whitelist.isWhitelist(msg.sender), "Sender must be whitelisted");
         startExchange(msg.sender, msg.value, "SENI", _currency);
     }
 
@@ -72,9 +75,9 @@ contract SentinelExchange is Ownable {
      * @param _currency Specify the symbol of the LCToken to be exchanged
      */
     function exchangeLct(address _sender, uint256 _value, string _currency)
-        external isCurrency(_currency)
+      external isCurrency(_currency)
     {
-        require(msg.sender == currencyMap[_currency]);
+        require(msg.sender == currencyMap[_currency], "Sender mus be the currency address");
         startExchange(_sender, _value, _currency, "SENI");
     }
 
@@ -85,8 +88,8 @@ contract SentinelExchange is Ownable {
      */
     function callback(bytes32 _exchangeId, uint256 _value) external {
         ExchangeInfo memory info = exchangeMap[_exchangeId];
-        require(info.isWaiting);
-        require(msg.sender == oracle);
+        require(info.isWaiting, "Exchange must be waiting");
+        require(msg.sender == oracle, "Sender must be the oracle address");
         exchangeMap[_exchangeId].isWaiting = false;
         if (keccak256(info.getCurrency) == keccak256("SENI")) {
             if (address(this).balance >= _value) {
@@ -101,6 +104,23 @@ contract SentinelExchange is Ownable {
             LCToken(currencyMap[info.getCurrency]).mint(info.sender, _value);
             emit Success(_exchangeId, _value);
         }
+    }
+
+    /**
+     * @notice The `claimTokens()` should only be called if a security issue is found.
+     * @param _token to transfer, use 0x0 for ether.
+     * @param _to the recipient that receives the tokens/ethers.
+     */
+    function claimTokens(address _token, address _to) external onlyOwner {
+        require(_to != address(0), "To address must be different from 0x0");
+        if (_token == address(0)) {
+            _to.transfer(address(this).balance);
+            return;
+        }
+
+        ERC20Basic token = ERC20Basic(_token);
+        uint256 balance = token.balanceOf(this);
+        require(token.transfer(_to, balance), "Transfer should be successfully");
     }
 
     /**

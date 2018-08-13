@@ -5,3 +5,4 @@ base/
 nohup.out
 node_modules/
 build/
+flats/
