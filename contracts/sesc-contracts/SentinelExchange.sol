@@ -23,13 +23,13 @@ contract SentinelExchange is Ownable {
     Whitelist public whitelist;
 
     mapping(string => address) currencyMap;
-    mapping(bytes32 => ExchangeInfo) public exchangeMap;
+    mapping(uint => ExchangeInfo) public exchangeMap;
 
     event CurrencyAdded(string name, address indexed addr);
     event CurrencyRemoved(string name, address indexed addr);
-    event Exchange(bytes32 exchangeId, uint256 value, string sellCurrency, string getCurrency);
-    event Success(bytes32 indexed exchangeId, uint256 indexed value);
-    event Fail(bytes32 indexed exchangeId, uint256 indexed value);
+    event Exchange(uint exchangeId, uint256 value, string sellCurrency, string getCurrency);
+    event Success(uint indexed exchangeId, uint256 indexed value);
+    event Fail(uint indexed exchangeId, uint256 indexed value);
 
     modifier isCurrency(string _currency) {
         require(currencyMap[_currency] != address(0), "Currency address must be different from 0x0");
@@ -49,14 +49,13 @@ contract SentinelExchange is Ownable {
         string getCurrency
     ) internal {
         require(value > 0, "Value not be zero");
-        bytes32 idHash = keccak256(currentId);
-        exchangeMap[idHash].isWaiting = true;
-        exchangeMap[idHash].sender = sender;
-        exchangeMap[idHash].value = value;
-        exchangeMap[idHash].sellCurrency = sellCurrency;
-        exchangeMap[idHash].getCurrency = getCurrency;
+        exchangeMap[currentId].isWaiting = true;
+        exchangeMap[currentId].sender = sender;
+        exchangeMap[currentId].value = value;
+        exchangeMap[currentId].sellCurrency = sellCurrency;
+        exchangeMap[currentId].getCurrency = getCurrency;
         currentId++;
-        emit Exchange(idHash, value, sellCurrency, getCurrency);
+        emit Exchange(currentId, value, sellCurrency, getCurrency);
     }
 
     /**
@@ -86,7 +85,7 @@ contract SentinelExchange is Ownable {
      * @param _exchangeId The id of the exchange to be finalized
      * @param _value The amount that will be transferred
      */
-    function callback(bytes32 _exchangeId, uint256 _value) external {
+    function callback(uint _exchangeId, uint256 _value) external {
         ExchangeInfo memory info = exchangeMap[_exchangeId];
         require(info.isWaiting, "Exchange must be waiting");
         require(msg.sender == oracle, "Sender must be the oracle address");
