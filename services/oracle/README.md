@@ -1,0 +1,1 @@
+Run node endpoint.js with the configuration in folder ./config
