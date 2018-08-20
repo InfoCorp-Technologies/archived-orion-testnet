@@ -120,7 +120,6 @@ contract SentinelExchange is Ownable {
             _to.transfer(address(this).balance);
             return;
         }
-
         ERC20Basic token = ERC20Basic(_token);
         uint256 balance = token.balanceOf(this);
         require(token.transfer(_to, balance), "Transfer should be successfully");
@@ -140,8 +139,10 @@ contract SentinelExchange is Ownable {
      * @param _currency The address of the LCToken currency
      */
     function setCurrency(LCToken _currency) external onlyOwner {
-        require(_currency.owner() == address(this));
-        currencyMap[bytes(_currency.symbol())] = _currency;
+        bytes memory name = bytes(_currency.symbol());
+        require(_currency.owner() == address(this), "The currency must have this Exchange contract as owner");
+        require(currencyMap[name] == address(0), "This currency has existed");
+        currencyMap[name] = _currency;
         emit CurrencyAdded(_currency.symbol(), _currency);
     }
 
@@ -150,9 +151,11 @@ contract SentinelExchange is Ownable {
      * @param _name The simbol name of the LCToken currency
      */
     function removeCurrency(string _name) external onlyOwner {
-        LCToken token = currencyMap[bytes(_name)];
+        bytes memory name = bytes(_name);
+        LCToken token = currencyMap[name];
+        require(token != address(0), "This currency hasn't been set");
         token.transferOwnership(msg.sender);
-        currencyMap[bytes(_name)] = LCToken(0);
+        currencyMap[name] = LCToken(0);
         emit CurrencyRemoved(_name, token);
     }
 
