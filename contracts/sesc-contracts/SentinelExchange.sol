@@ -140,8 +140,8 @@ contract SentinelExchange is Ownable {
      */
     function setCurrency(LCToken _currency) external onlyOwner {
         bytes memory name = bytes(_currency.symbol());
-        require(_currency.owner() == address(this), "The currency must have this Exchange contract as owner");
-        require(currencyMap[name] == address(0), "This currency has existed");
+        require(_currency.owner() == address(this), "The currency must have this Sentinel Exchange contract as owner");
+        require(currencyMap[name] == address(0), "This currency is already set");
         currencyMap[name] = _currency;
         emit CurrencyAdded(_currency.symbol(), _currency);
     }
