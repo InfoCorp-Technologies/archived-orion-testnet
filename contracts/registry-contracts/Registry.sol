@@ -9,6 +9,7 @@ contract Registry is Ownable {
         address implementer;
         bytes multichain;
         bool verified;
+        bool removing;
     }
 
     mapping (address => address) managers;
@@ -28,13 +29,13 @@ contract Registry is Ownable {
         address indexed addr, 
         bytes32 indexed interfaceHash, 
         string indexed multichain);
-    event InterfaceImplementerChanged(
-        address indexed odAddr, 
-        bytes32 indexed interfaceHash, 
-        address indexed newAddr);
-    event InterfaceImplementerRemoved(
+    event InterfaceImplementerRemoving(
         address indexed addr, 
         bytes32 indexed interfaceHash);
+    event InterfaceImplementerVerified(
+        address indexed addr, 
+        bytes32 indexed interfaceHash,
+        string action);
     event ManagerChanged(address indexed addr, address indexed newManager);
 
     /// @notice Query the combined interface given a name and id 
@@ -47,7 +48,7 @@ contract Registry is Ownable {
         assembly {
             interfaceBytes := mload(add(interfaceName, 32))
         }
-        if (bytes(interfaceName).length > 28 && idBytes > 0xffffffff) {
+        if (bytes(interfaceName).length > 28 || idBytes > 0xffffffff) {
             return 0;
         }
         return interfaceBytes | idBytes;
@@ -70,9 +71,9 @@ contract Registry is Ownable {
         emit ManagerChanged(addr, newManager);
     }
     
-    function getLivestock(string _name) external view returns(address, bytes28) {
+    function getLivestock(string _name) external view returns(address) {
         bytes28 name = toBytes28(_name);
-        return (livestockMap[name], name);
+        return livestockMap[name];
     }
      
     function setLivestock(Livestock _livestock) external onlyOwner {
@@ -92,23 +93,10 @@ contract Registry is Ownable {
         emit LivestockRemoved(_name, livestock);
     }
     
-    function getInterfaceImplementer(address addr, bytes32 iHash) external 
+    function getInterfaceImplementer(address addr, bytes32 iHash) public 
         view returns (address implementer, string multichain, bool verified) 
     {
-        Implementer memory interfaces;
-        uint id = uint(bytes4(iHash << (8 * 28)));
-        bytes28 name = bytes28(iHash);
-        address registered = registeredLivestock[iHash];
-        if (address(livestockMap[name]) != 0 && 
-            livestockMap[name].exists(id)) {
-            if (livestockMap[name].ownerOf(id) == addr) {
-                interfaces = interfacesMap[registered][iHash];
-            } else {
-                interfaces = interfacesMap[addr][0x0];
-            }
-        } else {
-            interfaces = interfacesMap[addr][iHash];
-        }
+        Implementer memory interfaces = getInterfaces(addr, iHash);
         implementer = interfaces.implementer;
         multichain = string(interfaces.multichain);
         verified = interfaces.verified;
@@ -120,7 +108,7 @@ contract Registry is Ownable {
     {
         Implementer memory interfaces = interfacesMap[addr][iHash];
         bytes memory multichainBytes = bytes(multichain);
-        // require(multichainBytes.length == 38);
+        require(multichainBytes.length == 38);
         require(!registeredMultichain[multichainBytes]);
         require(!interfaces.verified);
         if (iHash == "attestator") {
@@ -162,25 +150,59 @@ contract Registry is Ownable {
         }
         registeredMultichain[interfaces.multichain] = true;
         interfacesMap[addr][iHash].verified = true;
+        emit InterfaceImplementerVerified(addr, iHash, "Added");
     }
     
     function removeInterfaceImplementer(address addr, bytes32 iHash) 
         external canManage(addr) 
     {
-        require(interfacesMap[addr][iHash].verified);
+        Implementer memory interfaces = getInterfaces(addr, iHash);
+        require(interfaces.verified);
+        interfacesMap[addr][iHash].removing = true;
+        emit InterfaceImplementerRemoving(addr, iHash);
+    }
+    
+    function verifyInterfaceRemoval(address addr, bytes32 iHash) external {
+        Implementer memory interfaces = interfacesMap[addr][iHash];
+        Implementer memory empty = Implementer(0x0, "", false, false);
+        require(interfaces.removing);
+        require(interfacesMap[msg.sender]["attestator"].verified);
         uint id = uint(bytes4(iHash << (8 * 28)));
         bytes28 name = bytes28(iHash);
         if (id > 0) {
-            
+            address registered = registeredLivestock[iHash];
+            registeredLivestock[iHash] = 0;
+            livestockMap[name].burn(addr, id);
+            interfacesMap[addr][iHash].removing = false;
+            interfacesMap[registered][iHash] = empty;
+        } else {
+            interfacesMap[addr][iHash] = empty;
         }
-        interfacesMap[addr][iHash] = Implementer(0x0, "", false);
-        registeredMultichain[interfacesMap[addr][iHash].multichain] = false;
-        emit InterfaceImplementerRemoved(addr, iHash);
+        registeredMultichain[interfaces.multichain] = false;
+        emit InterfaceImplementerVerified(addr, iHash, "Removed");
     }
     
     function toBytes28(string name) internal pure returns(bytes28 result) {
         assembly {
             result := mload(add(name, 32))
+        }
+    }
+    
+    function getInterfaces(address addr, bytes32 iHash) 
+        internal view returns(Implementer interfaces) 
+    {
+        uint id = uint(bytes4(iHash << (8 * 28)));
+        bytes28 name = bytes28(iHash);
+        address registered = registeredLivestock[iHash];
+        if (address(livestockMap[name]) != 0 && 
+            livestockMap[name].exists(id)) {
+            if (livestockMap[name].ownerOf(id) == addr) {
+                interfaces = interfacesMap[registered][iHash];
+            } else {
+                interfaces = interfacesMap[addr][0x0];
+            }
+        } else {
+            interfaces = interfacesMap[addr][iHash];
         }
     }
 }
