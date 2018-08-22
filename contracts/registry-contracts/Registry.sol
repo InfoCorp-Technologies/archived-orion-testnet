@@ -84,7 +84,7 @@ contract Registry is Ownable {
         emit LivestockAdded(_livestock.symbol(), _livestock);
     }
     
-    function removeCurrency(string _name) external onlyOwner {
+    function removeLivestock(string _name) external onlyOwner {
         bytes28 name = toBytes28(_name);
         Livestock livestock = livestockMap[name];
         require(livestock != address(0), "This livestock hasn't been set");
