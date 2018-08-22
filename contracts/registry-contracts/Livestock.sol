@@ -5,7 +5,13 @@ import 'zeppelin-solidity/contracts/ownership/Ownable.sol';
 
 contract Livestock is ERC721Token, Ownable {
     
-    constructor(string _name, string _symbol) public ERC721Token(_name, _symbol) {}
+    constructor(
+        string _name, 
+        string _symbol, 
+        address _registry
+    ) public ERC721Token(_name, _symbol) {
+        owner = _registry;
+    }
     
     function transfer(address _to, uint256 _tokenId) public {
         require(_to != address(0));

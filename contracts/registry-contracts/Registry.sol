@@ -1,34 +1,43 @@
 pragma solidity ^0.4.23;
 
-contract Registry {
+import "zeppelin-solidity/contracts/ownership/Ownable.sol";
+import './Livestock.sol';
+
+contract Registry is Ownable {
     
     struct Implementer {
         address implementer;
         bytes multichain;
         bool verified;
     }
-    
-    address public admin;
 
-    mapping (bytes => bool) registeredMultichain;
     mapping (address => address) managers;
-    mapping (address => mapping(bytes32 => Implementer)) interfaces;
+    mapping (bytes28 => Livestock) livestockMap;
+    mapping (bytes32 => address) registeredLivestock;
+    mapping (bytes => bool) registeredMultichain;
+    mapping (address => mapping(bytes32 => Implementer)) interfacesMap;
 
     modifier canManage(address addr) {
         require(getManager(addr) == msg.sender);
         _;
     }
-
-    event InterfaceImplementerSet(address indexed addr, bytes32 indexed interfaceHash, string indexed multichain);
-    event InterfaceImplementerChanged(address indexed odAddr, bytes32 indexed interfaceHash, address indexed newAddr);
-    event InterfaceImplementerRemoved(address indexed addr, bytes32 indexed interfaceHash);
-    event ManagerChanged(address indexed addr, address indexed newManager);
     
-    constructor(address _address) public {
-        admin = _address;
-    }
+    event LivestockAdded(string name, address indexed addr);
+    event LivestockRemoved(string name, address indexed addr);
+    event InterfaceImplementerSet(
+        address indexed addr, 
+        bytes32 indexed interfaceHash, 
+        string indexed multichain);
+    event InterfaceImplementerChanged(
+        address indexed odAddr, 
+        bytes32 indexed interfaceHash, 
+        address indexed newAddr);
+    event InterfaceImplementerRemoved(
+        address indexed addr, 
+        bytes32 indexed interfaceHash);
+    event ManagerChanged(address indexed addr, address indexed newManager);
 
-    /// @notice Query the hash of an interface given a name
+    /// @notice Query the combined interface given a name and id 
     /// @param interfaceName Name of the interfce
     function interfaceHash(string interfaceName, uint id) 
         public pure returns(bytes32) 
@@ -60,50 +69,118 @@ contract Registry {
         managers[addr] = newManager == addr ? 0 : newManager;
         emit ManagerChanged(addr, newManager);
     }
-
-    function getInterfaceImplementer(address addr, bytes32 iHash) view external 
-        returns (address implementer, string multichain, bool verified) 
+    
+    function getLivestock(string _name) external view returns(address, bytes28) {
+        bytes28 name = toBytes28(_name);
+        return (livestockMap[name], name);
+    }
+     
+    function setLivestock(Livestock _livestock) external onlyOwner {
+        bytes28 name = toBytes28(_livestock.symbol());
+        require(_livestock.owner() == address(this), "The livestock contract must have this Registry contract as owner");
+        require(livestockMap[name] == address(0), "This livestock is already set");
+        livestockMap[name] = _livestock;
+        emit LivestockAdded(_livestock.symbol(), _livestock);
+    }
+    
+    function removeCurrency(string _name) external onlyOwner {
+        bytes28 name = toBytes28(_name);
+        Livestock livestock = livestockMap[name];
+        require(livestock != address(0), "This livestock hasn't been set");
+        livestock.transferOwnership(msg.sender);
+        livestockMap[name] = Livestock(0);
+        emit LivestockRemoved(_name, livestock);
+    }
+    
+    function getInterfaceImplementer(address addr, bytes32 iHash) external 
+        view returns (address implementer, string multichain, bool verified) 
     {
-        implementer = interfaces[addr][iHash].implementer;
-        multichain = string(interfaces[addr][iHash].multichain);
-        verified = interfaces[addr][iHash].verified;
+        Implementer memory interfaces;
+        uint id = uint(bytes4(iHash << (8 * 28)));
+        bytes28 name = bytes28(iHash);
+        address registered = registeredLivestock[iHash];
+        if (address(livestockMap[name]) != 0 && 
+            livestockMap[name].exists(id)) {
+            if (livestockMap[name].ownerOf(id) == addr) {
+                interfaces = interfacesMap[registered][iHash];
+            } else {
+                interfaces = interfacesMap[addr][0x0];
+            }
+        } else {
+            interfaces = interfacesMap[addr][iHash];
+        }
+        implementer = interfaces.implementer;
+        multichain = string(interfaces.multichain);
+        verified = interfaces.verified;
     }
 
     function setInterfaceImplementer(
         address addr, bytes32 iHash, string multichain) 
         external canManage(addr) 
     {
-        require(bytes(multichain).length == 38);
-        require(!registeredMultichain[bytes(multichain)]);
-        require(!interfaces[addr][iHash].verified);
-        if (registeredMultichain[interfaces[addr][iHash].multichain]) {
-            registeredMultichain[interfaces[addr][iHash].multichain] = false;
+        Implementer memory interfaces = interfacesMap[addr][iHash];
+        bytes memory multichainBytes = bytes(multichain);
+        // require(multichainBytes.length == 38);
+        require(!registeredMultichain[multichainBytes]);
+        require(!interfaces.verified);
+        if (iHash == "attestator") {
+            require(!interfacesMap[addr]["user"].verified);
+        } else {
+            require(!interfacesMap[addr]["attestator"].verified);
+            uint id = uint(bytes4(iHash << (8 * 28)));
+            bytes28 name = bytes28(iHash);
+            if (id > 0) {
+                require(interfacesMap[addr]["user"].verified);
+                require(!livestockMap[name].exists(id));
+            }
         }
-        interfaces[addr][iHash].implementer = msg.sender;
-        interfaces[addr][iHash].multichain = bytes(multichain);
+        if (registeredMultichain[interfaces.multichain]) {
+            registeredMultichain[interfaces.multichain] = false;
+        }
+        interfacesMap[addr][iHash].implementer = msg.sender;
+        interfacesMap[addr][iHash].multichain = multichainBytes;
         emit InterfaceImplementerSet(addr, iHash, multichain);
     }
     
     function verifyInterfaceImplementer(address addr, bytes32 iHash) external {
-        bytes memory multichain = interfaces[addr][iHash].multichain;
-        require(!interfaces[addr][iHash].verified);
-        require(interfaces[addr][iHash].implementer != 0);
-        require(!registeredMultichain[multichain]);
-        if (iHash == bytes32("attestator")) {
-            require(msg.sender == admin);
+        Implementer memory interfaces = interfacesMap[addr][iHash];
+        require(interfaces.implementer != 0);
+        require(!interfaces.verified);
+        require(!registeredMultichain[interfaces.multichain]);
+        if (iHash == "attestator") {
+            require(msg.sender == owner);
+            require(!interfacesMap[addr]["user"].verified);
         } else {
-            require(interfaces[msg.sender]["attestator"].verified);
-            require(!interfaces[addr]["attestator"].verified);
+            require(interfacesMap[msg.sender]["attestator"].verified);
+            require(!interfacesMap[addr]["attestator"].verified);
+            uint id = uint(bytes4(iHash << (8 * 28)));
+            bytes28 name = bytes28(iHash);
+            if (id > 0) {
+                livestockMap[name].mint(addr, id);
+                registeredLivestock[iHash] = addr;
+            }
         }
-        registeredMultichain[multichain] = true;
-        interfaces[addr][iHash].verified = true;
+        registeredMultichain[interfaces.multichain] = true;
+        interfacesMap[addr][iHash].verified = true;
     }
     
     function removeInterfaceImplementer(address addr, bytes32 iHash) 
         external canManage(addr) 
     {
-        interfaces[addr][iHash] = Implementer(0x0, "", false);
-        registeredMultichain[interfaces[addr][iHash].multichain] = false;
+        require(interfacesMap[addr][iHash].verified);
+        uint id = uint(bytes4(iHash << (8 * 28)));
+        bytes28 name = bytes28(iHash);
+        if (id > 0) {
+            
+        }
+        interfacesMap[addr][iHash] = Implementer(0x0, "", false);
+        registeredMultichain[interfacesMap[addr][iHash].multichain] = false;
         emit InterfaceImplementerRemoved(addr, iHash);
+    }
+    
+    function toBytes28(string name) internal pure returns(bytes28 result) {
+        assembly {
+            result := mload(add(name, 32))
+        }
     }
 }
