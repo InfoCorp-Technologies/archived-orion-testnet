@@ -108,18 +108,18 @@ contract Registry is Ownable {
     {
         Implementer memory interfaces = interfacesMap[addr][iHash];
         bytes memory multichainBytes = bytes(multichain);
-        require(multichainBytes.length == 38);
-        require(!registeredMultichain[multichainBytes]);
-        require(!interfaces.verified);
+        require(multichainBytes.length == 38, "The Multichain address string length must longer than 38");
+        require(!registeredMultichain[multichainBytes], "The Multichain address has been claimed");
+        require(!interfaces.verified, "The registered information must not be registered and verified before");
         if (iHash == "attestator") {
-            require(!interfacesMap[addr]["user"].verified);
+            require(!interfacesMap[addr]["user"].verified, "A user must not have attestator role at the same time");
         } else {
-            require(!interfacesMap[addr]["attestator"].verified);
+            require(!interfacesMap[addr]["attestator"].verified, "An attestator must not have user role at the same time");
             uint id = uint(bytes4(iHash << (8 * 28)));
             bytes28 name = bytes28(iHash);
             if (id > 0) {
-                require(interfacesMap[addr]["user"].verified);
-                require(!livestockMap[name].exists(id));
+                require(interfacesMap[addr]["user"].verified, "Only user can register livestock");
+                require(!livestockMap[name].exists(id), "This livestock token has existed");
             }
         }
         if (registeredMultichain[interfaces.multichain]) {
@@ -132,15 +132,15 @@ contract Registry is Ownable {
     
     function verifyInterfaceImplementer(address addr, bytes32 iHash) external {
         Implementer memory interfaces = interfacesMap[addr][iHash];
-        require(interfaces.implementer != 0);
-        require(!interfaces.verified);
-        require(!registeredMultichain[interfaces.multichain]);
+        require(interfaces.implementer != 0, "This registered information hasn't existed");
+        require(!interfaces.verified, "This registered information has already been verified");
+        require(!registeredMultichain[interfaces.multichain], "The Multichain address has been claimed");
         if (iHash == "attestator") {
-            require(msg.sender == owner);
-            require(!interfacesMap[addr]["user"].verified);
+            require(msg.sender == owner, "The verifier must be admin to verify attestator");
+            require(!interfacesMap[addr]["user"].verified, "A user must not have attestator role at the same time");
         } else {
-            require(interfacesMap[msg.sender]["attestator"].verified);
-            require(!interfacesMap[addr]["attestator"].verified);
+            require(interfacesMap[msg.sender]["attestator"].verified, "The verifier must be attestator to verify user or livestock");
+            require(!interfacesMap[addr]["attestator"].verified, "An attestator must not have user role at the same time");
             uint id = uint(bytes4(iHash << (8 * 28)));
             bytes28 name = bytes28(iHash);
             if (id > 0) {
@@ -157,7 +157,7 @@ contract Registry is Ownable {
         external canManage(addr) 
     {
         Implementer memory interfaces = getInterfaces(addr, iHash);
-        require(interfaces.verified);
+        require(interfaces.verified, "This registered information is not verified");
         interfacesMap[addr][iHash].removing = true;
         emit InterfaceImplementerRemoving(addr, iHash);
     }
@@ -165,8 +165,8 @@ contract Registry is Ownable {
     function verifyInterfaceRemoval(address addr, bytes32 iHash) external {
         Implementer memory interfaces = interfacesMap[addr][iHash];
         Implementer memory empty = Implementer(0x0, "", false, false);
-        require(interfaces.removing);
-        require(interfacesMap[msg.sender]["attestator"].verified);
+        require(interfaces.removing, "This registered information is not marked as removing");
+        require(interfacesMap[msg.sender]["attestator"].verified, "The verifier must be attestator to verify removal");
         uint id = uint(bytes4(iHash << (8 * 28)));
         bytes28 name = bytes28(iHash);
         if (id > 0) {
