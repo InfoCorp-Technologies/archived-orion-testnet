@@ -28,7 +28,7 @@ contract ERC820Registry is Ownable {
     event InterfaceImplementerSet(
         address indexed addr, 
         bytes32 indexed interfaceHash, 
-        string indexed multichain);
+        string multichain);
     event InterfaceImplementerRemoving(
         address indexed addr, 
         bytes32 indexed interfaceHash);
