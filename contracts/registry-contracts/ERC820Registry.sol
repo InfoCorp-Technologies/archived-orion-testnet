@@ -3,7 +3,7 @@ pragma solidity ^0.4.23;
 import "zeppelin-solidity/contracts/ownership/Ownable.sol";
 import './Livestock.sol';
 
-contract Registry is Ownable {
+contract ERC820Registry is Ownable {
     
     struct Implementer {
         address implementer;
