@@ -108,7 +108,7 @@ contract ERC820Registry is Ownable {
     {
         Implementer memory interfaces = interfacesMap[addr][iHash];
         bytes memory multichainBytes = bytes(multichain);
-        // require(multichainBytes.length == 38, "The Multichain address string length must longer than 38");
+        require(multichainBytes.length == 38, "The Multichain address string length must longer than 38");
         require(!registeredMultichain[multichainBytes], "The Multichain address has been claimed");
         require(!interfaces.verified, "The registered information must not be registered and verified before");
         if (iHash == "attestator") {
