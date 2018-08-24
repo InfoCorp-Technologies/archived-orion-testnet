@@ -108,7 +108,7 @@ contract ERC820Registry is Ownable {
     {
         Implementer memory interfaces = interfacesMap[addr][iHash];
         bytes memory multichainBytes = bytes(multichain);
-        require(multichainBytes.length == 38, "The Multichain address string length must longer than 38");
+        // require(multichainBytes.length == 38, "The Multichain address string length must longer than 38");
         require(!registeredMultichain[multichainBytes], "The Multichain address has been claimed");
         require(!interfaces.verified, "The registered information must not be registered and verified before");
         if (iHash == "attestator") {
@@ -119,7 +119,7 @@ contract ERC820Registry is Ownable {
             bytes28 name = bytes28(iHash);
             if (id > 0) {
                 require(interfacesMap[addr]["user"].verified, "Only user can register livestock");
-                require(!livestockMap[name].exists(id), "This livestock token has existed");
+                require(!livestockMap[name].exists(id), "This livestock contract is not set or the token has already been minted");
             }
         }
         if (registeredMultichain[interfaces.multichain]) {
@@ -163,9 +163,9 @@ contract ERC820Registry is Ownable {
     }
     
     function verifyInterfaceRemoval(address addr, bytes32 iHash) external {
-        Implementer memory interfaces = interfacesMap[addr][iHash];
         Implementer memory empty = Implementer(0x0, "", false, false);
-        require(interfaces.removing, "This registered information is not marked as removing");
+        Implementer memory interfaces;
+        require(interfacesMap[addr][iHash].removing, "This registered information is not marked as removing");
         if (iHash == "attestator") {
             require(msg.sender == owner, "The verifier must be admin to verify removal of attestator");
         } else {
@@ -175,14 +175,17 @@ contract ERC820Registry is Ownable {
         bytes28 name = bytes28(iHash);
         if (id > 0) {
             address registered = registeredLivestock[iHash];
+            interfaces = interfacesMap[registered][iHash];
+            registeredMultichain[interfaces.multichain] = false;
             registeredLivestock[iHash] = 0;
             livestockMap[name].burn(addr, id);
             interfacesMap[addr][iHash].removing = false;
             interfacesMap[registered][iHash] = empty;
         } else {
+            interfaces = interfacesMap[addr][iHash];
+            registeredMultichain[interfaces.multichain] = false;
             interfacesMap[addr][iHash] = empty;
         }
-        registeredMultichain[interfaces.multichain] = false;
         emit InterfaceImplementerVerified(addr, iHash, "Removed");
     }
     
