@@ -5,12 +5,19 @@ import 'zeppelin-solidity/contracts/ownership/Ownable.sol';
 
 contract Livestock is ERC721Token, Ownable {
     
+    event Mint(address indexed to, uint indexed id);
+    event Burn(address indexed burner, uint indexed id);
+    
     constructor(
         string _name, 
         string _symbol, 
         address _registry
     ) public ERC721Token(_name, _symbol) {
         owner = _registry;
+    }
+    
+    function tokensOfOwner(address _owner) external view returns (uint[]) {
+        return ownedTokens[_owner];
     }
     
     function transfer(address _to, uint256 _tokenId) public {
@@ -31,9 +38,11 @@ contract Livestock is ERC721Token, Ownable {
     
     function mint(address _to, uint256 _tokenId) external onlyOwner {
         super._mint(_to, _tokenId);
+        emit Mint(_to, _tokenId);
     }
     
     function burn(address _to, uint256 _tokenId) external onlyOwner {
         super._burn(_to, _tokenId);
+        emit Burn(_to, _tokenId);
     }
 }

@@ -166,7 +166,11 @@ contract ERC820Registry is Ownable {
         Implementer memory interfaces = interfacesMap[addr][iHash];
         Implementer memory empty = Implementer(0x0, "", false, false);
         require(interfaces.removing, "This registered information is not marked as removing");
-        require(interfacesMap[msg.sender]["attestator"].verified, "The verifier must be attestator to verify removal");
+        if (iHash == "attestator") {
+            require(msg.sender == owner, "The verifier must be admin to verify removal of attestator");
+        } else {
+            require(interfacesMap[msg.sender]["attestator"].verified, "The verifier must be attestator to verify removal of user and livestock");
+        }
         uint id = uint(bytes4(iHash << (8 * 28)));
         bytes28 name = bytes28(iHash);
         if (id > 0) {
