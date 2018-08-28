@@ -2,11 +2,21 @@ const { ERROR_MSG, ZERO_ADDRESS } = require('../setup')
 const ERC820Registry = artifacts.require('ERC820Registry')
 const Livestock = artifacts.require('Livestock')
 
+let AUTHORITY
+let ADDRESS_1
+let ADDRESS_2
+let ADDRESS_1_2
+
+let erc820Registry
+let livestock
+
 let USER = "user"
 let ATTESTATOR = "attestator"
 let COW = "COW"
 let CO = "CO"
+
 let COW_1
+let COW_2
 let CO_1
 
 const MULTICHAIN_ADR_0 = '00000000000000000000000000000000000000'
@@ -16,14 +26,13 @@ const MULTICHAIN_ADR_11 = '11000000000000000000000000000000000000'
 const MULTICHAIN_ADR_12 = '12000000000000000000000000000000000000'
 
 contract('Registry user and attestator', async (accounts) => {
-    let erc820Registry
-    const AUTHORITY = accounts[0]
-    const ADDRESS_1 = accounts[1]
-    const ADDRESS_2 = accounts[2]
-    const ADDRESS_1_2 = accounts[3]
+    AUTHORITY = accounts[0]
+    ADDRESS_1 = accounts[1]
+    ADDRESS_2 = accounts[2]
+    ADDRESS_1_2 = accounts[3]
 
     beforeEach(async function () {
-        erc820Registry = await ERC820Registry.new();
+        erc820Registry = await ERC820Registry.new(AUTHORITY);
         await erc820Registry.setInterfaceImplementer(ADDRESS_1, ATTESTATOR, MULTICHAIN_ADR_0, { from: ADDRESS_1 })
         await erc820Registry.setInterfaceImplementer(ADDRESS_2, USER, MULTICHAIN_ADR_1, { from: ADDRESS_2 })
     })
@@ -99,16 +108,13 @@ contract('Registry user and attestator', async (accounts) => {
 })
 
 contract('Registry livestock and removal', async (accounts) => {
-    let erc820Registry
-    let livestock
-    let COW_2
-    const AUTHORITY = accounts[0]
-    const ADDRESS_1 = accounts[1]
-    const ADDRESS_2 = accounts[2]
-    const ADDRESS_1_2 = accounts[3]
+    AUTHORITY = accounts[0]
+    ADDRESS_1 = accounts[1]
+    ADDRESS_2 = accounts[2]
+    ADDRESS_1_2 = accounts[3]
 
     beforeEach(async function () {
-        erc820Registry = await ERC820Registry.new()
+        erc820Registry = await ERC820Registry.new(AUTHORITY)
         livestock = await Livestock.new("Cow Token", COW, erc820Registry.address)
         await erc820Registry.setLivestock(livestock.address)
         await erc820Registry.setInterfaceImplementer(ADDRESS_1, ATTESTATOR, MULTICHAIN_ADR_0, { from: ADDRESS_1 })

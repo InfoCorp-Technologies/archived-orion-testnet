@@ -38,6 +38,10 @@ contract ERC820Registry is Ownable {
         string action);
     event ManagerChanged(address indexed addr, address indexed newManager);
 
+    constructor(address admin) public {
+        owner = admin;
+    }
+
     /// @notice Query the combined interface given a name and id 
     /// @param interfaceName Name of the interfce
     function interfaceHash(string interfaceName, uint id) 
