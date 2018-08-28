@@ -13,12 +13,12 @@ contract SentinelExchange is Ownable {
     struct ExchangeInfo {
         bool isWaiting;
         address sender;
-        uint256 value;
+        uint value;
         string sellCurrency;
         string getCurrency;
     }
 
-    uint256 public currentId;
+    uint public currentId;
     address public oracle;
     Whitelist public whitelist;
 
@@ -27,34 +27,35 @@ contract SentinelExchange is Ownable {
 
     event CurrencyAdded(string name, address indexed addr);
     event CurrencyRemoved(string name, address indexed addr);
-    event Exchange(uint exchangeId, uint256 value, string sellCurrency, string getCurrency);
-    event Success(uint indexed exchangeId, uint256 indexed value);
-    event Fail(uint indexed exchangeId, uint256 indexed value);
+    event Exchange(uint exchangeId, uint value, string sellCurrency, string getCurrency);
+    event Success(uint indexed exchangeId, uint indexed value);
+    event Fail(uint indexed exchangeId, uint indexed value);
 
     modifier isCurrency(string _currency) {
         require(currencyMap[bytes(_currency)] != address(0), "Currency address must be different from 0x0");
         _;
     }
 
-    constructor(Whitelist _whitelist, address _oracle) public {
+    constructor(address _owner, address _oracle, Whitelist _whitelist) public {
         require(_oracle != address(0), "Oracle address must be different from 0x0");
-        whitelist = _whitelist;
+        owner = _owner;
         oracle = _oracle;
+        whitelist = _whitelist;
     }
 
     function startExchange(
         address sender,
-        uint256 value,
+        uint value,
         string sellCurrency,
         string getCurrency
     ) internal {
         require(value > 0, "Value not be zero");
+        currentId++;
         exchangeMap[currentId].isWaiting = true;
         exchangeMap[currentId].sender = sender;
         exchangeMap[currentId].value = value;
         exchangeMap[currentId].sellCurrency = sellCurrency;
         exchangeMap[currentId].getCurrency = getCurrency;
-        currentId++;
         emit Exchange(currentId, value, sellCurrency, getCurrency);
     }
 
@@ -73,7 +74,7 @@ contract SentinelExchange is Ownable {
      * @param _value The amount that will be exchanged
      * @param _currency Specify the symbol of the LCToken to be exchanged
      */
-    function exchangeLct(address _sender, uint256 _value, string _currency)
+    function exchangeLct(address _sender, uint _value, string _currency)
       external isCurrency(_currency)
     {
         address currency = currencyMap[bytes(_currency)];
@@ -86,7 +87,7 @@ contract SentinelExchange is Ownable {
      * @param _exchangeId The id of the exchange to be finalized
      * @param _value The amount that will be transferred
      */
-    function callback(uint _exchangeId, uint256 _value) external {
+    function callback(uint _exchangeId, uint _value) external {
         ExchangeInfo memory info = exchangeMap[_exchangeId];
         require(info.isWaiting, "Exchange must be waiting");
         require(msg.sender == oracle, "Sender must be the oracle address");
@@ -121,7 +122,7 @@ contract SentinelExchange is Ownable {
             return;
         }
         ERC20Basic token = ERC20Basic(_token);
-        uint256 balance = token.balanceOf(this);
+        uint balance = token.balanceOf(this);
         require(token.transfer(_to, balance), "Transfer should be successfully");
     }
 

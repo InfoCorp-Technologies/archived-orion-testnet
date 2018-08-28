@@ -24,8 +24,7 @@ contract('Oracle', async (accounts) => {
     const RESULT = '{data: "data"}';
 
     beforeEach(async function () {
-        oracle = await Oracle.new({from: OWNER_ACCOUNT});
-        await oracle.setOracle(ORACLE_ACCOUNT, {from: OWNER_ACCOUNT});
+        oracle = await Oracle.new(OWNER_ACCOUNT, ORACLE_ACCOUNT);
     });
 
     it('testAPI', async function () {
@@ -60,7 +59,7 @@ contract('Oracle', async (accounts) => {
         assert.isNotNull(queryEv, 'ERROR: Missed catching Query event');
 
         if (queryEv) {
-            let callbackTx = await oracle.callback(queryEv.queryid, RESULT, {from: ORACLE_ACCOUNT});
+            let callbackTx = await oracle.callback(queryEv.queryid, RESULT, { from: ORACLE_ACCOUNT });
             truffleAssert.eventEmitted(callbackTx, 'Result', (ev) => {
                 return ev.queryid === queryEv.queryid && ev.result === RESULT;
             });
@@ -70,7 +69,7 @@ contract('Oracle', async (accounts) => {
     it('testCallback_invalidQueryId', async function () {
         let invalidQueryId = 0; // non-existent queryId
         try {
-            await oracle.callback(invalidQueryId, RESULT, {from: ORACLE_ACCOUNT});
+            await oracle.callback(invalidQueryId, RESULT, { from: ORACLE_ACCOUNT });
         } catch (err) {
             assert.ok(err instanceof Error);
         }
@@ -88,7 +87,7 @@ contract('Oracle', async (accounts) => {
 
         if (queryEv) {
             try {
-                await oracle.callback(queryEv.queryid, RESULT, {from: OWNER_ACCOUNT}); // not using ORACLE_ACCOUNT
+                await oracle.callback(queryEv.queryid, RESULT, { from: OWNER_ACCOUNT }); // not using ORACLE_ACCOUNT
             } catch (err) {
                 assert.ok(err instanceof Error);
             }
