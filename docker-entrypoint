@@ -4,13 +4,10 @@ set -e
 
 NODE_TYPE=${NODE_TYPE:-"default"}
 
-echo "[PARITY] Node type: $NODE_TYPE"
-
 if [ $NODE_TYPE = "default" ]; then
   NODE_TYPE=""
 else
   NODE_TYPE="-$NODE_TYPE"
 fi
 
-cd /data
 /parity/parity --config ./config$NODE_TYPE.toml --base-path ./base-path $@

@@ -1,10 +1,6 @@
 [parity]
 chain = "sentinel.json"
 identity = "sentinel-main"
-base_path="./base-path"
-
-[account]
-password = ["password.txt"]
 
 [dapps]
 disable = true

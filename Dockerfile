@@ -10,12 +10,17 @@ ENV GROUP_ID=${GROUP_ID:-1000}
 # Add our user and group first to make sure their IDs get assigned consistently,
 # regardless of whatever dependencies get added
 RUN groupadd -g ${GROUP_ID} sentinel \
-    && useradd -u ${USER_ID} -g sentinel -s /bin/bash -m -d /data sentinel
+    && useradd -u ${USER_ID} -g sentinel -s /bin/bash -m -d /sentinel sentinel
 
-WORKDIR /root
+WORKDIR /sentinel
 
-COPY ./docker-entrypoint /usr/local/bin/
+COPY config-main.toml config-rpc.toml config-validator.toml config.toml ./
+COPY nodes.txt sentinel.json ./
+COPY docker-entrypoint /usr/local/bin/
 
-RUN chmod +x /usr/local/bin/docker-entrypoint
+RUN chown sentinel:sentinel -R /sentinel \
+    && chmod +x /usr/local/bin/docker-entrypoint
+
+VOLUME [ "/sentinel/base-path" ]
 
 ENTRYPOINT ["docker-entrypoint"]

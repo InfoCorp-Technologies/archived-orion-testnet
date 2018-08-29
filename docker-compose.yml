@@ -5,12 +5,20 @@ services:
       context: .
       dockerfile: Dockerfile
     environment:
-      - NODE_TYPE=${NODE_TYPE}
+      - NODE_TYPE=default
     ports:
+      # JSON-RPC API
       - 8545:8545
-      - 8180:8180
+      # Websocker
       - 8546:8546
+      # Listening connections
       - 30303:30303
     volumes:
-      - ./:/data
-    command: --jsonrpc-interface 0.0.0.0 --ui-interface 0.0.0.0
+      - sentinel-node-data:/sentinel/base-path
+    # If you want to use Parity UI form https://github.com/parity-js/shell/releases,
+    # uncomment this line:
+    #command: --jsonrpc-interface all --ui-interface all --ws-interface all
+
+volumes:
+  sentinel-node-data:
+    driver: local
