@@ -6,10 +6,12 @@ contract Validator {
     address[] private pendingArr;
     bool private operation_set = false;
     bool public finalized = true;
+    uint public requiredSignatures;
     mapping (address => uint) validatorMap;
 
     event InitiateChange(bytes32 indexed parent_hash, address[] new_set);
     event ChangeFinalized(address[] current_set);
+    event RequiredSignaturesChanged(uint indexed requiredSignatures);
 
     modifier is_finalized {
         require(finalized);
@@ -33,11 +35,11 @@ contract Validator {
         return validatorMap[addr] > 0;
     }
     
-    function getValidators() public constant returns (address[]) {
+    function getValidators() public view returns (address[]) {
         return validatorArr;
     }
     
-    function getPendings() public constant returns (address[]) {
+    function getPendings() public view returns (address[]) {
         return pendingArr;
     }
     
@@ -69,5 +71,12 @@ contract Validator {
         validatorArr = pendingArr;
         finalized = true;
         emit ChangeFinalized(validatorArr);
+    }
+    
+    function setRequiredSignatures(uint _requiredSignatures) external is_validator {
+        require(validatorArr.length >= _requiredSignatures);
+        require(_requiredSignatures != 0);
+        requiredSignatures = _requiredSignatures;
+        emit RequiredSignaturesChanged(_requiredSignatures);
     }
 }
