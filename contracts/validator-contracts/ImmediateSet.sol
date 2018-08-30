@@ -24,7 +24,9 @@ contract Validator {
     }
 
     constructor(address[] init) public {
+        require(init.length > 0);
         validatorArr = pendingArr = init;
+        requiredSignatures = 1;
         for (uint i = 0; i < validatorArr.length; i++) {
             validatorMap[validatorArr[i]] = i+1;
         }
