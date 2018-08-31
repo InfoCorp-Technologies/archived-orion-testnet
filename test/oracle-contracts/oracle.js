@@ -25,6 +25,9 @@ contract('Oracle', async (accounts) => {
 
     beforeEach(async function () {
         oracle = await Oracle.new(OWNER_ACCOUNT, ORACLE_ACCOUNT);
+        await oracle.setAPI(USER, API_MAP[USER])
+        await oracle.setAPI(ATTESTATOR, API_MAP[ATTESTATOR])
+        await oracle.setAPI(LIVESTOCK, API_MAP[LIVESTOCK])
     });
 
     it('testAPI', async function () {
