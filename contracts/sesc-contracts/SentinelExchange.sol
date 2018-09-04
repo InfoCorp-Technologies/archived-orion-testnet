@@ -167,4 +167,8 @@ contract SentinelExchange is Ownable {
     function setOracle(address _oracle) external onlyOwner {
         oracle = _oracle;
     }
+    
+    function setWhitelist(Whitelist _whitelist) external onlyOwner {
+        whitelist = _whitelist;
+    }
 }

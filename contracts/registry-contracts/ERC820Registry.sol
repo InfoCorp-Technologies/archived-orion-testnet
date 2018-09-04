@@ -1,7 +1,8 @@
 pragma solidity ^0.4.23;
 
 import "zeppelin-solidity/contracts/ownership/Ownable.sol";
-import './Livestock.sol';
+import "./Administration.sol";
+import "./Livestock.sol";
 
 contract ERC820Registry is Ownable {
     
@@ -11,6 +12,8 @@ contract ERC820Registry is Ownable {
         bool verified;
         bool removing;
     }
+    
+    Administration public administration;
 
     mapping (address => address) managers;
     mapping (bytes28 => Livestock) livestockMap;
@@ -38,8 +41,9 @@ contract ERC820Registry is Ownable {
         string action);
     event ManagerChanged(address indexed addr, address indexed newManager);
 
-    constructor(address admin) public {
-        owner = admin;
+    constructor(address _owner, Administration _administration) public {
+        owner = _owner;
+        administration = _administration;
     }
 
     /// @notice Query the combined interface given a name and id 
@@ -76,12 +80,12 @@ contract ERC820Registry is Ownable {
     }
     
     function getLivestock(string _name) external view returns(address) {
-        bytes28 name = toBytes28(_name);
+        bytes28 name = strToBytes28(_name);
         return livestockMap[name];
     }
      
     function setLivestock(Livestock _livestock) external onlyOwner {
-        bytes28 name = toBytes28(_livestock.symbol());
+        bytes28 name = strToBytes28(_livestock.symbol());
         require(_livestock.owner() == address(this), "The livestock contract must have this Registry contract as owner");
         require(livestockMap[name] == address(0), "This livestock is already set");
         livestockMap[name] = _livestock;
@@ -89,7 +93,7 @@ contract ERC820Registry is Ownable {
     }
     
     function removeLivestock(string _name) external onlyOwner {
-        bytes28 name = toBytes28(_name);
+        bytes28 name = strToBytes28(_name);
         Livestock livestock = livestockMap[name];
         require(livestock != address(0), "This livestock hasn't been set");
         livestock.transferOwnership(msg.sender);
@@ -112,23 +116,17 @@ contract ERC820Registry is Ownable {
     {
         Implementer memory interfaces = interfacesMap[addr][iHash];
         bytes memory multichainBytes = bytes(multichain);
+        uint id = uint(bytes4(iHash << (8 * 28)));
+        bytes28 name = bytes28(iHash);
         require(multichainBytes.length == 38, "The Multichain address string length must longer than 38");
         require(!registeredMultichain[multichainBytes], "The Multichain address has been claimed");
         require(!interfaces.verified, "The registered information must not be registered and verified before");
-        if (iHash == "attestator") {
-            require(!interfacesMap[addr]["user"].verified, "A user must not have attestator role at the same time");
-        } else {
-            require(!interfacesMap[addr]["attestator"].verified, "An attestator must not have user role at the same time");
-            uint id = uint(bytes4(iHash << (8 * 28)));
-            bytes28 name = bytes28(iHash);
-            if (id > 0) {
-                require(interfacesMap[addr]["user"].verified, "Only user can register livestock");
-                require(!livestockMap[name].exists(id), "This livestock contract is not set or the token has already been minted");
-            }
+        forbiddenRule(addr, name, 2);
+        if (id > 0) {
+            require(livestockMap[name] != address(0), "This livestock contract is not set");
+            require(!livestockMap[name].exists(id), "The token has already been minted");
         }
-        if (registeredMultichain[interfaces.multichain]) {
-            registeredMultichain[interfaces.multichain] = false;
-        }
+        registeredMultichain[interfaces.multichain] = false;
         interfacesMap[addr][iHash].implementer = msg.sender;
         interfacesMap[addr][iHash].multichain = multichainBytes;
         emit InterfaceImplementerSet(addr, iHash, multichain);
@@ -136,21 +134,18 @@ contract ERC820Registry is Ownable {
     
     function verifyInterfaceImplementer(address addr, bytes32 iHash) external {
         Implementer memory interfaces = interfacesMap[addr][iHash];
+        uint id = uint(bytes4(iHash << (8 * 28)));
+        bytes28 name = bytes28(iHash);
         require(interfaces.implementer != 0, "This registered information hasn't existed");
         require(!interfaces.verified, "This registered information has already been verified");
         require(!registeredMultichain[interfaces.multichain], "The Multichain address has been claimed");
-        if (iHash == "attestator") {
-            require(msg.sender == owner, "The verifier must be admin to verify attestator");
-            require(!interfacesMap[addr]["user"].verified, "A user must not have attestator role at the same time");
-        } else {
-            require(interfacesMap[msg.sender]["attestator"].verified, "The verifier must be attestator to verify user or livestock");
-            require(!interfacesMap[addr]["attestator"].verified, "An attestator must not have user role at the same time");
-            uint id = uint(bytes4(iHash << (8 * 28)));
-            bytes28 name = bytes28(iHash);
-            if (id > 0) {
-                livestockMap[name].mint(addr, id);
-                registeredLivestock[iHash] = addr;
-            }
+        requiredRule(addr, name, 0);
+        requiredRule(addr, name, 1);
+        forbiddenRule(addr, name, 2);
+        forbiddenRule(addr, name, 3);
+        if (id > 0) {
+            livestockMap[name].mint(addr, id);
+            registeredLivestock[iHash] = addr;
         }
         registeredMultichain[interfaces.multichain] = true;
         interfacesMap[addr][iHash].verified = true;
@@ -161,7 +156,9 @@ contract ERC820Registry is Ownable {
         external canManage(addr) 
     {
         Implementer memory interfaces = getInterfaces(addr, iHash);
+        bytes28 name = bytes28(iHash);
         require(interfaces.verified, "This registered information is not verified");
+        forbiddenRule(addr, name, 6);
         interfacesMap[addr][iHash].removing = true;
         emit InterfaceImplementerRemoving(addr, iHash);
     }
@@ -169,34 +166,75 @@ contract ERC820Registry is Ownable {
     function verifyInterfaceRemoval(address addr, bytes32 iHash) external {
         Implementer memory empty = Implementer(0x0, "", false, false);
         Implementer memory interfaces;
-        require(interfacesMap[addr][iHash].removing, "This registered information is not marked as removing");
-        if (iHash == "attestator") {
-            require(msg.sender == owner, "The verifier must be admin to verify removal of attestator");
-        } else {
-            require(interfacesMap[msg.sender]["attestator"].verified, "The verifier must be attestator to verify removal of user and livestock");
-        }
         uint id = uint(bytes4(iHash << (8 * 28)));
         bytes28 name = bytes28(iHash);
+        require(interfacesMap[addr][iHash].removing, "This registered information is not marked as removing");
+        requiredRule(addr, name, 4);
+        requiredRule(addr, name, 5);
+        forbiddenRule(addr, name, 6);
+        forbiddenRule(addr, name, 7);
         if (id > 0) {
             address registered = registeredLivestock[iHash];
             interfaces = interfacesMap[registered][iHash];
-            registeredMultichain[interfaces.multichain] = false;
+            interfacesMap[registered][iHash] = empty;
+            interfacesMap[addr][iHash].removing = false;
             registeredLivestock[iHash] = 0;
             livestockMap[name].burn(addr, id);
-            interfacesMap[addr][iHash].removing = false;
-            interfacesMap[registered][iHash] = empty;
         } else {
             interfaces = interfacesMap[addr][iHash];
-            registeredMultichain[interfaces.multichain] = false;
             interfacesMap[addr][iHash] = empty;
         }
+        registeredMultichain[interfaces.multichain] = false;
         emit InterfaceImplementerVerified(addr, iHash, "Removed");
     }
     
-    function toBytes28(string name) internal pure returns(bytes28 result) {
+    function requiredRule(address addr, bytes28 ruleName,  uint ruleType) 
+        internal view 
+    {
+        require(ruleType / 2 == 0 || ruleType / 2 == 2);
+        string memory name = string(abi.encodePacked(ruleName));
+        bytes28[] memory rules = administration.getRules(name, ruleType);
+        bool result;
+        for (uint i = 0; i < rules.length; i++) {
+            bytes28 rule = rules[i];
+            if (isFitWithRule(addr, rule, ruleType)) { 
+                result = true;
+                break;
+            }
+        }
+        require(result);
+    }
+    
+    function forbiddenRule(address addr, bytes28 ruleName,  uint ruleType) 
+        internal view 
+    {
+        require(ruleType / 2 == 1 || ruleType / 2 == 3);
+        string memory name = string(abi.encodePacked(ruleName));
+        bytes28[] memory rules = administration.getRules(name, ruleType);
+        bool result = true;
+        for (uint i = 0; i < rules.length; i++) {
+            bytes28 rule = rules[i];
+            if (isFitWithRule(addr, rule, ruleType)) {
+                result = false;
+                break;
+            }
+        }
+        require(result);
+    }
+    
+    function strToBytes28(string name) internal pure returns(bytes28 result) {
         assembly {
             result := mload(add(name, 32))
         }
+    }
+    
+    function isFitWithRule(address addr, bytes28 rule, uint ruleType) 
+        internal view returns(bool)
+    { 
+        return (ruleType % 2 == 0 && interfacesMap[addr][rule].verified ||
+            ruleType % 2 == 0 && rule == "admin" && addr == administration.owner() ||
+            ruleType % 2 != 0 && interfacesMap[msg.sender][rule].verified ||
+            ruleType % 2 != 0 && rule == "admin" && msg.sender == administration.owner());
     }
     
     function getInterfaces(address addr, bytes32 iHash) 
