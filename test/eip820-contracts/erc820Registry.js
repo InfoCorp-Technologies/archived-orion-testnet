@@ -79,17 +79,25 @@ contract('Registry user and attestator', async (accounts) => {
         await erc820Registry.setInterfaceImplementer(ADDRESS_1, ATTESTATOR, MULTICHAIN_ADR_12, { FROM: ADDRESS_1 }).should.be.rejectedWith(ERROR_MSG)
     })
 
-    it('Cannot set other role for attestator', async function () {
+    it('Cannot set user role for attestator', async function () {
         await erc820Registry.verifyInterfaceImplementer(ADDRESS_1, ATTESTATOR, { from: AUTHORITY }).should.be.fulfilled
-        await erc820Registry.setInterfaceImplementer(ADDRESS_1, CO, MULTICHAIN_ADR_11, { from: ADDRESS_1 }).should.be.rejectedWith(ERROR_MSG)
+        await erc820Registry.setInterfaceImplementer(ADDRESS_1, USER, MULTICHAIN_ADR_11, { from: ADDRESS_1 }).should.be.rejectedWith(ERROR_MSG)
     })
 
-    it('Cannot verify other role for attestator', async function () {
+    it('Cannot verify user role for attestator', async function () {
         await erc820Registry.setInterfaceImplementer(ADDRESS_1_2, ATTESTATOR, MULTICHAIN_ADR_11, { from: ADDRESS_1_2 }).should.be.fulfilled
         await erc820Registry.verifyInterfaceImplementer(ADDRESS_1_2, ATTESTATOR, { from: AUTHORITY }).should.be.fulfilled
-        await erc820Registry.setInterfaceImplementer(ADDRESS_1, CO, MULTICHAIN_ADR_12, { from: ADDRESS_1 }).should.be.fulfilled
+        await erc820Registry.setInterfaceImplementer(ADDRESS_1, USER, MULTICHAIN_ADR_12, { from: ADDRESS_1 }).should.be.fulfilled
         await erc820Registry.verifyInterfaceImplementer(ADDRESS_1, ATTESTATOR, { from: AUTHORITY }).should.be.fulfilled
-        await erc820Registry.verifyInterfaceImplementer(ADDRESS_1, CO, { from: ADDRESS_1_2 }).should.be.rejectedWith(ERROR_MSG)
+        await erc820Registry.verifyInterfaceImplementer(ADDRESS_1, USER, { from: ADDRESS_1_2 }).should.be.rejectedWith(ERROR_MSG)
+    })
+
+    it('Cannot verify attestator role for user', async function () {
+        await erc820Registry.setInterfaceImplementer(ADDRESS_1_2, ATTESTATOR, MULTICHAIN_ADR_11, { from: ADDRESS_1_2 }).should.be.fulfilled
+        await erc820Registry.verifyInterfaceImplementer(ADDRESS_1_2, ATTESTATOR, { from: AUTHORITY }).should.be.fulfilled
+        await erc820Registry.setInterfaceImplementer(ADDRESS_1, USER, MULTICHAIN_ADR_12, { from: ADDRESS_1 }).should.be.fulfilled
+        await erc820Registry.verifyInterfaceImplementer(ADDRESS_1, USER, { from: ADDRESS_1_2 }).should.be.fulfilled
+        await erc820Registry.verifyInterfaceImplementer(ADDRESS_1, ATTESTATOR, { from: AUTHORITY }).should.be.rejectedWith(ERROR_MSG)
     })
 
     it('Cannot set interface with already claimed Multichain address', async function () {
@@ -118,7 +126,6 @@ contract('Registry user and attestator', async (accounts) => {
     })
 })
 
-
 contract('Registry livestock and removal', async (accounts) => {
     AUTHORITY = accounts[0]
     ADDRESS_1 = accounts[1]
@@ -137,77 +144,76 @@ contract('Registry livestock and removal', async (accounts) => {
         await administration.addRule(USER, ATTESTATOR, 2)
         await administration.addRule(ATTESTATOR, USER, 2)
         await administration.addRule(ATTESTATOR, COW, 2)
+        await administration.addRule(ATTESTATOR, ADMIN, 5)
         await administration.addRule(USER, ATTESTATOR, 5)
         await administration.addRule(COW, ATTESTATOR, 5)
         await erc820Registry.setLivestock(livestock.address)
         await erc820Registry.setInterfaceImplementer(ADDRESS_1, ATTESTATOR, MULTICHAIN_ADR_0, { from: ADDRESS_1 })
         await erc820Registry.setInterfaceImplementer(ADDRESS_2, USER, MULTICHAIN_ADR_1, { from: ADDRESS_2 })
-        // await erc820Registry.verifyInterfaceImplementer(ADDRESS_1, ATTESTATOR, { from: AUTHORITY })
-        // await erc820Registry.verifyInterfaceImplementer(ADDRESS_2, USER, { from: ADDRESS_1 })
+        await erc820Registry.verifyInterfaceImplementer(ADDRESS_1, ATTESTATOR, { from: AUTHORITY })
+        await erc820Registry.verifyInterfaceImplementer(ADDRESS_2, USER, { from: ADDRESS_1 })
+        await whitelist.addWhitelist([ADDRESS_1, ADDRESS_2])
         CO_1 = await erc820Registry.interfaceHash(CO, 1)
         COW_1 = await erc820Registry.interfaceHash(COW, 1)
         COW_2 = await erc820Registry.interfaceHash(COW, 2)
     })
 
-    it('a', async function () {
-
+    it('Can only register valid livestock to user', async function () {
+        await erc820Registry.setInterfaceImplementer(ADDRESS_1_2, COW_1, MULTICHAIN_ADR_2, { from: ADDRESS_1_2 }).should.be.rejectedWith(ERROR_MSG)
+        await erc820Registry.setInterfaceImplementer(ADDRESS_2, CO_1, MULTICHAIN_ADR_2, { from: ADDRESS_2 }).should.be.rejectedWith(ERROR_MSG)
+        await erc820Registry.setInterfaceImplementer(ADDRESS_2, COW_1, MULTICHAIN_ADR_2, { from: ADDRESS_2 }).should.be.fulfilled
     })
-    // it('Can only register valid livestock to user', async function () {
-    //     await erc820Registry.setInterfaceImplementer(ADDRESS_1_2, COW_1, MULTICHAIN_ADR_2, { from: ADDRESS_1_2 }).should.be.rejectedWith(ERROR_MSG)
-    //     await erc820Registry.setInterfaceImplementer(ADDRESS_2, CO_1, MULTICHAIN_ADR_2, { from: ADDRESS_2 }).should.be.rejectedWith(ERROR_MSG)
-    //     await erc820Registry.setInterfaceImplementer(ADDRESS_2, COW_1, MULTICHAIN_ADR_2, { from: ADDRESS_2 }).should.be.fulfilled
-    // })
 
-    // it('Can only attestator verify livestock', async function () {
-    //     await erc820Registry.setInterfaceImplementer(ADDRESS_2, COW_1, MULTICHAIN_ADR_2, { from: ADDRESS_2 }).should.be.fulfilled
-    //     await erc820Registry.verifyInterfaceImplementer(ADDRESS_2, COW_1, { from: AUTHORITY }).should.be.rejectedWith(ERROR_MSG);
-    //     (await livestock.exists(1)).should.be.equal(false)
-    //     await erc820Registry.verifyInterfaceImplementer(ADDRESS_2, COW_1, { from: ADDRESS_1 }).should.be.fulfilled;
-    //     (await livestock.ownerOf(1)).should.be.equal(ADDRESS_2)
-    // })
+    it('Can only attestator verify livestock', async function () {
+        await erc820Registry.setInterfaceImplementer(ADDRESS_2, COW_1, MULTICHAIN_ADR_2, { from: ADDRESS_2 }).should.be.fulfilled
+        await erc820Registry.verifyInterfaceImplementer(ADDRESS_2, COW_1, { from: AUTHORITY }).should.be.rejectedWith(ERROR_MSG);
+        (await livestock.exists(1)).should.be.equal(false)
+        await erc820Registry.verifyInterfaceImplementer(ADDRESS_2, COW_1, { from: ADDRESS_1 }).should.be.fulfilled;
+        (await livestock.ownerOf(1)).should.be.equal(ADDRESS_2)
+    })
 
-    // it('Cannot set existed livestock to other user', async function () {
-    //     await setLivestock(ADDRESS_2, COW_1, MULTICHAIN_ADR_2)
-    //     await erc820Registry.setInterfaceImplementer(ADDRESS_1_2, COW_1, MULTICHAIN_ADR_11, { from: ADDRESS_1_2 }).should.be.rejectedWith(ERROR_MSG)
-    // })
+    it('Cannot set existed livestock to other user', async function () {
+        await setLivestock(ADDRESS_2, COW_1, MULTICHAIN_ADR_2)
+        await erc820Registry.setInterfaceImplementer(ADDRESS_1_2, COW_1, MULTICHAIN_ADR_11, { from: ADDRESS_1_2 }).should.be.rejectedWith(ERROR_MSG)
+    })
 
-    // it('Cannot set existing livestock to other user', async function () {
-    //     await setUser(ADDRESS_1_2)
-    //     await setLivestock(ADDRESS_2, COW_1, MULTICHAIN_ADR_2)
-    //     await erc820Registry.setInterfaceImplementer(ADDRESS_1_2, COW_1, MULTICHAIN_ADR_12, { from: ADDRESS_1_2 }).should.be.rejectedWith(ERROR_MSG)
-    //     await erc820Registry.setInterfaceImplementer(ADDRESS_1_2, COW_2, MULTICHAIN_ADR_12, { from: ADDRESS_1_2 }).should.be.fulfilled
-    // })
+    it('Cannot set existing livestock to other user', async function () {
+        await setUser(ADDRESS_1_2)
+        await setLivestock(ADDRESS_2, COW_1, MULTICHAIN_ADR_2)
+        await erc820Registry.setInterfaceImplementer(ADDRESS_1_2, COW_1, MULTICHAIN_ADR_12, { from: ADDRESS_1_2 }).should.be.rejectedWith(ERROR_MSG)
+        await erc820Registry.setInterfaceImplementer(ADDRESS_1_2, COW_2, MULTICHAIN_ADR_12, { from: ADDRESS_1_2 }).should.be.fulfilled
+    })
 
-    // it('Cannot verify existing livestock to other user', async function () {
-    //     await setUser(ADDRESS_1_2)
-    //     await erc820Registry.setInterfaceImplementer(ADDRESS_1_2, COW_1, MULTICHAIN_ADR_12, { from: ADDRESS_1_2 }).should.be.fulfilled
-    //     await setLivestock(ADDRESS_2, COW_1, MULTICHAIN_ADR_2)
-    //     await erc820Registry.verifyInterfaceImplementer(ADDRESS_1_2, COW_1, { from: ADDRESS_1 }).should.be.rejectedWith(ERROR_MSG)
-    // })
+    it('Cannot verify existing livestock to other user', async function () {
+        await setUser(ADDRESS_1_2)
+        await erc820Registry.setInterfaceImplementer(ADDRESS_1_2, COW_1, MULTICHAIN_ADR_12, { from: ADDRESS_1_2 }).should.be.fulfilled
+        await setLivestock(ADDRESS_2, COW_1, MULTICHAIN_ADR_2)
+        await erc820Registry.verifyInterfaceImplementer(ADDRESS_1_2, COW_1, { from: ADDRESS_1 }).should.be.rejectedWith(ERROR_MSG)
+    })
 
-    // it('Can only admin verifiy register removal for attestator)', async function () {
-    //     await erc820Registry.removeInterfaceImplementer(ADDRESS_1, ATTESTATOR, { from: ADDRESS_1 }).should.be.fulfilled
-    //     await erc820Registry.verifyInterfaceRemoval(ADDRESS_1, ATTESTATOR, { from: ADDRESS_1 }).should.be.rejectedWith(ERROR_MSG)
-    //     await erc820Registry.verifyInterfaceRemoval(ADDRESS_1, ATTESTATOR, { from: AUTHORITY }).should.be.fulfilled
-    // })
+    it('Can only admin verifiy register removal for attestator)', async function () {
+        await erc820Registry.removeInterfaceImplementer(ADDRESS_1, ATTESTATOR, { from: ADDRESS_1 }).should.be.fulfilled
+        await erc820Registry.verifyInterfaceRemoval(ADDRESS_1, ATTESTATOR, { from: ADDRESS_1 }).should.be.rejectedWith(ERROR_MSG)
+        await erc820Registry.verifyInterfaceRemoval(ADDRESS_1, ATTESTATOR, { from: AUTHORITY }).should.be.fulfilled
+    })
 
-    // it('Can only attestor verifiy register removal for user or livestock', async function () {
-    //     await setLivestock(ADDRESS_2, COW_1, MULTICHAIN_ADR_2);
-    //     (await livestock.ownerOf(1)).should.be.equal(ADDRESS_2)
-    //     await erc820Registry.removeInterfaceImplementer(ADDRESS_2, COW_1, { from: ADDRESS_2 }).should.be.fulfilled
-    //     await erc820Registry.verifyInterfaceRemoval(ADDRESS_2, COW_1, { from: AUTHORITY }).should.be.rejectedWith(ERROR_MSG)
-    //     await erc820Registry.verifyInterfaceRemoval(ADDRESS_2, COW_1, { from: ADDRESS_1 }).should.be.fulfilled;
-    //     (await livestock.exists(1)).should.be.equal(false)
-    // })
+    it('Can only attestor verifiy register removal for user or livestock', async function () {
+        await setLivestock(ADDRESS_2, COW_1, MULTICHAIN_ADR_2);
+        (await livestock.ownerOf(1)).should.be.equal(ADDRESS_2)
+        await erc820Registry.removeInterfaceImplementer(ADDRESS_2, COW_1, { from: ADDRESS_2 }).should.be.fulfilled
+        await erc820Registry.verifyInterfaceRemoval(ADDRESS_2, COW_1, { from: AUTHORITY }).should.be.rejectedWith(ERROR_MSG)
+        await erc820Registry.verifyInterfaceRemoval(ADDRESS_2, COW_1, { from: ADDRESS_1 }).should.be.fulfilled;
+        (await livestock.exists(1)).should.be.equal(false)
+    })
 
-    // it('Transfer livestock to other user will transfer register to that user', async function () {
-    //     await setLivestock(ADDRESS_2, COW_1, MULTICHAIN_ADR_2).should.be.fulfilled
-    //     var interfaces = await erc820Registry.getInterfaceImplementer(ADDRESS_2, COW_1)
-    //     isSet(interfaces).should.be.equal(true)
-    //     livestock.transfer(ADDRESS_1, 1, { from: ADDRESS_2 }).should.be.fulfilled
-    //     isSet(await erc820Registry.getInterfaceImplementer(ADDRESS_2, COW_1))
-    //     isEqual(await erc820Registry.getInterfaceImplementer(ADDRESS_1, COW_1), interfaces)
-    // })
+    it('Transfer livestock to other user will transfer register to that user', async function () {
+        await setLivestock(ADDRESS_2, COW_1, MULTICHAIN_ADR_2)
+        var interfaces = await erc820Registry.getInterfaceImplementer(ADDRESS_2, COW_1)
+        isSet(interfaces).should.be.equal(true)
+        livestock.transfer(ADDRESS_1, 1, { from: ADDRESS_2 }).should.be.fulfilled
+        isSet(await erc820Registry.getInterfaceImplementer(ADDRESS_2, COW_1))
+        isEqual(await erc820Registry.getInterfaceImplementer(ADDRESS_1, COW_1), interfaces)
+    })
 
     async function setLivestock(addr, livestock, multichain) {
         await erc820Registry.setInterfaceImplementer(addr, livestock, multichain, { from: addr }).should.be.fulfilled

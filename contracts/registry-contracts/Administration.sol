@@ -66,7 +66,7 @@ contract Administration is Ownable {
         }
         if (ruleType == ADD_REGISTER_REQUIRED_IMPLEMENTER_TYPE)
             addRegisterRule[implementer].requiredImplementer.push(rule);
-        if (ruleType == ADD_REGISTER_FORBIDDEN_VERIFIER_TYPE)
+        if (ruleType == ADD_REGISTER_REQUIRED_VERIFIER_TYPE)
             addRegisterRule[implementer].requiredVerifier.push(rule);
         if (ruleType == ADD_REGISTER_FORBIDDEN_IMPLEMENTER_TYPE)
             addRegisterRule[implementer].forbiddenImplementer.push(rule);
