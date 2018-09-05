@@ -133,8 +133,8 @@ contract ERC820Registry is Ownable {
         require(multichainBytes.length == 38, "The Multichain address string length must longer than 38");
         require(!registeredMultichain[multichainBytes], "The Multichain address has been claimed");
         require(!interfaces.verified, "The registered information must not be registered and verified before");
-        requiredRule(addr, name, administration.ADD_REGISTER_REQUIRED_IMPLEMENTER_TYPE());
-        forbiddenRule(addr, name, administration.ADD_REGISTER_FORBIDDEN_IMPLEMENTER_TYPE());
+        requiredRule(addr, name, administration.set_interface_required());
+        forbiddenRule(addr, name, administration.set_interface_forbidden());
         if (id > 0) {
             require(livestockMap[name] != address(0), "This livestock contract is not set");
             require(!livestockMap[name].exists(id), "The token has already been minted");
@@ -157,10 +157,10 @@ contract ERC820Registry is Ownable {
         require(interfaces.implementer != 0, "This registered information hasn't existed");
         require(!interfaces.verified, "This registered information has already been verified");
         require(!registeredMultichain[interfaces.multichain], "The Multichain address has been claimed");
-        requiredRule(addr, name, administration.ADD_REGISTER_REQUIRED_IMPLEMENTER_TYPE());
-        requiredRule(addr, name, administration.ADD_REGISTER_REQUIRED_VERIFIER_TYPE());
-        forbiddenRule(addr, name, administration.ADD_REGISTER_FORBIDDEN_IMPLEMENTER_TYPE());
-        forbiddenRule(addr, name, administration.ADD_REGISTER_FORBIDDEN_VERIFIER_TYPE());
+        requiredRule(addr, name, administration.set_interface_required());
+        requiredRule(addr, name, administration.verify_interface_required());
+        forbiddenRule(addr, name, administration.set_interface_forbidden());
+        forbiddenRule(addr, name, administration.verify_interface_forbidden());
         if (id > 0) {
             livestockMap[name].mint(addr, id);
             registeredLivestock[iHash] = addr;
@@ -181,8 +181,8 @@ contract ERC820Registry is Ownable {
         Implementer memory interfaces = getInterfaces(addr, iHash);
         bytes28 name = bytes28(iHash);
         require(interfaces.verified, "This registered information is not verified");
-        requiredRule(addr, name, administration.REMOVE_REGISTER_REQUIRED_IMPLEMENTER_TYPE());
-        forbiddenRule(addr, name, administration.REMOVE_REGISTER_FORBIDDEN_IMPLEMENTER_TYPE());
+        requiredRule(addr, name, administration.remove_interface_required());
+        forbiddenRule(addr, name, administration.remove_interface_forbidden());
         interfacesMap[addr][iHash].removing = true;
         emit InterfaceImplementerRemoving(addr, iHash);
     }
@@ -199,10 +199,10 @@ contract ERC820Registry is Ownable {
         bytes28 name = bytes28(iHash);
         require(interfacesMap[addr][iHash].removing, "This registered information is not marked as removing");
         // require the interface register to satisfy the rules set in Adminisstration
-        requiredRule(addr, name, administration.REMOVE_REGISTER_REQUIRED_IMPLEMENTER_TYPE());
-        requiredRule(addr, name, administration.REMOVE_REGISTER_REQUIRED_VERIFIER_TYPE());
-        forbiddenRule(addr, name, administration.REMOVE_REGISTER_FORBIDDEN_IMPLEMENTER_TYPE());
-        forbiddenRule(addr, name, administration.REMOVE_REGISTER_FORBIDDEN_VERIFIER_TYPE()s);
+        requiredRule(addr, name, administration.remove_interface_required());
+        requiredRule(addr, name, administration.verify_remove_interface_required());
+        forbiddenRule(addr, name, administration.remove_interface_forbidden());
+        forbiddenRule(addr, name, administration.verify_remove_interface_forbidden());
         if (id > 0) {
             address registered = registeredLivestock[iHash];
             interfaces = interfacesMap[registered][iHash];
@@ -227,8 +227,7 @@ contract ERC820Registry is Ownable {
     function requiredRule(address addr, bytes28 interfaceName,  uint ruleType) 
         internal view 
     {
-        string memory name = string(abi.encodePacked(interfaceName));
-        bytes28[] memory rules = administration.getRules(name, ruleType);
+        bytes28[] memory rules = administration.getRules(interfaceName, ruleType);
         bool result;
         if (rules.length < 1 && (ruleType == 0 || ruleType == 4)) {
             result = true;
@@ -252,8 +251,7 @@ contract ERC820Registry is Ownable {
     function forbiddenRule(address addr, bytes28 interfaceName,  uint ruleType) 
         internal view 
     {
-        string memory name = string(abi.encodePacked(interfaceName));
-        bytes28[] memory rules = administration.getRules(name, ruleType);
+        bytes28[] memory rules = administration.getRules(interfaceName, ruleType);
         bool result = true;
         for (uint i = 0; i < rules.length; i++) {
             bytes28 rule = rules[i];
