@@ -22,15 +22,13 @@ contract Administration is Ownable {
         owner = admin;
     }
 
-    function strToBytes28(string name) public pure returns(bytes28) {
-        bytes28 result;
+    function strToBytes28(string name) public pure returns(bytes28 result) {
         assembly {
             result := mload(add(name, 32))
         }
-        return result;
     } 
     
-    function getRules(bytes28 _role, uint _rule) public returns(bytes28[]) {
+    function getRules(bytes28 _role, uint _rule) public view returns(bytes28[]) {
         require(_rule < 8);
         return rules[_role][_rule];
     }

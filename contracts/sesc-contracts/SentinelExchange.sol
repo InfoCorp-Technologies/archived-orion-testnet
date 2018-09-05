@@ -75,7 +75,7 @@ contract SentinelExchange is Ownable {
      * @param _currency Specify the symbol of the LCToken to be exchanged
      */
     function exchangeLct(address _sender, uint _value, string _currency)
-      external isCurrency(_currency)
+        external isCurrency(_currency)
     {
         address currency = currencyMap[bytes(_currency)];
         require(msg.sender == currency, "Sender mus be the currency address");
@@ -168,6 +168,10 @@ contract SentinelExchange is Ownable {
         oracle = _oracle;
     }
     
+    /**
+     * @dev The whitelist variable setter
+     * @param _whitelist The address of the whitelist
+     */
     function setWhitelist(Whitelist _whitelist) external onlyOwner {
         whitelist = _whitelist;
     }
