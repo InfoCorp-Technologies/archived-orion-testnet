@@ -10,6 +10,10 @@ contract Whitelist is Ownable {
     event Whitelisted (address indexed addr);
     event Removed(address indexed addr);
 
+    constructor(address _owner) public {
+        owner = _owner;
+    }
+
     function addWhitelist(address[] _addresses) external onlyOwner {
         for (uint i = i; i < _addresses.length; i++) {
             if (!isWhitelist[_addresses[i]]) {

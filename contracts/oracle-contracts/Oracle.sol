@@ -10,7 +10,7 @@ contract Oracle is Ownable {
     }
     
     uint currentId;
-    address public oracle = 0x00DC7B3229F23C975E0510FDb9cBcC4e695729Fd;
+    address public oracle;
     
     mapping(string => string) apiMap;
     mapping(bytes32 => QueryInfo) queryMap;
@@ -19,10 +19,12 @@ contract Oracle is Ownable {
     event Query(bytes32 queryid, string url, string pubkey);
     event Result(bytes32 queryid, string result);
 
-    constructor() public {
-        setAPI("user", "http://104.211.59.231/user/");
-        setAPI("attestator", "http://104.211.59.231/attestator/");
-        setAPI("livestock", "http://104.211.59.231/livestock/");
+    constructor(address _owner, address _oracle) public {
+        owner = _owner;
+        oracle = _oracle;
+        // setAPI("user", "http://104.211.59.231/user/");
+        // setAPI("attestator", "http://104.211.59.231/attestator/");
+        // setAPI("livestock", "http://104.211.59.231/livestock/");
     }
     
     function api(string name) view external returns(string) {

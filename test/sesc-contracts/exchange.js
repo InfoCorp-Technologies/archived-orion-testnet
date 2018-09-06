@@ -6,40 +6,27 @@ const SentinelExchange = artifacts.require("SentinelExchange.sol");
 contract('SentinelExchange', async (accounts) => {
     let owner = accounts[0];
     let whiteUser = accounts[1];
-    let blackUser = accounts[3];
-    let oracle = accounts[4];
+    let blackUser = accounts[2];
+    let oracle = accounts[3];
 
     beforeEach(async () => {
-        whitelist = await Whitelist.new({ from: owner });
+        whitelist = await Whitelist.new(owner);
         await whitelist.addWhitelist([whiteUser], { from: owner });
-        exchange = await SentinelExchange.new(whitelist.address, oracle, { from: owner });
-        token = await LCToken.new(
-            "Local Currency Token Myanmar",
-            "LCT.MMK",
-            18,
-            whitelist.address,
-            exchange.address,
-            { from: owner });
+        exchange = await SentinelExchange.new(owner, oracle, whitelist.address);
+        token = await LCToken.new("Local Currency Token Myanmar", "LCT.MMK", 18, whitelist.address, exchange.address, { from: owner });
         await exchange.setCurrency(token.address);
     })
 
     // Sentinel Exchange contract receive _value SENI to mint _value LCT.MMK  to _user
     async function mintLCT(_user, _value) {
-        let exchangeTx = await exchange.exchangeSeni(
-            "LCT.MMK", { from: _user, value: _value });
+        let exchangeTx = await exchange.exchangeSeni("LCT.MMK", { from: _user, value: _value });
         let exchangeId = exchangeTx['logs'][0].args.exchangeId;
         await exchange.callback(exchangeId, _value, { from: oracle });
     }
 
     it('Add/Remove currecy', async () => {
-        let otherToken = await LCToken.new(
-            "Local Currency Token ASD",
-            "LCT.ASD",
-            18,
-            whitelist.address,
-            exchange.address,
-            { from: owner });
-        const addTx =await exchange.setCurrency(otherToken.address, { from: owner }).should.be.fulfilled;
+        let otherToken = await LCToken.new("Local Currency Token ASD", "LCT.ASD", 18, whitelist.address, exchange.address, { from: owner });
+        const addTx = await exchange.setCurrency(otherToken.address, { from: owner }).should.be.fulfilled;
         addTx['logs'][0].event.should.be.equal("CurrencyAdded");
         (otherToken.address).should.be.equal(await exchange.currency("LCT.ASD"));
         (exchange.address).should.be.equal(await otherToken.owner());
@@ -67,10 +54,9 @@ contract('SentinelExchange', async (accounts) => {
     it('Whitelisted user exchange 1 SENI with SENI-LCT.MMK rate 2:1', async () => {
         (await token.balanceOf(whiteUser)).toNumber().should.be.equal(0);
         let value = 1000000000000000000;
-        let exchangeTx = await exchange.exchangeSeni(
-            "LCT.MMK", { from: whiteUser, value: value }).should.be.fulfilled;
-        let exchangeId = exchangeTx['logs'][0].args.exchangeId;
-        let resultTx = await exchange.callback(exchangeId, value / 2, { from: oracle }).should.be.fulfilled;
+        let exchangeTx = await exchange.exchangeSeni("LCT.MMK", { from: whiteUser, value: value }).should.be.fulfilled;
+        let exchangeId = exchangeTx['logs'][0].args.exchangeId.toNumber();
+        let resultTx = await exchange.callback(exchangeId, value / 2, { from: oracle }).should.be.fulfilled
         resultTx['logs'][0].event.should.be.equal("Success");
         (await token.balanceOf(whiteUser)).toNumber().should.be.equal(value / 2);
         let exchangeInfo = await exchange.exchangeMap(exchangeId);

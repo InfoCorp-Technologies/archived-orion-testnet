@@ -13,48 +13,49 @@ contract SentinelExchange is Ownable {
     struct ExchangeInfo {
         bool isWaiting;
         address sender;
-        uint256 value;
+        uint value;
         string sellCurrency;
         string getCurrency;
     }
 
-    uint256 public currentId;
+    uint public currentId;
     address public oracle;
     Whitelist public whitelist;
 
-    mapping(string => address) currencyMap;
+    mapping(bytes => LCToken) currencyMap;
     mapping(uint => ExchangeInfo) public exchangeMap;
 
     event CurrencyAdded(string name, address indexed addr);
     event CurrencyRemoved(string name, address indexed addr);
-    event Exchange(uint exchangeId, uint256 value, string sellCurrency, string getCurrency);
-    event Success(uint indexed exchangeId, uint256 indexed value);
-    event Fail(uint indexed exchangeId, uint256 indexed value);
+    event Exchange(uint exchangeId, uint value, string sellCurrency, string getCurrency);
+    event Success(uint indexed exchangeId, uint indexed value);
+    event Fail(uint indexed exchangeId, uint indexed value);
 
     modifier isCurrency(string _currency) {
-        require(currencyMap[_currency] != address(0), "Currency address must be different from 0x0");
+        require(currencyMap[bytes(_currency)] != address(0), "Currency address must be different from 0x0");
         _;
     }
 
-    constructor(Whitelist _whitelist, address _oracle) public {
+    constructor(address _owner, address _oracle, Whitelist _whitelist) public {
         require(_oracle != address(0), "Oracle address must be different from 0x0");
-        whitelist = _whitelist;
+        owner = _owner;
         oracle = _oracle;
+        whitelist = _whitelist;
     }
 
     function startExchange(
         address sender,
-        uint256 value,
+        uint value,
         string sellCurrency,
         string getCurrency
     ) internal {
         require(value > 0, "Value not be zero");
+        currentId++;
         exchangeMap[currentId].isWaiting = true;
         exchangeMap[currentId].sender = sender;
         exchangeMap[currentId].value = value;
         exchangeMap[currentId].sellCurrency = sellCurrency;
         exchangeMap[currentId].getCurrency = getCurrency;
-        currentId++;
         emit Exchange(currentId, value, sellCurrency, getCurrency);
     }
 
@@ -73,10 +74,11 @@ contract SentinelExchange is Ownable {
      * @param _value The amount that will be exchanged
      * @param _currency Specify the symbol of the LCToken to be exchanged
      */
-    function exchangeLct(address _sender, uint256 _value, string _currency)
-      external isCurrency(_currency)
+    function exchangeLct(address _sender, uint _value, string _currency)
+        external isCurrency(_currency)
     {
-        require(msg.sender == currencyMap[_currency], "Sender mus be the currency address");
+        address currency = currencyMap[bytes(_currency)];
+        require(msg.sender == currency, "Sender mus be the currency address");
         startExchange(_sender, _value, _currency, "SENI");
     }
 
@@ -85,22 +87,25 @@ contract SentinelExchange is Ownable {
      * @param _exchangeId The id of the exchange to be finalized
      * @param _value The amount that will be transferred
      */
-    function callback(uint _exchangeId, uint256 _value) external {
+    function callback(uint _exchangeId, uint _value) external {
         ExchangeInfo memory info = exchangeMap[_exchangeId];
         require(info.isWaiting, "Exchange must be waiting");
         require(msg.sender == oracle, "Sender must be the oracle address");
         exchangeMap[_exchangeId].isWaiting = false;
+        LCToken token;
         if (keccak256(info.getCurrency) == keccak256("SENI")) {
+            token = currencyMap[bytes(info.sellCurrency)];
             if (address(this).balance >= _value) {
                 info.sender.transfer(_value);
-                LCToken(currencyMap[info.sellCurrency]).burn(info.value);
+                token.burn(info.value);
                 emit Success(_exchangeId, _value);
             } else {
-                LCToken(currencyMap[info.sellCurrency]).transferFromOwner(info.sender, info.value);
+                token.transferFromOwner(info.sender, info.value);
                 emit Fail(_exchangeId, _value);
             }
         } else {
-            LCToken(currencyMap[info.getCurrency]).mint(info.sender, _value);
+            token = currencyMap[bytes(info.getCurrency)];
+            token.mint(info.sender, _value);
             emit Success(_exchangeId, _value);
         }
     }
@@ -116,9 +121,8 @@ contract SentinelExchange is Ownable {
             _to.transfer(address(this).balance);
             return;
         }
-
         ERC20Basic token = ERC20Basic(_token);
-        uint256 balance = token.balanceOf(this);
+        uint balance = token.balanceOf(this);
         require(token.transfer(_to, balance), "Transfer should be successfully");
     }
 
@@ -128,7 +132,7 @@ contract SentinelExchange is Ownable {
      * @return The address of the currency
      */
     function currency(string _name) external view returns(address) {
-        return currencyMap[_name];
+        return currencyMap[bytes(_name)];
     }
 
     /**
@@ -136,7 +140,10 @@ contract SentinelExchange is Ownable {
      * @param _currency The address of the LCToken currency
      */
     function setCurrency(LCToken _currency) external onlyOwner {
-        currencyMap[_currency.symbol()] = _currency;
+        bytes memory name = bytes(_currency.symbol());
+        require(_currency.owner() == address(this), "The currency must have this Sentinel Exchange contract as owner");
+        require(currencyMap[name] == address(0), "This currency is already set");
+        currencyMap[name] = _currency;
         emit CurrencyAdded(_currency.symbol(), _currency);
     }
 
@@ -145,9 +152,12 @@ contract SentinelExchange is Ownable {
      * @param _name The simbol name of the LCToken currency
      */
     function removeCurrency(string _name) external onlyOwner {
-        LCToken(currencyMap[_name]).transferOwnership(msg.sender);
-        currencyMap[_name] = address(0);
-        emit CurrencyRemoved(_name, currencyMap[_name]);
+        bytes memory name = bytes(_name);
+        LCToken token = currencyMap[name];
+        require(token != address(0), "This currency hasn't been set");
+        token.transferOwnership(msg.sender);
+        currencyMap[name] = LCToken(0);
+        emit CurrencyRemoved(_name, token);
     }
 
     /**
@@ -156,5 +166,13 @@ contract SentinelExchange is Ownable {
      */
     function setOracle(address _oracle) external onlyOwner {
         oracle = _oracle;
+    }
+    
+    /**
+     * @dev The whitelist variable setter
+     * @param _whitelist The address of the whitelist
+     */
+    function setWhitelist(Whitelist _whitelist) external onlyOwner {
+        whitelist = _whitelist;
     }
 }

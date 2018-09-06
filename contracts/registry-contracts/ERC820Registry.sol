@@ -1,0 +1,293 @@
+pragma solidity ^0.4.23;
+
+import "zeppelin-solidity/contracts/ownership/Ownable.sol";
+import "./Administration.sol";
+import "./Livestock.sol";
+import '../sesc-contracts/Whitelist.sol';
+
+contract ERC820Registry is Ownable {
+
+    struct Implementer {
+        address implementer;
+        bytes multichain;
+        bool verified;
+        bool removing;
+    }
+
+    Administration public administration;
+
+    mapping (address => address) managers;
+    mapping (bytes28 => Livestock) livestockMap;
+    mapping (bytes32 => address) registeredLivestock;
+    mapping (bytes => bool) registeredMultichain;
+    mapping (address => mapping(bytes32 => Implementer)) interfacesMap;
+
+    event LivestockAdded(string name, address indexed addr);
+    event LivestockRemoved(string name, address indexed addr);
+    event InterfaceImplementerSet(address indexed addr, bytes32 indexed interfaceHash, string multichain);
+    event InterfaceImplementerRemoving(address indexed addr, bytes32 indexed interfaceHash);
+    event InterfaceImplementerVerified(address indexed addr, bytes32 indexed interfaceHash, string action);
+    event ManagerChanged(address indexed addr, address indexed newManager);
+
+    modifier canManage(address addr) {
+        require(getManager(addr) == msg.sender);
+        _;
+    }
+
+    constructor(address _owner, Administration _administration) public {
+        require(_owner != address(0), "Owner address is required");
+        require(_administration != address(0), "Administrator address is required");
+        owner = _owner;
+        administration = _administration;
+    }
+
+    /// @notice GetManager
+    function getManager(address _addr) public view returns(address) {
+        // By default the manager of an address is the same address
+        return managers[_addr] == address(0) ? _addr : managers[_addr];
+    }
+
+    function setManager(address _addr, address _newManager)
+        external canManage(_addr)
+    {
+        managers[_addr] = _newManager == _addr ? address(0) : _newManager;
+        emit ManagerChanged(_addr, _newManager);
+    }
+
+    function getLivestock(string _name) external view returns(address) {
+        return livestockMap[strToBytes28(_name)];
+    }
+
+    function setLivestock(Livestock _livestock) external onlyOwner {
+        bytes28 name = strToBytes28(_livestock.symbol());
+        require(livestockMap[name] == address(0), "This livestock is already set");
+        require(_livestock.owner() == address(this), "The livestock contract must have this Registry contract as owner");
+        livestockMap[name] = _livestock;
+        emit LivestockAdded(_livestock.symbol(), _livestock);
+    }
+
+    function removeLivestock(string _name) external onlyOwner {
+        bytes28 name = strToBytes28(_name);
+        Livestock livestock = livestockMap[name];
+        require(livestock != address(0), "This livestock hasn't been set");
+        livestock.transferOwnership(msg.sender);
+        livestockMap[name] = Livestock(0);
+        emit LivestockRemoved(_name, livestock);
+    }
+
+    /**
+     * @dev The administration variables setter
+     * @param _administration The administration address
+     */
+    function setAdministration(Administration _administration) external onlyOwner {
+        require(_administration != address(0), "Administrator address is required");
+        administration = _administration;
+    }
+
+    /**
+     * @dev Query the combined interface given a name and id
+     * @param _interfaceName Name of the interface
+     * @param _id Id of the livestock, left empty (id = 0) if not livestock
+     */
+    function interfaceHash(string _interfaceName, uint _id)
+        public pure returns(bytes32)
+    {
+        bytes32 interfaceBytes = bytes32(strToBytes28(_interfaceName));
+        bytes32 idBytes = bytes32(_id);
+        if (bytes(_interfaceName).length > 28 || idBytes > 0xffffffff) {
+            return 0;
+        }
+        return interfaceBytes | idBytes;
+    }
+
+    /**
+     * @dev Query the registered information of an address by the interface
+     * @param _addr The address used to query
+     * @param _iHash The interface used to query
+     */
+    function getInterfaceImplementer(address _addr, bytes32 _iHash) public
+        view returns (address implementer, string multichain, bool verified)
+    {
+        Implementer memory interfaces = getInterfaces(_addr, _iHash);
+        implementer = interfaces.implementer;
+        multichain = string(interfaces.multichain);
+        verified = interfaces.verified;
+    }
+
+    /**
+     * @dev Register interface to an address with the Multichain address.
+     * @param _addr The address that is registered
+     * @param _iHash The combined interface registered to the address.
+     * @param _multichain The Multichain address that is registered to the address
+     */
+    function setInterfaceImplementer(address _addr, bytes32 _iHash, string _multichain)
+        external canManage(_addr)
+    {
+        Implementer memory interfaces = interfacesMap[_addr][_iHash];
+        bytes memory multichainBytes = bytes(_multichain);
+        require(multichainBytes.length == 38, "The Multichain address string length must longer than 38");
+        require(!interfaces.verified, "The registered information must not be registered and verified before");
+        require(!registeredMultichain[multichainBytes], "The Multichain address has been claimed");
+        (uint id, bytes28 name) = decodeHash(_iHash);        
+        requiredRule(_addr, name, administration.set_interface_required());
+        forbiddenRule(_addr, name, administration.set_interface_forbidden());
+        if (id > 0) {
+            require(livestockMap[name] != address(0), "This livestock contract is not set");
+            require(!livestockMap[name].exists(id), "The token has already been minted");
+        }
+        registeredMultichain[interfaces.multichain] = false;
+        interfacesMap[_addr][_iHash].implementer = msg.sender;
+        interfacesMap[_addr][_iHash].multichain = multichainBytes;
+        emit InterfaceImplementerSet(_addr, _iHash, _multichain);
+    }
+
+    /**
+     * @dev Verify the register of an address through an interface.
+     * @param _addr The address that is registered
+     * @param _iHash The combined interface registered to the address.
+     */
+    function verifyInterfaceImplementer(address _addr, bytes32 _iHash) external {
+        Implementer memory interfaces = interfacesMap[_addr][_iHash];
+        require(interfaces.implementer != address(0), "This registered information hasn't existed");
+        require(!interfaces.verified, "This registered information has already been verified");
+        require(!registeredMultichain[interfaces.multichain], "The Multichain address has been claimed");
+        (uint id, bytes28 name) = decodeHash(_iHash);
+        requiredRule(_addr, name, administration.set_interface_required());
+        requiredRule(_addr, name, administration.verify_interface_required());
+        forbiddenRule(_addr, name, administration.set_interface_forbidden());
+        forbiddenRule(_addr, name, administration.verify_interface_forbidden());
+        if (id > 0) {
+            require(registeredLivestock[_iHash] == address(0), "The TokenId is allready registered");
+            registeredLivestock[_iHash] = _addr;
+            livestockMap[name].mint(_addr, id);
+        }
+        registeredMultichain[interfaces.multichain] = true;
+        interfacesMap[_addr][_iHash].verified = true;
+        emit InterfaceImplementerVerified(_addr, _iHash, "Added");
+    }
+
+    /**
+     * @dev Remove the register of an address through an interface.
+     * @param _addr The address that is registered
+     * @param _iHash The combined interface registered to the address.
+     */
+    function removeInterfaceImplementer(address _addr, bytes32 _iHash)
+        external canManage(_addr)
+    {
+        Implementer memory interfaces = getInterfaces(_addr, _iHash);
+        require(interfaces.verified, "This registered information is not verified");
+        require(!interfaces.removing, "This registered information is allready marked as removing");
+        bytes28 name = bytes28(_iHash);
+        requiredRule(_addr, name, administration.remove_interface_required());
+        forbiddenRule(_addr, name, administration.remove_interface_forbidden());
+        interfacesMap[_addr][_iHash].removing = true;
+        emit InterfaceImplementerRemoving(_addr, _iHash);
+    }
+
+
+    /**
+     * @dev Verify the register removal of an address through an interface.
+     * @param _addr The address that is registered
+     * @param _iHash The combined interface registered to the address.
+     */
+    function verifyInterfaceRemoval(address _addr, bytes32 _iHash) external {
+        require(interfacesMap[_addr][_iHash].removing, "This registered information is not marked as removing");
+        Implementer memory empty = Implementer(0x0, "", false, false);
+        (uint id, bytes28 name) = decodeHash(_iHash);
+        requiredRule(_addr, name, administration.remove_interface_required());
+        requiredRule(_addr, name, administration.verify_remove_interface_required());
+        forbiddenRule(_addr, name, administration.remove_interface_forbidden());
+        forbiddenRule(_addr, name, administration.verify_remove_interface_forbidden());
+        if (id > 0) {
+            registeredLivestock[_iHash] = address(0);
+            livestockMap[name].burn(_addr, id);
+        }
+        registeredMultichain[interfacesMap[_addr][_iHash].multichain] = false;
+        interfacesMap[_addr][_iHash] = empty;
+        emit InterfaceImplementerVerified(_addr, _iHash, "Removed");
+    }
+
+    /**
+     * @dev Check if the interface of an address fit with the rule's required interfaces
+     * @param _addr The address that the interface is registered to
+     * @param _interfaceName The address's implementer or verifier interface name
+     * @param _ruleType The rule type (must be Required type)
+     */
+    function requiredRule(address _addr, bytes28 _interfaceName, uint _ruleType)
+        internal view
+    {
+        bytes28[] memory rules = administration.getRules(_interfaceName, _ruleType);
+        bool result;
+        if (rules.length < 1 && (_ruleType == 0 || _ruleType == 4)) {
+            result = true;
+        }
+        for (uint i = 0; i < rules.length; i++) {
+            bytes28 rule = rules[i];
+            if (isFitWithRule(_addr, rule, _ruleType)) {
+                result = true;
+                break;
+            }
+        }
+        require(result);
+    }
+
+    /**
+     * @dev Check if the interface of an address fit with the rule's forbidden interfaces
+     * @param _addr The address that the interface is registered to
+     * @param _interfaceName The address's implementer or verifier interface name
+     * @param _ruleType The rule type (must be Forbidden type)
+     */
+    function forbiddenRule(address _addr, bytes28 _interfaceName, uint _ruleType)
+        internal view
+    {
+        bytes28[] memory rules = administration.getRules(_interfaceName, _ruleType);
+        bool result = true;
+        for (uint i = 0; i < rules.length; i++) {
+            bytes28 rule = rules[i];
+            if (isFitWithRule(_addr, rule, _ruleType)) {
+                result = false;
+                break;
+            }
+        }
+        require(result);
+    }
+
+    function isFitWithRule(address _addr, bytes28 _rule, uint _ruleType)
+        internal view returns(bool)
+    {
+        return (_ruleType % 2 == 0 && interfacesMap[_addr][_rule].verified ||
+        _ruleType % 2 == 0 && _rule == "admin" && _addr == administration.owner() ||
+        _ruleType % 2 != 0 && interfacesMap[msg.sender][_rule].verified ||
+        _ruleType % 2 != 0 && _rule == "admin" && msg.sender == administration.owner());
+    }
+
+    function getInterfaces(address _addr, bytes32 _iHash) internal view
+        returns(Implementer interfaces)
+    {
+        uint id = uint(bytes4(_iHash << (8 * 28)));
+        bytes28 name = bytes28(_iHash);
+        address registered = registeredLivestock[_iHash];
+        if (address(livestockMap[name]) != address(0) &&
+            livestockMap[name].exists(id))
+        {
+            if (livestockMap[name].ownerOf(id) == _addr) {
+                interfaces = interfacesMap[registered][_iHash];
+            } else {
+                interfaces = interfacesMap[_addr][0x0];
+            }
+        } else {
+            interfaces = interfacesMap[_addr][_iHash];
+        }
+    }
+
+    function strToBytes28(string _name) internal pure returns(bytes28 result) {
+        assembly {
+            result := mload(add(_name, 32))
+        }
+    }
+
+    function decodeHash(bytes32 _iHash) public pure returns(uint id, bytes28 name) {
+        id = uint(bytes4(_iHash << (8 * 28)));
+        name = bytes28(_iHash);
+    }
+}

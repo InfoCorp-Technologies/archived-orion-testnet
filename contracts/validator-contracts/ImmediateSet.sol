@@ -1,32 +1,20 @@
 pragma solidity ^0.4.23;
 
-import '../operation-contracts/Operations.sol';
-
 contract Validator {
-
-    Operations public operation;
+    
     address[] private validatorArr;
-    address[] private pendingArr = [
-        0x574366e84f74f2e913aD9A6782CE6Ac8022e16EB
-    ];
+    address[] private pendingArr;
     bool private operation_set = false;
     bool public finalized = true;
+    uint public requiredSignatures;
     mapping (address => uint) validatorMap;
 
     event InitiateChange(bytes32 indexed parent_hash, address[] new_set);
     event ChangeFinalized(address[] current_set);
+    event RequiredSignaturesChanged(uint indexed requiredSignatures);
 
     modifier is_finalized {
         require(finalized);
-        _;
-    }
-    
-    // Function modifier that let's add or remove validar based on current msg.sender status
-    modifier is_sender_validator (address sender) {
-        if (operation_set) {
-            require(msg.sender == address(operation));
-        }
-        require(validatorMap[sender] > 0);
         _;
     }
     
@@ -35,19 +23,25 @@ contract Validator {
         _;
     }
 
-    constructor() public {
-        validatorArr = pendingArr;
+    constructor(address[] init) public {
+        require(init.length > 0);
+        validatorArr = pendingArr = init;
+        requiredSignatures = 1;
         for (uint i = 0; i < validatorArr.length; i++) {
             validatorMap[validatorArr[i]] = i+1;
         }
     }
 
     // Called on every block to update node validator list.
-    function getValidators() public constant returns (address[]) {
+    function isValidator(address addr) external view returns(bool) {
+        return validatorMap[addr] > 0;
+    }
+    
+    function getValidators() public view returns (address[]) {
         return validatorArr;
     }
     
-    function getPendings() public constant returns (address[]) {
+    function getPendings() public view returns (address[]) {
         return pendingArr;
     }
     
@@ -55,26 +49,18 @@ contract Validator {
     function addValidator(address _newValidator) public is_finalized is_validator {
         validatorMap[_newValidator] = pendingArr.length;
         pendingArr.push(_newValidator);
-        operation.addClient(_newValidator, msg.sender);
         initiateChange();
     }
 
     // Remove a validator from the list.
     function removeValidator(address _oldValidator) public is_finalized is_validator {
-        uint index = validatorMap[_oldValidator];
+        uint index = validatorMap[_oldValidator]-1;
+        uint last = pendingArr.length-1;
         validatorMap[_oldValidator] = 0;
-        pendingArr[index] = pendingArr[pendingArr.length-1];
+        validatorMap[pendingArr[last]] = index+1;
+        pendingArr[index] = pendingArr[last];
         pendingArr.length--;
-        operation.removeClient(_oldValidator, msg.sender);
         initiateChange();
-    }
-    
-    function setOperation(Operations _operation, address _sender) public 
-        is_sender_validator(_sender) 
-    {
-        require(!operation_set);
-        operation = _operation;
-        operation_set = true;
     }
 
     function initiateChange() private {
@@ -83,8 +69,16 @@ contract Validator {
     }
 
     function finalizeChange() public {
+        require(!finalized);
         validatorArr = pendingArr;
         finalized = true;
         emit ChangeFinalized(validatorArr);
+    }
+    
+    function setRequiredSignatures(uint _requiredSignatures) external is_validator {
+        require(validatorArr.length >= _requiredSignatures);
+        require(_requiredSignatures != 0);
+        requiredSignatures = _requiredSignatures;
+        emit RequiredSignaturesChanged(_requiredSignatures);
     }
 }
