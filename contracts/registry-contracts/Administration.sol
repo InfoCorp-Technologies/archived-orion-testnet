@@ -33,7 +33,7 @@ contract Administration is Ownable {
         return rules[_role][_rule];
     }
 
-    function addRule(string _role, string _target, uint _rule) public {
+    function addRule(string _role, string _target, uint _rule) public onlyOwner {
         require(_rule < 8);
         bytes28 role = strToBytes28(_role);
         bytes28 target = strToBytes28(_target);
@@ -41,7 +41,7 @@ contract Administration is Ownable {
         emit RuleAdded(_role, _target, _rule);
     }
 
-    function removeRule(string _role, string _target, uint _rule) public {
+    function removeRule(string _role, string _target, uint _rule) public onlyOwner {
         require(_rule < 8);
         bytes28 role = strToBytes28(_role);
         bytes28 target = strToBytes28(_target);
