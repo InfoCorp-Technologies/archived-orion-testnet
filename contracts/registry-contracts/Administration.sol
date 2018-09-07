@@ -4,14 +4,14 @@ import "zeppelin-solidity/contracts/ownership/Ownable.sol";
 
 contract Administration is Ownable {
 
-    uint constant public set_interface_required = 0;
-    uint constant public verify_interface_required = 1;
-    uint constant public set_interface_forbidden = 2;
-    uint constant public verify_interface_forbidden = 3;
-    uint constant public remove_interface_required = 4;
-    uint constant public verify_remove_interface_required = 5;
-    uint constant public remove_interface_forbidden = 6;
-    uint constant public verify_remove_interface_forbidden = 7;
+    uint constant public SET_INTERFACE_REQUIRED = 0;
+    uint constant public VERIFY_INTERFACE_REQUIRED = 1;
+    uint constant public SET_INTERFACE_FORBIDDEN = 2;
+    uint constant public VERIFY_INTERFACE_FORBIDDEN = 3;
+    uint constant public REMOVE_INTERFACE_REQUIRED = 4;
+    uint constant public VERIFY_REMOVE_INTERFACE_REQUIRED = 5;
+    uint constant public REMOVE_INTERFACE_FORBIDDEN = 6;
+    uint constant public VERIFY_REMOVE_INTERFACE_FORBIDDEN = 7;
 
     /**
      * First mapping key bytes28 is the role name.
@@ -22,6 +22,11 @@ contract Administration is Ownable {
 
     event RuleAdded(string role, string target, uint rule);
     event RuleRemoved(string role, string target, uint rule);
+
+    function setAdminAddress(address _admin) external onlyOwner {
+        require(_admin != address(0), "Admin address is required");
+        owner = _admin;
+    }
 
     function strToBytes28(string name) public pure returns(bytes28 result) {
         assembly {
