@@ -1,11 +1,10 @@
 pragma solidity ^0.4.23;
 
-import "zeppelin-solidity/contracts/ownership/Ownable.sol";
 import "./Administration.sol";
 import "./Livestock.sol";
-import '../sesc-contracts/Whitelist.sol';
+import "../sesc-contracts/Whitelist.sol";
 
-contract ERC820Registry is Ownable {
+contract ERC820Registry is Administration {
 
     struct Implementer {
         address implementer;
@@ -13,8 +12,6 @@ contract ERC820Registry is Ownable {
         bool verified;
         bool removing;
     }
-
-    Administration public administration;
 
     mapping (address => address) managers;
     mapping (bytes28 => Livestock) livestockMap;
@@ -32,13 +29,6 @@ contract ERC820Registry is Ownable {
     modifier canManage(address addr) {
         require(getManager(addr) == msg.sender);
         _;
-    }
-
-    constructor(address _owner, Administration _administration) public {
-        require(_owner != address(0), "Owner address is required");
-        require(_administration != address(0), "Administrator address is required");
-        owner = _owner;
-        administration = _administration;
     }
 
     /// @notice GetManager
@@ -73,15 +63,6 @@ contract ERC820Registry is Ownable {
         livestock.transferOwnership(msg.sender);
         livestockMap[name] = Livestock(0);
         emit LivestockRemoved(_name, livestock);
-    }
-
-    /**
-     * @dev The administration variables setter
-     * @param _administration The administration address
-     */
-    function setAdministration(Administration _administration) external onlyOwner {
-        require(_administration != address(0), "Administrator address is required");
-        administration = _administration;
     }
 
     /**
@@ -128,9 +109,9 @@ contract ERC820Registry is Ownable {
         require(multichainBytes.length == 38, "The Multichain address string length must longer than 38");
         require(!interfaces.verified, "The registered information must not be registered and verified before");
         require(!registeredMultichain[multichainBytes], "The Multichain address has been claimed");
-        (uint id, bytes28 name) = decodeHash(_iHash);        
-        requiredRule(_addr, name, administration.set_interface_required());
-        forbiddenRule(_addr, name, administration.set_interface_forbidden());
+        (uint id, bytes28 name) = decodeHash(_iHash);
+        requiredRule(_addr, name, set_interface_required);
+        forbiddenRule(_addr, name, set_interface_forbidden);
         if (id > 0) {
             require(livestockMap[name] != address(0), "This livestock contract is not set");
             require(!livestockMap[name].exists(id), "The token has already been minted");
@@ -152,10 +133,10 @@ contract ERC820Registry is Ownable {
         require(!interfaces.verified, "This registered information has already been verified");
         require(!registeredMultichain[interfaces.multichain], "The Multichain address has been claimed");
         (uint id, bytes28 name) = decodeHash(_iHash);
-        requiredRule(_addr, name, administration.set_interface_required());
-        requiredRule(_addr, name, administration.verify_interface_required());
-        forbiddenRule(_addr, name, administration.set_interface_forbidden());
-        forbiddenRule(_addr, name, administration.verify_interface_forbidden());
+        requiredRule(_addr, name, set_interface_required);
+        requiredRule(_addr, name, verify_interface_required);
+        forbiddenRule(_addr, name, set_interface_forbidden);
+        forbiddenRule(_addr, name, verify_interface_forbidden);
         if (id > 0) {
             require(registeredLivestock[_iHash] == address(0), "The TokenId is allready registered");
             registeredLivestock[_iHash] = _addr;
@@ -178,12 +159,11 @@ contract ERC820Registry is Ownable {
         require(interfaces.verified, "This registered information is not verified");
         require(!interfaces.removing, "This registered information is allready marked as removing");
         bytes28 name = bytes28(_iHash);
-        requiredRule(_addr, name, administration.remove_interface_required());
-        forbiddenRule(_addr, name, administration.remove_interface_forbidden());
+        requiredRule(_addr, name, remove_interface_required);
+        forbiddenRule(_addr, name, remove_interface_forbidden);
         interfacesMap[_addr][_iHash].removing = true;
         emit InterfaceImplementerRemoving(_addr, _iHash);
     }
-
 
     /**
      * @dev Verify the register removal of an address through an interface.
@@ -194,10 +174,10 @@ contract ERC820Registry is Ownable {
         require(interfacesMap[_addr][_iHash].removing, "This registered information is not marked as removing");
         Implementer memory empty = Implementer(0x0, "", false, false);
         (uint id, bytes28 name) = decodeHash(_iHash);
-        requiredRule(_addr, name, administration.remove_interface_required());
-        requiredRule(_addr, name, administration.verify_remove_interface_required());
-        forbiddenRule(_addr, name, administration.remove_interface_forbidden());
-        forbiddenRule(_addr, name, administration.verify_remove_interface_forbidden());
+        requiredRule(_addr, name, remove_interface_required);
+        requiredRule(_addr, name, verify_remove_interface_required);
+        forbiddenRule(_addr, name, remove_interface_forbidden);
+        forbiddenRule(_addr, name, verify_remove_interface_forbidden);
         if (id > 0) {
             registeredLivestock[_iHash] = address(0);
             livestockMap[name].burn(_addr, id);
@@ -205,60 +185,6 @@ contract ERC820Registry is Ownable {
         registeredMultichain[interfacesMap[_addr][_iHash].multichain] = false;
         interfacesMap[_addr][_iHash] = empty;
         emit InterfaceImplementerVerified(_addr, _iHash, "Removed");
-    }
-
-    /**
-     * @dev Check if the interface of an address fit with the rule's required interfaces
-     * @param _addr The address that the interface is registered to
-     * @param _interfaceName The address's implementer or verifier interface name
-     * @param _ruleType The rule type (must be Required type)
-     */
-    function requiredRule(address _addr, bytes28 _interfaceName, uint _ruleType)
-        internal view
-    {
-        bytes28[] memory rules = administration.getRules(_interfaceName, _ruleType);
-        bool result;
-        if (rules.length < 1 && (_ruleType == 0 || _ruleType == 4)) {
-            result = true;
-        }
-        for (uint i = 0; i < rules.length; i++) {
-            bytes28 rule = rules[i];
-            if (isFitWithRule(_addr, rule, _ruleType)) {
-                result = true;
-                break;
-            }
-        }
-        require(result);
-    }
-
-    /**
-     * @dev Check if the interface of an address fit with the rule's forbidden interfaces
-     * @param _addr The address that the interface is registered to
-     * @param _interfaceName The address's implementer or verifier interface name
-     * @param _ruleType The rule type (must be Forbidden type)
-     */
-    function forbiddenRule(address _addr, bytes28 _interfaceName, uint _ruleType)
-        internal view
-    {
-        bytes28[] memory rules = administration.getRules(_interfaceName, _ruleType);
-        bool result = true;
-        for (uint i = 0; i < rules.length; i++) {
-            bytes28 rule = rules[i];
-            if (isFitWithRule(_addr, rule, _ruleType)) {
-                result = false;
-                break;
-            }
-        }
-        require(result);
-    }
-
-    function isFitWithRule(address _addr, bytes28 _rule, uint _ruleType)
-        internal view returns(bool)
-    {
-        return (_ruleType % 2 == 0 && interfacesMap[_addr][_rule].verified ||
-        _ruleType % 2 == 0 && _rule == "admin" && _addr == administration.owner() ||
-        _ruleType % 2 != 0 && interfacesMap[msg.sender][_rule].verified ||
-        _ruleType % 2 != 0 && _rule == "admin" && msg.sender == administration.owner());
     }
 
     function getInterfaces(address _addr, bytes32 _iHash) internal view
@@ -280,10 +206,11 @@ contract ERC820Registry is Ownable {
         }
     }
 
-    function strToBytes28(string _name) internal pure returns(bytes28 result) {
-        assembly {
-            result := mload(add(_name, 32))
-        }
+    function isFitWithRule(address _addr, bytes28 _rule, uint _ruleType)
+        internal view returns(bool)
+    {
+        address addr = _ruleType % 2 == 0 ? _addr : msg.sender;
+        return (interfacesMap[addr][_rule].verified || _rule == "admin" && addr == owner);
     }
 
     function decodeHash(bytes32 _iHash) public pure returns(uint id, bytes28 name) {

@@ -3,7 +3,7 @@
 rm -rf flats/*
 
 files=(
-    ./contracts/eip820-contracts/*.sol
+    ./contracts/registry-contracts/*.sol
     ./contracts/operation-contracts/*.sol
     ./contracts/oracle-contracts/*.sol
     ./contracts/sesc-contracts/*.sol

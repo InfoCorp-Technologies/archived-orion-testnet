@@ -20,6 +20,17 @@ let USER = "user"
 let COW = "COW"
 let CO = "CO"
 
+// RULES
+
+const SET_INTERFACE_REQUIRED = 0;
+const VERIFY_INTERFACE_REQUIRED = 1;
+const SET_INTERFACE_FORBIDDEN = 2;
+const VERIFY_INTERFACE_FORBIDDEN = 3;
+const REMOVE_INTERFACE_REQUIRED = 4;
+const VERIFY_REMOVE_INTERFACE_REQUIRED = 5;
+const REMOVE_INTERFACE_FORBIDDEN = 6;
+const VERIFY_REMOVE_INTERFACE_FORBIDDEN = 7;
+
 let COW_1
 let COW_2
 let CO_1
@@ -37,13 +48,12 @@ contract('Registry user and attestator', async (accounts) => {
     ADDRESS_1_2 = accounts[3]
 
     beforeEach(async function () {
-        administration = await Administration.new(AUTHORITY)
-        erc820Registry = await ERC820Registry.new(AUTHORITY, administration.address)
-        await administration.addRule(ATTESTATOR, ADMIN, 1)
-        await administration.addRule(USER, ATTESTATOR, 1)
-        await administration.addRule(USER, ATTESTATOR, 2)
-        await administration.addRule(ATTESTATOR, USER, 2)
-        await administration.addRule(USER, ATTESTATOR, 5)
+        erc820Registry = await ERC820Registry.new({ from: AUTHORITY })
+        await erc820Registry.addRule(ATTESTATOR, ADMIN, VERIFY_INTERFACE_REQUIRED)
+        await erc820Registry.addRule(USER, ATTESTATOR, VERIFY_INTERFACE_REQUIRED)
+        await erc820Registry.addRule(USER, ATTESTATOR, SET_INTERFACE_FORBIDDEN)
+        await erc820Registry.addRule(ATTESTATOR, USER, SET_INTERFACE_FORBIDDEN)
+        await erc820Registry.addRule(USER, ATTESTATOR, VERIFY_REMOVE_INTERFACE_REQUIRED)
         await erc820Registry.setInterfaceImplementer(ADDRESS_1, ATTESTATOR, MULTICHAIN_ADR_0, { from: ADDRESS_1 })
         await erc820Registry.setInterfaceImplementer(ADDRESS_2, USER, MULTICHAIN_ADR_1, { from: ADDRESS_2 })
     })
@@ -133,20 +143,19 @@ contract('Registry livestock and removal', async (accounts) => {
     ADDRESS_1_2 = accounts[3]
 
     beforeEach(async function () {
-        administration = await Administration.new(AUTHORITY)
-        erc820Registry = await ERC820Registry.new(AUTHORITY, administration.address)
+        erc820Registry = await ERC820Registry.new({ from: AUTHORITY })
         whitelist = await Whitelist.new(AUTHORITY)
         livestock = await Livestock.new("Cow Token", COW, erc820Registry.address, whitelist.address)
-        await administration.addRule(ATTESTATOR, ADMIN, 1)
-        await administration.addRule(USER, ATTESTATOR, 1)
-        await administration.addRule(COW, ATTESTATOR, 1)
-        await administration.addRule(COW, USER, 0)
-        await administration.addRule(USER, ATTESTATOR, 2)
-        await administration.addRule(ATTESTATOR, USER, 2)
-        await administration.addRule(ATTESTATOR, COW, 2)
-        await administration.addRule(ATTESTATOR, ADMIN, 5)
-        await administration.addRule(USER, ATTESTATOR, 5)
-        await administration.addRule(COW, ATTESTATOR, 5)
+        await erc820Registry.addRule(ATTESTATOR, ADMIN, VERIFY_INTERFACE_REQUIRED)
+        await erc820Registry.addRule(USER, ATTESTATOR, VERIFY_INTERFACE_REQUIRED)
+        await erc820Registry.addRule(COW, ATTESTATOR, VERIFY_INTERFACE_REQUIRED)
+        await erc820Registry.addRule(COW, USER, SET_INTERFACE_REQUIRED)
+        await erc820Registry.addRule(USER, ATTESTATOR, SET_INTERFACE_FORBIDDEN)
+        await erc820Registry.addRule(ATTESTATOR, USER, SET_INTERFACE_FORBIDDEN)
+        await erc820Registry.addRule(ATTESTATOR, COW, SET_INTERFACE_FORBIDDEN)
+        await erc820Registry.addRule(ATTESTATOR, ADMIN, VERIFY_REMOVE_INTERFACE_REQUIRED)
+        await erc820Registry.addRule(USER, ATTESTATOR, VERIFY_REMOVE_INTERFACE_REQUIRED)
+        await erc820Registry.addRule(COW, ATTESTATOR, VERIFY_REMOVE_INTERFACE_REQUIRED)
         await erc820Registry.setLivestock(livestock.address)
         await erc820Registry.setInterfaceImplementer(ADDRESS_1, ATTESTATOR, MULTICHAIN_ADR_0, { from: ADDRESS_1 })
         await erc820Registry.setInterfaceImplementer(ADDRESS_2, USER, MULTICHAIN_ADR_1, { from: ADDRESS_2 })

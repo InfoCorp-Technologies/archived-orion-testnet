@@ -3,7 +3,7 @@ pragma solidity ^0.4.23;
 import "zeppelin-solidity/contracts/ownership/Ownable.sol";
 
 contract Administration is Ownable {
-    
+
     uint constant public set_interface_required = 0;
     uint constant public verify_interface_required = 1;
     uint constant public set_interface_forbidden = 2;
@@ -12,22 +12,23 @@ contract Administration is Ownable {
     uint constant public verify_remove_interface_required = 5;
     uint constant public remove_interface_forbidden = 6;
     uint constant public verify_remove_interface_forbidden = 7;
-    
+
+    /**
+     * First mapping key bytes28 is the role name.
+     * Second mapping key uint is the rule id.
+     * Second mapping value bytes28[] is the array of rules.
+     */
     mapping(bytes28 => mapping(uint => bytes28[])) rules;
-    
+
     event RuleAdded(string role, string target, uint rule);
     event RuleRemoved(string role, string target, uint rule);
-    
-    constructor(address admin) public {
-        owner = admin;
-    }
 
     function strToBytes28(string name) public pure returns(bytes28 result) {
         assembly {
             result := mload(add(name, 32))
         }
-    } 
-    
+    }
+
     function getRules(bytes28 _role, uint _rule) public view returns(bytes28[]) {
         require(_rule < 8);
         return rules[_role][_rule];
@@ -47,8 +48,8 @@ contract Administration is Ownable {
         bytes28 target = strToBytes28(_target);
         remove(rules[role][_rule], target);
         emit RuleRemoved(_role, _target, _rule);
-    }	
-    
+    }
+
     function remove(bytes28[] storage list, bytes28 removed) internal {
         uint length = list.length;
         for (uint i = 0; i < length; i++) {
@@ -59,4 +60,55 @@ contract Administration is Ownable {
             }
         }
     }
+
+    /**
+     * @dev Check if the interface of an address fit with the rule's required interfaces
+     * @param _addr The address that the interface is registered to
+     * @param _interfaceName The address's implementer or verifier interface name
+     * @param _ruleType The rule type (must be Required type)
+     */
+    function requiredRule(address _addr, bytes28 _interfaceName, uint _ruleType)
+        internal view
+    {
+        bytes28[] memory currentRules = getRules(_interfaceName, _ruleType);
+        bool result = false;
+        if (currentRules.length < 1 && (_ruleType == 0 || _ruleType == 4)) {
+            result = true;
+        }
+        for (uint i = 0; i < currentRules.length; i++) {
+            bytes28 rule = currentRules[i];
+            if (isFitWithRule(_addr, rule, _ruleType)) {
+                result = true;
+                break;
+            }
+        }
+        require(result);
+    }
+
+    /**
+     * @dev Check if the interface of an address fit with the rule's forbidden interfaces
+     * @param _addr The address that the interface is registered to
+     * @param _interfaceName The address's implementer or verifier interface name
+     * @param _ruleType The rule type (must be Forbidden type)
+     */
+    function forbiddenRule(address _addr, bytes28 _interfaceName, uint _ruleType)
+        internal view
+    {
+        bytes28[] memory currentRules = getRules(_interfaceName, _ruleType);
+        bool result = true;
+        for (uint i = 0; i < currentRules.length; i++) {
+            bytes28 rule = currentRules[i];
+            if (isFitWithRule(_addr, rule, _ruleType)) {
+                result = false;
+                break;
+            }
+        }
+        require(result);
+    }
+
+    function isFitWithRule(address, bytes28, uint) internal view returns(bool)
+    {
+        // has to be defined in the child contract
+    }
+
 }
