@@ -4,7 +4,7 @@ import "./Administration.sol";
 import "./Livestock.sol";
 import "../sesc-contracts/Whitelist.sol";
 
-contract ERC820Registry is Administration {
+contract Registry is Administration {
 
     struct Implementer {
         address implementer;
@@ -110,8 +110,7 @@ contract ERC820Registry is Administration {
         require(!interfaces.verified, "The registered information must not be registered and verified before");
         require(!registeredMultichain[multichainBytes], "The Multichain address has been claimed");
         (uint id, bytes28 name) = decodeHash(_iHash);
-        requiredRule(_addr, name, SET_INTERFACE_REQUIRED);
-        forbiddenRule(_addr, name, SET_INTERFACE_FORBIDDEN);
+        canExecute(_addr, name, Actions.SET_INTERFACE);
         if (id > 0) {
             require(livestockMap[name] != address(0), "This livestock contract is not set");
             require(!livestockMap[name].exists(id), "The token has already been minted");
@@ -133,8 +132,7 @@ contract ERC820Registry is Administration {
         require(!interfaces.verified, "This registered information has already been verified");
         require(!registeredMultichain[interfaces.multichain], "The Multichain address has been claimed");
         (uint id, bytes28 name) = decodeHash(_iHash);
-        requiredRule(_addr, name, VERIFY_INTERFACE_REQUIRED);
-        forbiddenRule(_addr, name, VERIFY_INTERFACE_FORBIDDEN);
+        canExecute(_addr, name, Actions.VERIFY_INTERFACE);
         if (id > 0) {
             require(registeredLivestock[_iHash] == address(0), "The TokenId is allready registered");
             registeredLivestock[_iHash] = _addr;
@@ -157,8 +155,7 @@ contract ERC820Registry is Administration {
         require(interfaces.verified, "This registered information is not verified");
         require(!interfaces.removing, "This registered information is allready marked as removing");
         bytes28 name = bytes28(_iHash);
-        requiredRule(_addr, name, REMOVE_INTERFACE_REQUIRED);
-        forbiddenRule(_addr, name, REMOVE_INTERFACE_FORBIDDEN);
+        canExecute(_addr, name, Actions.REMOVE_INTERFACE);
         interfacesMap[_addr][_iHash].removing = true;
         emit InterfaceImplementerRemoving(_addr, _iHash);
     }
@@ -172,8 +169,7 @@ contract ERC820Registry is Administration {
         require(interfacesMap[_addr][_iHash].removing, "This registered information is not marked as removing");
         Implementer memory empty = Implementer(0x0, "", false, false);
         (uint id, bytes28 name) = decodeHash(_iHash);
-        requiredRule(_addr, name, VERIFY_REMOVE_INTERFACE_REQUIRED);
-        forbiddenRule(_addr, name, VERIFY_REMOVE_INTERFACE_FORBIDDEN);
+        canExecute(_addr, name, Actions.VERIFY_REMOVE_INTERFACE);
         if (id > 0) {
             registeredLivestock[_iHash] = address(0);
             livestockMap[name].burn(_addr, id);
@@ -202,14 +198,14 @@ contract ERC820Registry is Administration {
         }
     }
 
-    function isFitWithRule(address _addr, bytes28 _rule, uint _ruleType)
-        internal view returns(bool)
+    function isFitWithRule(address _addr, bytes28 _role, uint _action) internal view
+        returns(bool)
     {
-        // _ruleType % 2
-        //  = 0 is set/remove rule,
-        // != 0 is verify rule.
-        address addr = _ruleType % 2 == 0 ? _addr : msg.sender;
-        return (interfacesMap[addr][_rule].implementer != address(0) || _rule == "admin" && addr == owner);
+        // _action % 2
+        //  = 0 indicates that it's a set/remove action type,
+        // != 0 indicates that it's a verify action type.
+        address addr = _action % 2 == 0 ? _addr : msg.sender;
+        return (interfacesMap[addr][_role].implementer != address(0) || _role == "admin" && addr == owner);
     }
 
     function decodeHash(bytes32 _iHash) public pure returns(uint id, bytes28 name) {
