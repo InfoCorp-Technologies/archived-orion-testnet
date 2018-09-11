@@ -89,7 +89,7 @@ contract Registry is Administration {
     function getInterfaceImplementer(address _addr, bytes32 _iHash) public
         view returns (address implementer, string multichain, bool verified)
     {
-        Implementer memory interfaces = getInterfaces(_addr, _iHash);
+        Implementer memory interfaces = _getInterfaces(_addr, _iHash);
         implementer = interfaces.implementer;
         multichain = string(interfaces.multichain);
         verified = interfaces.verified;
@@ -110,7 +110,7 @@ contract Registry is Administration {
         require(!interfaces.verified, "The registered information must not be registered and verified before");
         require(!registeredMultichain[multichainBytes], "The Multichain address has been claimed");
         (uint id, bytes28 name) = decodeHash(_iHash);
-        canExecute(_addr, name, Actions.SET_INTERFACE);
+        _canExecute(_addr, name, Actions.SET_INTERFACE);
         if (id > 0) {
             require(livestockMap[name] != address(0), "This livestock contract is not set");
             require(!livestockMap[name].exists(id), "The token has already been minted");
@@ -132,7 +132,7 @@ contract Registry is Administration {
         require(!interfaces.verified, "This registered information has already been verified");
         require(!registeredMultichain[interfaces.multichain], "The Multichain address has been claimed");
         (uint id, bytes28 name) = decodeHash(_iHash);
-        canExecute(_addr, name, Actions.VERIFY_INTERFACE);
+        _canExecute(_addr, name, Actions.VERIFY_INTERFACE);
         if (id > 0) {
             require(registeredLivestock[_iHash] == address(0), "The TokenId is allready registered");
             registeredLivestock[_iHash] = _addr;
@@ -151,11 +151,11 @@ contract Registry is Administration {
     function removeInterfaceImplementer(address _addr, bytes32 _iHash)
         external canManage(_addr)
     {
-        Implementer memory interfaces = getInterfaces(_addr, _iHash);
+        Implementer memory interfaces = _getInterfaces(_addr, _iHash);
         require(interfaces.verified, "This registered information is not verified");
         require(!interfaces.removing, "This registered information is allready marked as removing");
         bytes28 name = bytes28(_iHash);
-        canExecute(_addr, name, Actions.REMOVE_INTERFACE);
+        _canExecute(_addr, name, Actions.REMOVE_INTERFACE);
         interfacesMap[_addr][_iHash].removing = true;
         emit InterfaceImplementerRemoving(_addr, _iHash);
     }
@@ -169,7 +169,7 @@ contract Registry is Administration {
         require(interfacesMap[_addr][_iHash].removing, "This registered information is not marked as removing");
         Implementer memory empty = Implementer(0x0, "", false, false);
         (uint id, bytes28 name) = decodeHash(_iHash);
-        canExecute(_addr, name, Actions.VERIFY_REMOVE_INTERFACE);
+        _canExecute(_addr, name, Actions.VERIFY_REMOVE_INTERFACE);
         if (id > 0) {
             registeredLivestock[_iHash] = address(0);
             livestockMap[name].burn(_addr, id);
@@ -179,7 +179,7 @@ contract Registry is Administration {
         emit InterfaceImplementerVerified(_addr, _iHash, "Removed");
     }
 
-    function getInterfaces(address _addr, bytes32 _iHash) internal view
+    function _getInterfaces(address _addr, bytes32 _iHash) internal view
         returns(Implementer interfaces)
     {
         uint id = uint(bytes4(_iHash << (8 * 28)));
@@ -198,7 +198,7 @@ contract Registry is Administration {
         }
     }
 
-    function isFitWithRule(address _addr, bytes28 _role, uint _action) internal view
+    function _isFitWithRule(address _addr, bytes28 _role, uint _action) internal view
         returns(bool)
     {
         // _action % 2

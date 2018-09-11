@@ -3,15 +3,15 @@ pragma solidity ^0.4.20;
 import "zeppelin-solidity/contracts/ownership/Ownable.sol";
 
 contract Oracle is Ownable {
-    
+
     struct QueryInfo {
         bool isWaiting;
         string result;
     }
-    
+
     uint currentId;
     address public oracle;
-    
+
     mapping(string => string) apiMap;
     mapping(bytes32 => QueryInfo) queryMap;
 
@@ -26,11 +26,11 @@ contract Oracle is Ownable {
         // setAPI("attestator", "http://104.211.59.231/attestator/");
         // setAPI("livestock", "http://104.211.59.231/livestock/");
     }
-    
+
     function api(string name) view external returns(string) {
         return apiMap[name];
     }
-    
+
     function query(string name, string input, string pubkey) external {
         string memory url = strConcat(apiMap[name], input);
         bytes32 idHash = keccak256(currentId);
@@ -38,7 +38,7 @@ contract Oracle is Ownable {
         currentId++;
         emit Query(idHash, url, pubkey);
     }
-    
+
     function callback(bytes32 _queryid, string _result) public {
         require(queryMap[_queryid].isWaiting);
         require(msg.sender == oracle);
@@ -46,20 +46,20 @@ contract Oracle is Ownable {
         queryMap[_queryid].result = _result;
         emit Result(_queryid, _result);
     }
-    
+
     function result(bytes32 _queryid) view external returns(string) {
         return queryMap[_queryid].result;
     }
-    
+
     function setAPI(string _name, string _api) public onlyOwner {
         apiMap[_name] = _api;
         emit SetAPI(_name, _api);
     }
-    
+
     function setOracle(address _oracle) external onlyOwner {
         oracle = _oracle;
     }
-    
+
     function strConcat(string _a, string _b) internal pure returns (string) {
         bytes memory _ba = bytes(_a);
         bytes memory _bb = bytes(_b);

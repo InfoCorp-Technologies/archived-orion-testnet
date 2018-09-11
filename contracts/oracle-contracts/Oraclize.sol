@@ -3,12 +3,12 @@ pragma solidity ^0.4.20;
 import "./OraclizeAPI.sol";
 
 contract Oraclize is usingOraclize {
-    
+
     struct QueryInfo {
         address caller;
         string result;
     }
-    
+
     mapping(bytes => string) apiMap;
     mapping(bytes32 => QueryInfo) queryMap;
 
@@ -29,12 +29,12 @@ contract Oraclize is usingOraclize {
         queryMap[queryid].result = result;
         emit Result(queryid, queryMap[queryid].caller);
     }
-    
+
     function api(string name) view external returns(string) {
         bytes memory interfaces = bytes(name);
         return apiMap[interfaces];
     }
-    
+
     function query(string name, string walletaddress, uint gaslimit) payable external {
         bytes memory interfaces = bytes(name);
         string memory url = strConcat("json(", apiMap[interfaces], walletaddress, ").result");
@@ -42,15 +42,15 @@ contract Oraclize is usingOraclize {
         queryMap[queryId].caller = msg.sender;
         emit Query(queryId, url);
     }
-    
+
     function result(bytes32 queryid) view external returns(string) {
         return queryMap[queryid].result;
     }
-    
+
     function oar() view external returns(address) {
         return OAR;
     }
-    
+
     function setAPI(string _name, string _api) external {
         bytes memory interfaces = bytes(_name);
         apiMap[interfaces] = _api;

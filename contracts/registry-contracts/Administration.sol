@@ -34,18 +34,6 @@ contract Administration is Ownable {
         owner = _admin;
     }
 
-    function getRules(bytes28 _role, uint _action) public view validAction(_action)
-        returns(bytes28[])
-    {
-        return rules[_role][_action];
-    }
-
-    function getPermissions(bytes28 _role, uint _action) public view validAction(_action)
-        returns(bytes28[])
-    {
-        return permissions[_role][_action];
-    }
-
     function addPermission(string _role, string _target, uint _action) external
         onlyOwner validAction(_action)
     {
@@ -66,11 +54,11 @@ contract Administration is Ownable {
         onlyOwner validAction(_action)
     {
         (bytes28 role, bytes28  target) = encodeValues(_role, _target);
-        remove(rules[role][_action], target);
+        _remove(rules[role][_action], target);
         emit RuleRemoved(_role, _target, _action);
     }
 
-    function remove(bytes28[] storage _list, bytes28 _roleToRemove) internal {
+    function _remove(bytes28[] storage _list, bytes28 _roleToRemove) internal {
         uint length = _list.length;
         for (uint i = 0; i < length; i++) {
             if (_list[i] == _roleToRemove) {
@@ -81,11 +69,11 @@ contract Administration is Ownable {
         }
     }
 
-    function canExecute(address _address, bytes28 _role, Actions _action) internal view
+    function _canExecute(address _address, bytes28 _role, Actions _action) internal view
         validAction(uint(_action))
     {
-        require(checkPermissions(_address, _role, uint(_action)), "Implementer doesn't have the right permission");
-        require(checkRules(_address, _role, uint(_action)), "Implementer doesn't comply with the rules");
+        require(_checkPermissions(_address, _role, uint(_action)), "Implementer doesn't have the right permission");
+        require(_checkRules(_address, _role, uint(_action)), "Implementer doesn't comply with the rules");
     }
 
     /**
@@ -95,11 +83,11 @@ contract Administration is Ownable {
      * @param _action The action type
      * @return a boolean indicating if the implementer has permission to execute the _action
      */
-    function checkPermissions(address _address, bytes28 _role, uint _action) internal view
+    function _checkPermissions(address _address, bytes28 _role, uint _action) internal view
         returns(bool result)
     {
         result = false;
-        bytes28[] memory currentPermissions = getPermissions(_role, _action);
+        bytes28[] memory currentPermissions = permissions[_role][_action];
         if (currentPermissions.length == 0 &&
             (_action == uint(Actions.SET_INTERFACE) || _action == uint(Actions.REMOVE_INTERFACE)))
         {
@@ -107,7 +95,7 @@ contract Administration is Ownable {
         } else {
             for (uint i = 0; i < currentPermissions.length; i++) {
                 bytes28 permission = currentPermissions[i];
-                if (isFitWithRule(_address, permission, _action)) {
+                if (_isFitWithRule(_address, permission, _action)) {
                     result = true;
                     break;
                 }
@@ -122,15 +110,15 @@ contract Administration is Ownable {
      * @param _action The action type
      * @return a boolean indicating whether the rules are respected or not
      */
-    function checkRules(address _address, bytes28 _role, uint _action) internal view
+    function _checkRules(address _address, bytes28 _role, uint _action) internal view
         returns(bool result)
     {
         result = true;
-        bytes28[] memory currentRules = getRules(_role, _action);
+        bytes28[] memory currentRules = rules[_role][_action];
         if (currentRules.length != 0) {
             for (uint i = 0; i < currentRules.length; i++) {
                 bytes28 rule = currentRules[i];
-                if (isFitWithRule(_address, rule, _action)) {
+                if (_isFitWithRule(_address, rule, _action)) {
                     result = false;
                     break;
                 }
@@ -138,7 +126,7 @@ contract Administration is Ownable {
         }
     }
 
-    function isFitWithRule(address, bytes28, uint) internal view returns(bool)
+    function _isFitWithRule(address, bytes28, uint) internal view returns(bool)
     {
         // Has to be defined in the child contract
     }
@@ -149,7 +137,7 @@ contract Administration is Ownable {
         }
     }
 
-    function encodeValues(string _role, string _target) internal pure
+    function encodeValues(string _role, string _target) public pure
         returns(bytes28 role, bytes28 target)
     {
         role = strToBytes28(_role);

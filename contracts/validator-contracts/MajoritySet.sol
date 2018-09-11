@@ -25,319 +25,319 @@ import "./interfaces/ValidatorSet.sol";
 // Benign misbehaviour can be absolved before being called the second time.
 
 contract Validator is ValidatorSet {
-    
-	// EVENTS
-	event Report(address indexed reporter, address indexed reported, bytes indexed proof);
-	event Support(address indexed supporter, address indexed supported, bool indexed added);
-	event ChangeFinalized(address[] current_set);
-	
-	struct Data {
-		address[] stored;
-		mapping(address => uint) inserted;
-	}
 
-	// Did the voter already vote.
-	function contains(Data storage self, address voter) internal view returns (bool) {
-		return self.inserted[voter] > 0;
-	}
+    // EVENTS
+    event Report(address indexed reporter, address indexed reported, bytes indexed proof);
+    event Support(address indexed supporter, address indexed supported, bool indexed added);
+    event ChangeFinalized(address[] current_set);
 
-	// Voter casts a vote.
-	function insert(Data storage self, address voter) internal returns (bool) {
-		if (self.inserted[voter] > 0) { return false; }
-		self.stored.push(voter);
-		self.inserted[voter] = self.stored.length;
-		return true;
-	}
+    struct Data {
+        address[] stored;
+        mapping(address => uint) inserted;
+    }
 
-	// Retract a vote by a voter.
-	function remove(Data storage self, address voter) internal returns (bool) {
-		if (self.inserted[voter] == 0) { return false; }
-		self.stored[self.inserted[voter]-1] = self.stored[self.stored.length-1];
-		self.inserted[self.stored[self.stored.length-1]] = self.inserted[voter];
-		self.stored.length--;
-		self.inserted[voter] = 0;
-		return true;
-	}
+    // Did the voter already vote.
+    function contains(Data storage self, address voter) internal view returns (bool) {
+        return self.inserted[voter] > 0;
+    }
 
-	struct ValidatorStatus {
-		bool isValidator;
-		uint index;
-		Data support;
-		Data supported;
-		mapping(address => uint) firstBenign;
-		Data benignMisbehaviour;
-	}
+    // Voter casts a vote.
+    function insert(Data storage self, address voter) internal returns (bool) {
+        if (self.inserted[voter] > 0) { return false; }
+        self.stored.push(voter);
+        self.inserted[voter] = self.stored.length;
+        return true;
+    }
 
-	address constant SYSTEM_ADDRESS = 0xffffFFFfFFffffffffffffffFfFFFfffFFFfFFfE;
-	uint public constant MAX_VALIDATORS = 30;
-	uint public constant MAX_INACTIVITY = 6 hours;
-	uint public constant RECENT_BLOCKS = 20;
+    // Retract a vote by a voter.
+    function remove(Data storage self, address voter) internal returns (bool) {
+        if (self.inserted[voter] == 0) { return false; }
+        self.stored[self.inserted[voter]-1] = self.stored[self.stored.length-1];
+        self.inserted[self.stored[self.stored.length-1]] = self.inserted[voter];
+        self.stored.length--;
+        self.inserted[voter] = 0;
+        return true;
+    }
+
+    struct ValidatorStatus {
+        bool isValidator;
+        uint index;
+        Data support;
+        Data supported;
+        mapping(address => uint) firstBenign;
+        Data benignMisbehaviour;
+    }
+
+    address constant SYSTEM_ADDRESS = 0xffffFFFfFFffffffffffffffFfFFFfffFFFfFFfE;
+    uint public constant MAX_VALIDATORS = 30;
+    uint public constant MAX_INACTIVITY = 6 hours;
+    uint public constant RECENT_BLOCKS = 20;
 
 // STATE
 
-	address[] validatorsList;
-	address[] pendingList;
-	bool public finalized;
-	mapping(address => ValidatorStatus) validatorsStatus;
+    address[] validatorsList;
+    address[] pendingList;
+    bool public finalized;
+    mapping(address => ValidatorStatus) validatorsStatus;
 
-	// Used to lower the constructor cost.
-	Data initialSupport;
+    // Used to lower the constructor cost.
+    Data initialSupport;
 
-	constructor() public {
-		pendingList.push(0x574366e84f74f2e913aD9A6782CE6Ac8022e16EB);
-		pendingList.push(0x876BaDa62006F4d3b4063fd97618D666575efb07);
-		for (uint i = 0; i < pendingList.length; i++) {
-			address supporter = pendingList[i];
-			insert(initialSupport, supporter);
-			validatorsStatus[supporter].isValidator = true;
-			validatorsStatus[supporter].index = i;
-			for (uint j = 0; j < pendingList.length; j++) {
-				address validator = pendingList[j];
-				insert(validatorsStatus[validator].support, supporter);
-				insert(validatorsStatus[supporter].supported, validator);
-			}
-		}
-		validatorsList = pendingList;
-		finalized = true;
-	}
-	
-	function getInitialSupport() external view returns (address[]){
-		return initialSupport.stored;
-	}
+    constructor() public {
+        pendingList.push(0x574366e84f74f2e913aD9A6782CE6Ac8022e16EB);
+        pendingList.push(0x876BaDa62006F4d3b4063fd97618D666575efb07);
+        for (uint i = 0; i < pendingList.length; i++) {
+            address supporter = pendingList[i];
+            insert(initialSupport, supporter);
+            validatorsStatus[supporter].isValidator = true;
+            validatorsStatus[supporter].index = i;
+            for (uint j = 0; j < pendingList.length; j++) {
+                address validator = pendingList[j];
+                insert(validatorsStatus[validator].support, supporter);
+                insert(validatorsStatus[supporter].supported, validator);
+            }
+        }
+        validatorsList = pendingList;
+        finalized = true;
+    }
 
-	// Called on every block to update node validator list.
-	function getValidators() public constant returns (address[]) {
-		return validatorsList;
-	}
-	
-	function getPendings() public constant returns (address[]) {
-	    return pendingList;
-	}
+    function getInitialSupport() external view returns (address[]){
+        return initialSupport.stored;
+    }
 
-	// Log desire to change the current list.
-	function initiateChange() private when_finalized {
-		finalized = false;
-		emit InitiateChange(blockhash(block.number - 1), pendingList);
-	}
+    // Called on every block to update node validator list.
+    function getValidators() public constant returns (address[]) {
+        return validatorsList;
+    }
 
-	function finalizeChange() public only_system_and_not_finalized {
-		validatorsList = pendingList;
-		finalized = true;
-		emit ChangeFinalized(validatorsList);
-	}
+    function getPendings() public constant returns (address[]) {
+        return pendingList;
+    }
 
-	// SUPPORT LOOKUP AND MANIPULATION
+    // Log desire to change the current list.
+    function initiateChange() private when_finalized {
+        finalized = false;
+        emit InitiateChange(blockhash(block.number - 1), pendingList);
+    }
 
-	// Find the total support for a given address.
-	function getSupport(address validator) public constant returns (address[]) {
-		return validatorsStatus[validator].support.stored;
-	}
+    function finalizeChange() public only_system_and_not_finalized {
+        validatorsList = pendingList;
+        finalized = true;
+        emit ChangeFinalized(validatorsList);
+    }
 
-	function getSupported(address validator) public constant returns (address[]) {
-		return validatorsStatus[validator].supported.stored;
-	}
-	
-	function supportContained(address validator, address support) public constant returns (bool) {
-		return contains(validatorsStatus[validator].support, support);
-	}
-	
-	function supportedContained(address validator, address supported) public constant returns (bool) {
-		return contains(validatorsStatus[validator].supported, supported);
-	}
+    // SUPPORT LOOKUP AND MANIPULATION
 
-	// Vote to include a validator.
-	function addSupport(address validator) public only_validator not_voted(validator) free_validator_slots {
-		insert(validatorsStatus[validator].support, msg.sender);
-		insert(validatorsStatus[msg.sender].supported, validator);
-		addValidator(validator);
-		emit Support(msg.sender, validator, true);
-	}
+    // Find the total support for a given address.
+    function getSupport(address validator) public constant returns (address[]) {
+        return validatorsStatus[validator].support.stored;
+    }
 
-	// Remove support for a validator.
-	function removeSupport(address sender, address validator) private {
-		remove(validatorsStatus[validator].support, sender);
-		remove(validatorsStatus[sender].supported, validator);
-		emit Support(sender, validator, false);
-		removeValidator(validator);
-	}
+    function getSupported(address validator) public constant returns (address[]) {
+        return validatorsStatus[validator].supported.stored;
+    }
 
-	// MALICIOUS BEHAVIOUR HANDLING
+    function supportContained(address validator, address support) public constant returns (bool) {
+        return contains(validatorsStatus[validator].support, support);
+    }
 
-	// Called when a validator should be removed.
-	function reportMalicious(address validator, uint blockNumber, bytes proof) public only_validator is_recent(blockNumber) {
-		removeSupport(msg.sender, validator);
-		emit Report(msg.sender, validator, proof);
-	}
-	
-	function reportMaliciousNow(address validator, bytes proof) public {
-		reportMalicious(validator, block.number, proof);
-	}
+    function supportedContained(address validator, address supported) public constant returns (bool) {
+        return contains(validatorsStatus[validator].supported, supported);
+    }
 
-	// BENIGN MISBEHAVIOUR HANDLING
+    // Vote to include a validator.
+    function addSupport(address validator) public only_validator not_voted(validator) free_validator_slots {
+        insert(validatorsStatus[validator].support, msg.sender);
+        insert(validatorsStatus[msg.sender].supported, validator);
+        addValidator(validator);
+        emit Support(msg.sender, validator, true);
+    }
 
-	// Report that a validator has misbehaved in a benign way.
-	function reportBenign(address validator, uint blockNumber) public only_validator is_validator(validator) is_recent(blockNumber) {
-		firstBenign(validator);
-		repeatedBenign(validator);
-		emit Report(msg.sender, validator, "Benign");
-	}
-	
-	function reportBenignNow(address validator) public {
-	    reportBenign(validator, block.number);
-	}
+    // Remove support for a validator.
+    function removeSupport(address sender, address validator) private {
+        remove(validatorsStatus[validator].support, sender);
+        remove(validatorsStatus[sender].supported, validator);
+        emit Support(sender, validator, false);
+        removeValidator(validator);
+    }
 
-	// Find the total number of repeated misbehaviour votes.
-	function getRepeatedBenign(address validator) public constant returns (uint) {
-		return validatorsStatus[validator].benignMisbehaviour.stored.length;
-	}
+    // MALICIOUS BEHAVIOUR HANDLING
 
-	// Track the first benign misbehaviour.
-	function firstBenign(address validator) private has_not_benign_misbehaved(validator) {
-		validatorsStatus[validator].firstBenign[msg.sender] = now;
-	}
+    // Called when a validator should be removed.
+    function reportMalicious(address validator, uint blockNumber, bytes proof) public only_validator is_recent(blockNumber) {
+        removeSupport(msg.sender, validator);
+        emit Report(msg.sender, validator, proof);
+    }
 
-	// Report that a validator has been repeatedly misbehaving.
-	function repeatedBenign(address validator) private has_repeatedly_benign_misbehaved(validator) {
-		insert(validatorsStatus[validator].benignMisbehaviour, msg.sender);
-		confirmedRepeatedBenign(validator);
-	}
+    function reportMaliciousNow(address validator, bytes proof) public {
+        reportMalicious(validator, block.number, proof);
+    }
 
-	// When enough long term benign misbehaviour votes have been seen, remove support.
-	function confirmedRepeatedBenign(address validator) private agreed_on_repeated_benign(validator) {
-		validatorsStatus[validator].firstBenign[msg.sender] = 0;
-		remove(validatorsStatus[validator].benignMisbehaviour, msg.sender);
-		removeSupport(msg.sender, validator);
-	}
+    // BENIGN MISBEHAVIOUR HANDLING
 
-	// Absolve a validator from a benign misbehaviour.
-	function absolveFirstBenign(address validator) public has_benign_misbehaved(validator) {
-		validatorsStatus[validator].firstBenign[msg.sender] = 0;
-		remove(validatorsStatus[validator].benignMisbehaviour, msg.sender);
-	}
-	
-	// Add a status tracker for unknown validator.
-	function newStatus(address validator) private {
-	    address[] memory none;
-	    Data memory empty = Data({ stored: none });
-		validatorsStatus[validator] = ValidatorStatus({
-			isValidator: false,
-			index: 0,
-			support: empty,
-			supported: empty,
-			benignMisbehaviour: empty
-		});
-	}
+    // Report that a validator has misbehaved in a benign way.
+    function reportBenign(address validator, uint blockNumber) public only_validator is_validator(validator) is_recent(blockNumber) {
+        firstBenign(validator);
+        repeatedBenign(validator);
+        emit Report(msg.sender, validator, "Benign");
+    }
 
-	// ENACTMENT FUNCTIONS (called when support gets out of line with the validator list)
+    function reportBenignNow(address validator) public {
+        reportBenign(validator, block.number);
+    }
 
-	// Add the validator if supported by majority.
-	// Since the number of validators increases it is possible to some fall below the threshold.
-	function addValidator(address validator) public is_not_validator(validator) has_high_support(validator) {
-		validatorsStatus[validator].index = pendingList.length;
-		pendingList.push(validator);
-		validatorsStatus[validator].isValidator = true;
+    // Find the total number of repeated misbehaviour votes.
+    function getRepeatedBenign(address validator) public constant returns (uint) {
+        return validatorsStatus[validator].benignMisbehaviour.stored.length;
+    }
+
+    // Track the first benign misbehaviour.
+    function firstBenign(address validator) private has_not_benign_misbehaved(validator) {
+        validatorsStatus[validator].firstBenign[msg.sender] = now;
+    }
+
+    // Report that a validator has been repeatedly misbehaving.
+    function repeatedBenign(address validator) private has_repeatedly_benign_misbehaved(validator) {
+        insert(validatorsStatus[validator].benignMisbehaviour, msg.sender);
+        confirmedRepeatedBenign(validator);
+    }
+
+    // When enough long term benign misbehaviour votes have been seen, remove support.
+    function confirmedRepeatedBenign(address validator) private agreed_on_repeated_benign(validator) {
+        validatorsStatus[validator].firstBenign[msg.sender] = 0;
+        remove(validatorsStatus[validator].benignMisbehaviour, msg.sender);
+        removeSupport(msg.sender, validator);
+    }
+
+    // Absolve a validator from a benign misbehaviour.
+    function absolveFirstBenign(address validator) public has_benign_misbehaved(validator) {
+        validatorsStatus[validator].firstBenign[msg.sender] = 0;
+        remove(validatorsStatus[validator].benignMisbehaviour, msg.sender);
+    }
+
+    // Add a status tracker for unknown validator.
+    function newStatus(address validator) private {
+        address[] memory none;
+        Data memory empty = Data({ stored: none });
+        validatorsStatus[validator] = ValidatorStatus({
+            isValidator: false,
+            index: 0,
+            support: empty,
+            supported: empty,
+            benignMisbehaviour: empty
+        });
+    }
+
+    // ENACTMENT FUNCTIONS (called when support gets out of line with the validator list)
+
+    // Add the validator if supported by majority.
+    // Since the number of validators increases it is possible to some fall below the threshold.
+    function addValidator(address validator) public is_not_validator(validator) has_high_support(validator) {
+        validatorsStatus[validator].index = pendingList.length;
+        pendingList.push(validator);
+        validatorsStatus[validator].isValidator = true;
         insert(validatorsStatus[validator].support, validator);
         insert(validatorsStatus[validator].supported, validator);
         initiateChange();
-	}
+    }
 
-	// Remove a validator without enough support.
-	// Can be called to clean low support validators after making the list longer.
-	function removeValidator(address validator) public is_validator(validator) has_low_support(validator) {
-		uint removedIndex = validatorsStatus[validator].index;
-		uint lastIndex = pendingList.length-1;
-		address lastValidator = pendingList[lastIndex];
-		pendingList[removedIndex] = lastValidator;
-		validatorsStatus[lastValidator].index = removedIndex;
-		delete pendingList[lastIndex];
-		pendingList.length--;
-		address[] memory supportRemove = validatorsStatus[validator].support.stored;
-		address[] memory supportedRemove = validatorsStatus[validator].supported.stored;
-		for (uint i = 0; i < supportRemove.length; i++) {
-			remove(validatorsStatus[supportRemove[i]].supported, validator);
-			remove(validatorsStatus[validator].support, supportRemove[i]);
-		}
-		for (uint j = 0; j < supportedRemove.length; j++) {
-			remove(validatorsStatus[supportedRemove[j]].support, validator);
-			remove(validatorsStatus[validator].supported, supportedRemove[j]);
-		}
-		newStatus(validator);
-		initiateChange();
-	}
+    // Remove a validator without enough support.
+    // Can be called to clean low support validators after making the list longer.
+    function removeValidator(address validator) public is_validator(validator) has_low_support(validator) {
+        uint removedIndex = validatorsStatus[validator].index;
+        uint lastIndex = pendingList.length-1;
+        address lastValidator = pendingList[lastIndex];
+        pendingList[removedIndex] = lastValidator;
+        validatorsStatus[lastValidator].index = removedIndex;
+        delete pendingList[lastIndex];
+        pendingList.length--;
+        address[] memory supportRemove = validatorsStatus[validator].support.stored;
+        address[] memory supportedRemove = validatorsStatus[validator].supported.stored;
+        for (uint i = 0; i < supportRemove.length; i++) {
+            remove(validatorsStatus[supportRemove[i]].supported, validator);
+            remove(validatorsStatus[validator].support, supportRemove[i]);
+        }
+        for (uint j = 0; j < supportedRemove.length; j++) {
+            remove(validatorsStatus[supportedRemove[j]].support, validator);
+            remove(validatorsStatus[validator].supported, supportedRemove[j]);
+        }
+        newStatus(validator);
+        initiateChange();
+    }
 
-	// MODIFIERS
+    // MODIFIERS
 
-	function highSupport(address validator) public constant returns (bool) {
-		return getSupport(validator).length > pendingList.length/2;
-	}
+    function highSupport(address validator) public constant returns (bool) {
+        return getSupport(validator).length > pendingList.length/2;
+    }
 
-	function firstBenignReported(address reporter, address validator) public constant returns (uint) {
-		return validatorsStatus[validator].firstBenign[reporter];
-	}
+    function firstBenignReported(address reporter, address validator) public constant returns (uint) {
+        return validatorsStatus[validator].firstBenign[reporter];
+    }
 
-	modifier has_high_support(address validator) {
-		if (highSupport(validator)) { _; }
-	}
+    modifier has_high_support(address validator) {
+        if (highSupport(validator)) { _; }
+    }
 
-	modifier has_low_support(address validator) {
-		if (!highSupport(validator)) { _; }
-	}
+    modifier has_low_support(address validator) {
+        if (!highSupport(validator)) { _; }
+    }
 
-	modifier has_not_benign_misbehaved(address validator) {
-		if (firstBenignReported(msg.sender, validator) == 0) { _; }
-	}
+    modifier has_not_benign_misbehaved(address validator) {
+        if (firstBenignReported(msg.sender, validator) == 0) { _; }
+    }
 
-	modifier has_benign_misbehaved(address validator) {
-		if (firstBenignReported(msg.sender, validator) > 0) { _; }
-	}
+    modifier has_benign_misbehaved(address validator) {
+        if (firstBenignReported(msg.sender, validator) > 0) { _; }
+    }
 
-	modifier has_repeatedly_benign_misbehaved(address validator) {
-		if (firstBenignReported(msg.sender, validator) - now > MAX_INACTIVITY) { _; }
-	}
+    modifier has_repeatedly_benign_misbehaved(address validator) {
+        if (firstBenignReported(msg.sender, validator) - now > MAX_INACTIVITY) { _; }
+    }
 
-	modifier agreed_on_repeated_benign(address validator) {
-		if (getRepeatedBenign(validator) > pendingList.length/2) { _; }
-	}
+    modifier agreed_on_repeated_benign(address validator) {
+        if (getRepeatedBenign(validator) > pendingList.length/2) { _; }
+    }
 
-	modifier free_validator_slots() {
-		require(pendingList.length < MAX_VALIDATORS);
-		_;
-	}
+    modifier free_validator_slots() {
+        require(pendingList.length < MAX_VALIDATORS);
+        _;
+    }
 
-	modifier only_validator() {
-		require(validatorsStatus[msg.sender].isValidator);
-		_;
-	}
+    modifier only_validator() {
+        require(validatorsStatus[msg.sender].isValidator);
+        _;
+    }
 
-	modifier is_validator(address someone) {
-		if (validatorsStatus[someone].isValidator) { _; }
-	}
+    modifier is_validator(address someone) {
+        if (validatorsStatus[someone].isValidator) { _; }
+    }
 
-	modifier is_not_validator(address someone) {
-		if (!validatorsStatus[someone].isValidator) { _; }
-	}
+    modifier is_not_validator(address someone) {
+        if (!validatorsStatus[someone].isValidator) { _; }
+    }
 
-	modifier not_voted(address validator) {
-		require(!contains(validatorsStatus[validator].support, msg.sender));
-		_;
-	}
+    modifier not_voted(address validator) {
+        require(!contains(validatorsStatus[validator].support, msg.sender));
+        _;
+    }
 
-	modifier has_no_votes(address validator) {
-		if (validatorsStatus[validator].support.stored.length == 0) { _; }
-	}
+    modifier has_no_votes(address validator) {
+        if (validatorsStatus[validator].support.stored.length == 0) { _; }
+    }
 
-	modifier is_recent(uint blockNumber) {
-		require(block.number <= blockNumber + RECENT_BLOCKS);
-		_;
-	}
+    modifier is_recent(uint blockNumber) {
+        require(block.number <= blockNumber + RECENT_BLOCKS);
+        _;
+    }
 
-	modifier only_system_and_not_finalized() {
-		require(msg.sender == SYSTEM_ADDRESS && !finalized);
-		_;
-	}
+    modifier only_system_and_not_finalized() {
+        require(msg.sender == SYSTEM_ADDRESS && !finalized);
+        _;
+    }
 
-	modifier when_finalized() {
-		require(finalized);
-		_;
-	}
+    modifier when_finalized() {
+        require(finalized);
+        _;
+    }
 }

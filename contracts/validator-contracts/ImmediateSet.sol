@@ -1,7 +1,7 @@
 pragma solidity ^0.4.23;
 
 contract Validator {
-    
+
     address[] private validatorArr;
     address[] private pendingArr;
     bool private operation_set = false;
@@ -17,7 +17,7 @@ contract Validator {
         require(finalized);
         _;
     }
-    
+
     modifier is_validator {
         require(validatorMap[msg.sender] > 0);
         _;
@@ -36,15 +36,15 @@ contract Validator {
     function isValidator(address addr) external view returns(bool) {
         return validatorMap[addr] > 0;
     }
-    
+
     function getValidators() public view returns (address[]) {
         return validatorArr;
     }
-    
+
     function getPendings() public view returns (address[]) {
         return pendingArr;
     }
-    
+
     // Expand the list of validators.
     function addValidator(address _newValidator) public is_finalized is_validator {
         validatorMap[_newValidator] = pendingArr.length;
@@ -74,7 +74,7 @@ contract Validator {
         finalized = true;
         emit ChangeFinalized(validatorArr);
     }
-    
+
     function setRequiredSignatures(uint _requiredSignatures) external is_validator {
         require(validatorArr.length >= _requiredSignatures);
         require(_requiredSignatures != 0);
