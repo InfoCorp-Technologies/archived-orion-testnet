@@ -37,7 +37,8 @@ contract SentinelExchange is Ownable {
     }
 
     constructor(address _owner, address _oracle, Whitelist _whitelist) public {
-        require(_oracle != address(0), "Oracle address must be different from 0x0");
+        require(_owner != address(0), "Owner address is required");
+        require(_oracle != address(0), "Owner address is required");
         owner = _owner;
         oracle = _oracle;
         whitelist = _whitelist;

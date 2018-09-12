@@ -31,6 +31,11 @@ contract Registry is Administration {
         _;
     }
 
+    constructor(address _admin) public {
+        require(_admin != address(0), "Admin address is required");
+        owner = _admin;
+    }
+
     /// @notice GetManager
     function getManager(address _addr) public view returns(address) {
         // By default the manager of an address is the same address
