@@ -16,8 +16,8 @@ services:
     volumes:
       - sentinel-node-data:/sentinel/base-path
     # If you want to use Parity UI form https://github.com/parity-js/shell/releases,
-    # uncomment this line:
-    #command: --jsonrpc-interface all --ui-interface all --ws-interface all
+    # add this flags to the command --jsonrpc-interface all --ui-interface all --ws-interface all
+    command: --keys-path /sentinel/keys
 
 volumes:
   sentinel-node-data:

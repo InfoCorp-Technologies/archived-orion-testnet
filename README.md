@@ -56,7 +56,7 @@ Then run the node with:
 $ docker-compose up
 ```
 ### Copy files to container
-The genesis and config files are in the folder `/sentinel` and the base path on `/sentinel/base-path` inside the container, so if you need to send files to container like keys or password.txt, you can do it by follow this steps.
+The genesis and config files are in the folder `/sentinel` and the keys path on `/sentinel/keys/Sentinel\ Chain/` inside the container, so if you need to send files to container like private keys or password.txt, you can do it by follow this steps.
 
 Create the container:
 ```
@@ -69,11 +69,14 @@ Get the container name:
 $ docker ps -a
 ```
 
-Then copy the files usin this command:
+Then, for example, copy the private key file usin this command:
 ```
-$ docker cp PATH_TO_YOUR_KEY CONTAINER_NAME:/sentinel/base-path/keys/Sentinel\ Chain/
+$ docker cp PATH_TO_YOUR_KEY CONTAINER_NAME:/sentinel/keys/Sentinel\ Chain/
 ```
-
+or, the password.txt file like these:
+```
+$ docker cp PATH_TO_PASSWORD.TXT CONTAINER_NAME:/sentinel/
+```
 And finally start the container:
 ```
 $ docker-compose up

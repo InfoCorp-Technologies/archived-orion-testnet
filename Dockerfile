@@ -18,9 +18,10 @@ COPY config-main.toml config-rpc.toml config-validator.toml config.toml ./
 COPY nodes.txt sentinel.json ./
 COPY docker-entrypoint /usr/local/bin/
 
-RUN chown sentinel:sentinel -R /sentinel \
+RUN mkdir -p keys/Sentinel\ Chain \
+    chown sentinel:sentinel -R /sentinel \
     && chmod +x /usr/local/bin/docker-entrypoint
 
-VOLUME [ "/sentinel/base-path" ]
+VOLUME ["/sentinel/base-path"]
 
 ENTRYPOINT ["docker-entrypoint"]
