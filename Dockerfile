@@ -19,7 +19,7 @@ COPY nodes.txt sentinel.json ./
 COPY docker-entrypoint /usr/local/bin/
 
 RUN mkdir -p keys/Sentinel\ Chain \
-    chown sentinel:sentinel -R /sentinel \
+    && chown sentinel:sentinel -R /sentinel \
     && chmod +x /usr/local/bin/docker-entrypoint
 
 VOLUME ["/sentinel/base-path"]
