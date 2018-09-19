@@ -11,6 +11,7 @@ contract Whitelist is Ownable {
     event Removed(address indexed addr);
 
     constructor(address _owner) public {
+        require(_owner != address(0), "Owner address is required");
         owner = _owner;
     }
 

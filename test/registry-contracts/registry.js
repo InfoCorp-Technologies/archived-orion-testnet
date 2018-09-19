@@ -44,7 +44,7 @@ contract('Registry user and attestator', async (accounts) => {
     ADDRESS_1_2 = accounts[3]
 
     beforeEach(async function () {
-        registry = await Registry.new({ from: ADMIN_ADDRESS })
+        registry = await Registry.new(ADMIN_ADDRESS)
         await registry.addPermission(ATTESTATOR, ADMIN, VERIFY_INTERFACE, { from: ADMIN_ADDRESS })
         await registry.addPermission(USER, ATTESTATOR, VERIFY_INTERFACE, { from: ADMIN_ADDRESS })
         await registry.addPermission(USER, ATTESTATOR, VERIFY_REMOVE_INTERFACE, { from: ADMIN_ADDRESS })
@@ -140,7 +140,7 @@ contract('Registry livestock and removal', async (accounts) => {
     ADDRESS_1_2 = accounts[3]
 
     beforeEach(async function () {
-        registry = await Registry.new({ from: ADMIN_ADDRESS })
+        registry = await Registry.new(ADMIN_ADDRESS)
         whitelist = await Whitelist.new(ADMIN_ADDRESS)
         livestock = await Livestock.new("Cow Token", COW, registry.address, whitelist.address)
         await registry.addPermission(ATTESTATOR, ADMIN, VERIFY_INTERFACE, { from: ADMIN_ADDRESS })

@@ -22,9 +22,8 @@ COPY config ./config
 COPY sentinel.json ./
 COPY docker-entrypoint /usr/local/bin/
 
-RUN mkdir -p /sentinel/nodes \
-    && chmod +x /usr/local/bin/docker-entrypoint
+RUN chmod +x /usr/local/bin/docker-entrypoint
 
-VOLUME ["/sentinel/base-path"]
+VOLUME ["/sentinel/base-path", "/sentinel/nodes"]
 
 ENTRYPOINT ["docker-entrypoint"]

@@ -20,6 +20,8 @@ contract Oracle is Ownable {
     event Result(bytes32 queryid, string result);
 
     constructor(address _owner, address _oracle) public {
+        require(_owner != address(0), "Owner address is required");
+        require(_oracle != address(0), "Oracle address is required");
         owner = _owner;
         oracle = _oracle;
         // setAPI("user", "http://104.211.59.231/user/");
