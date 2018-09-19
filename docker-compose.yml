@@ -5,7 +5,8 @@ services:
       context: .
       dockerfile: Dockerfile
     environment:
-      - NODE_TYPE=default
+      - NODE_TYPE=dev
+      - KEY_PATH=/sentinel/keys/KEY_NAME
     ports:
       # JSON-RPC API
       - 8545:8545
@@ -15,9 +16,7 @@ services:
       - 30303:30303
     volumes:
       - sentinel-node-data:/sentinel/base-path
-    # If you want to use Parity UI form https://github.com/parity-js/shell/releases,
-    # add this flags to the command --jsonrpc-interface all --ui-interface all --ws-interface all
-    command: --keys-path /sentinel/keys
+      - PATH_TO_YOUR_KEY_FOLDER:/sentinel/keys
 
 volumes:
   sentinel-node-data:

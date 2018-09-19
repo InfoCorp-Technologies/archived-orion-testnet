@@ -1,0 +1,24 @@
+[parity]
+chain = "sentinel.json"
+identity = "sentinel-provider"
+
+[dapps]
+disable = true
+
+[ui]
+disable = true
+
+[network]
+discovery = true
+reserved_peers = "/sentinel/nodes/nodes.txt"
+
+[rpc]
+interface = "0.0.0.0"
+cors = ["all"]
+hosts = ["all"]
+apis = ["safe"]
+
+[misc]
+logging = "own_tx=trace"
+log_file = "parity-rpc.log"
+color = true

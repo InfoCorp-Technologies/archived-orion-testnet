@@ -2,12 +2,35 @@
 
 set -e
 
-NODE_TYPE=${NODE_TYPE:-"default"}
+export UNLOCK=${UNLOCK:-'0x574366e84f74f2e913ad9a6782ce6ac8022e16eb'}
+export AUTHOR=${AUTHOR:-'0x574366e84f74f2e913ad9a6782ce6ac8022e16eb'}
+export ENGINE_SIGNER=${ENGINE_SIGNER:-'0x574366e84f74f2e913ad9a6782ce6ac8022e16eb'}
+export PASS_PATH=${PASS_PATH:-'/sentinel/password.txt'}
+export KEY_PATH=${KEY_PATH:-''}
 
+# Process config files
+envsubst '${UNLOCK} ${AUTHOR} ${ENGINE_SIGNER} ${PASS_PATH}' < /sentinel/config/config-dev.docker.toml > /sentinel/config-dev.toml
+envsubst '${UNLOCK} ${AUTHOR} ${ENGINE_SIGNER} ${PASS_PATH}' < /sentinel/config/config-main.docker.toml > /sentinel/config-main.toml
+envsubst '${UNLOCK} ${AUTHOR} ${ENGINE_SIGNER} ${PASS_PATH}' < /sentinel/config/config-validator.docker.toml > /sentinel/config-validator.toml
+cp /sentinel/config/config-provider.docker.toml /sentinel/config-provider.toml
+cp /sentinel/config/config.docker.toml /sentinel/config.toml
+
+# Import key
+if [ ! -z $KEY_PATH ]; then
+  /parity/parity account import $KEY_PATH --chain ./sentinel.json --keys-path ./base-path/keys
+fi
+
+# Process node type
+NODE_TYPE=${NODE_TYPE:-"default"}
 if [ $NODE_TYPE = "default" ]; then
   NODE_TYPE=""
 else
   NODE_TYPE="-$NODE_TYPE"
 fi
 
+if [ ! -f "/sentinel/nodes/nodes.txt" ]; then
+  touch /sentinel/nodes/nodes.txt
+fi
+
+chown sentinel:sentinel -R /sentinel
 /parity/parity --config ./config$NODE_TYPE.toml --base-path ./base-path $@

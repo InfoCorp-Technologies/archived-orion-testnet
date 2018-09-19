@@ -1,0 +1,25 @@
+[parity]
+chain = "sentinel.json"
+identity = "sentinel-default"
+
+[ui]
+disable = false
+
+[network]
+discovery = true
+reserved_peers = "/sentinel/nodes/nodes.txt"
+
+[rpc]
+interface = "all"
+cors = ["*"]
+hosts = ["all"]
+
+[footprint]
+tracing = "on"
+fat_db = "on"
+pruning = "archive"
+
+[misc]
+logging = "own_tx=trace"
+log_file = "parity.log"
+color = true
