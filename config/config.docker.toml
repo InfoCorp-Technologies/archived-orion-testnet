@@ -7,7 +7,7 @@ disable = false
 
 [network]
 discovery = true
-reserved_peers = "/sentinel/nodes/nodes.txt"
+reserved_peers = "$NODES_PATH"
 
 [rpc]
 interface = "all"

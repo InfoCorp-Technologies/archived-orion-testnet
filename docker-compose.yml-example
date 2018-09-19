@@ -1,0 +1,26 @@
+version: '3'
+services:
+  sentinel-chain-node:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - NODE_TYPE=dev
+      - KEY_PATH=/sentinel/files/<KEY_FILENAME>
+      - PASS_PATH=/sentinel/files/<PASSWORD_FILENAME>
+      - NODES_PATH=/sentinel/files/<NODES_FILENAME>
+      - UNLOCK=<ADDRESS>
+      - AUTHOR=<ADDRESS>
+      - ENGINE_SIGNER=<ADDRESS>
+    ports:
+      - 8545:8545
+      - 8546:8546
+      - 30303:30303
+    volumes:
+      - sentinel-chain-network-data:/sentinel/base-path
+      - <PATH_TO_FILES_FOLDER>:/sentinel/files
+volumes:
+  sentinel-chain-network-data:
+    driver: local
+  sentinel-chain-network-nodes:
+    driver: local

@@ -2,16 +2,18 @@
 
 set -e
 
+# Set default values for ENV's variables
 export UNLOCK=${UNLOCK:-'0x574366e84f74f2e913ad9a6782ce6ac8022e16eb'}
 export AUTHOR=${AUTHOR:-'0x574366e84f74f2e913ad9a6782ce6ac8022e16eb'}
 export ENGINE_SIGNER=${ENGINE_SIGNER:-'0x574366e84f74f2e913ad9a6782ce6ac8022e16eb'}
 export PASS_PATH=${PASS_PATH:-'/sentinel/password.txt'}
 export KEY_PATH=${KEY_PATH:-''}
+export NODES_PATH=${NODES_PATH:-'/sentinel/nodes/nodes.txt'}
 
 # Process config files
-envsubst '${UNLOCK} ${AUTHOR} ${ENGINE_SIGNER} ${PASS_PATH}' < /sentinel/config/config-dev.docker.toml > /sentinel/config-dev.toml
-envsubst '${UNLOCK} ${AUTHOR} ${ENGINE_SIGNER} ${PASS_PATH}' < /sentinel/config/config-main.docker.toml > /sentinel/config-main.toml
-envsubst '${UNLOCK} ${AUTHOR} ${ENGINE_SIGNER} ${PASS_PATH}' < /sentinel/config/config-validator.docker.toml > /sentinel/config-validator.toml
+envsubst '${UNLOCK} ${AUTHOR} ${ENGINE_SIGNER} ${PASS_PATH} ${NODES_PATH}' < /sentinel/config/config-dev.docker.toml > /sentinel/config-dev.toml
+envsubst '${UNLOCK} ${AUTHOR} ${ENGINE_SIGNER} ${PASS_PATH} ${NODES_PATH}' < /sentinel/config/config-main.docker.toml > /sentinel/config-main.toml
+envsubst '${UNLOCK} ${AUTHOR} ${ENGINE_SIGNER} ${PASS_PATH} ${NODES_PATH}' < /sentinel/config/config-validator.docker.toml > /sentinel/config-validator.toml
 cp /sentinel/config/config-provider.docker.toml /sentinel/config-provider.toml
 cp /sentinel/config/config.docker.toml /sentinel/config.toml
 
@@ -28,9 +30,6 @@ else
   NODE_TYPE="-$NODE_TYPE"
 fi
 
-if [ ! -f "/sentinel/nodes/nodes.txt" ]; then
-  touch /sentinel/nodes/nodes.txt
-fi
-
+# Run parity
 chown sentinel:sentinel -R /sentinel
 /parity/parity --config ./config$NODE_TYPE.toml --base-path ./base-path $@
