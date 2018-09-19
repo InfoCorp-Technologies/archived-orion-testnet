@@ -20,6 +20,8 @@ hosts = ["all"]
 
 [websockets]
 interface = "all"
+hosts = ["all"]
+origins = ["all"]
 
 [mining]
 author = "$AUTHOR"
