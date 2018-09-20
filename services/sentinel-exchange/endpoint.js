@@ -139,11 +139,4 @@ function handleRequests(callback) {
     });
 }
 
-contract.getPastEvents('allEvents', {
-    fromBlock: 0,
-    toBlock: 'latest'
-}).then(async exchanges => {
-    console.log(JSON.stringify(exchanges,null,4))
-});
-
 handleRequests(listenRequests);
