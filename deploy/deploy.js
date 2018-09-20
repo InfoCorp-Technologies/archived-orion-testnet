@@ -23,7 +23,7 @@ async function deploy() {
     ],
     {from: DEPLOYMENT_ACCOUNT_ADDRESS, nonce: nonce}
   );
-  nonce++;
+
   console.log("\nDeployment has been completed.\n");
 
   fs.writeFileSync('./deploymentResults.json', JSON.stringify({

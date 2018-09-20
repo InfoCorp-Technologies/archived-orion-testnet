@@ -7,3 +7,4 @@ node_modules/
 build/
 flats/
 docker-compose.yml
+services/sentinel-exchange/config/config.json

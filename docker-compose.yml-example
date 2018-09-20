@@ -1,5 +1,6 @@
 version: '3'
 services:
+
   sentinel-chain-node:
     build:
       context: .
@@ -19,6 +20,20 @@ services:
     volumes:
       - sentinel-chain-network-data:/sentinel/base-path
       - <PATH_TO_FILES_FOLDER>:/sentinel/files
+
+  sentinel-chain-exchange-service:
+    build:
+      context: .
+      dockerfile: docker/exchange-service/Dockerfile
+    depends_on:
+      - sentinel-chain-node
+      - sentinel-chain-mock-fx-price-service
+
+  sentinel-chain-mock-fx-price-service:
+    build:
+      context: .
+      dockerfile: docker/fx-price-service/Dockerfile
+
 volumes:
   sentinel-chain-network-data:
     driver: local

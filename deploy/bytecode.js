@@ -6,24 +6,21 @@ const { web3 } = require('./src/utils');
 
 const CONTRACTS_DIR = ['../contracts/', '../node_modules/zeppelin-solidity/contracts/'];
 
-function findContract(pathName) {
-    let file = path.basename(pathName);
-    let files;
-    for (let i = 0; i < CONTRACTS_DIR.length; i++) {
-        files = find.fileSync(file, CONTRACTS_DIR[i]);
-        if (files.length) break;
-    }
-    const contractPath = path.resolve(files[0]);
-    if (fs.existsSync(contractPath)) {
-        return fs.readFileSync(contractPath, 'utf8');
-    } else {
-        throw new Error(`File ${contractPath} not found`);
-    }
-}
-
 function findImports (pathName) {
     try {
-        return { contents: findContract(pathName) };
+        let file = path.basename(pathName);
+        let files, result;
+        for (let i = 0; i < CONTRACTS_DIR.length; i++) {
+            files = find.fileSync(file, CONTRACTS_DIR[i]);
+            if (files.length) break;
+        }
+        const contractPath = path.resolve(files[0]);
+        if (fs.existsSync(contractPath)) {
+            result = fs.readFileSync(contractPath, 'utf8');
+        } else {
+            throw new Error(`File ${contractPath} not found`);
+        }
+        return { contents: result };
     } catch(e) {
         return { error: e.message };
     }
