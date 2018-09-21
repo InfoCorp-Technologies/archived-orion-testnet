@@ -1,3 +1,4 @@
-/service/sentinel-exchange/config/config.js-example
+/service/sentinel-exchange/config/config.json-example
+/service/sentinel-exchange/config/config.json
 /service/sentinel-exchange/node_modules
 /service/mock-fx-price/node_modules

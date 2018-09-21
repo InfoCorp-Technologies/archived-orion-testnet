@@ -1,0 +1,12 @@
+{
+  "host": "$HOST",
+  "rateEndpoint": "$RATE_ENDPOINT",
+  "contract": {
+    "address": "$CONTRACT_ADDRESS",
+    "fromBlock": $FROM_BLOCK
+  },
+  "executer": {
+    "address": "$ORACLE_ADDRESS",
+    "privkey": "$ORACLE_PK"
+  }
+}
