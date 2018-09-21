@@ -18,6 +18,9 @@ cors = ["all"]
 hosts = ["all"]
 apis = ["safe"]
 
+[websockets]
+interface = "all"
+
 [misc]
 logging = "own_tx=trace"
 log_file = "parity-rpc.log"

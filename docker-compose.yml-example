@@ -25,6 +25,9 @@ services:
     build:
       context: .
       dockerfile: docker/exchange-service/Dockerfile
+    environment:
+      - HOST=ws://sentinel-chain-node:8546
+      - RATE_ENDPOINT=http://sentinel-chain-mock-fx-price-service:65221/rate
     depends_on:
       - sentinel-chain-node
       - sentinel-chain-mock-fx-price-service
@@ -33,6 +36,15 @@ services:
     build:
       context: .
       dockerfile: docker/fx-price-service/Dockerfile
+
+  sentinel-chain-data-query-service:
+    build:
+      context: .
+      dockerfile: docker/data-query-service/Dockerfile
+    environment:
+      - HOST=ws://sentinel-chain-node:8546
+    depends_on:
+      - sentinel-chain-node
 
 volumes:
   sentinel-chain-network-data:

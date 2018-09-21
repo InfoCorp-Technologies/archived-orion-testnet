@@ -1,4 +1,6 @@
-/service/sentinel-exchange/config/config.json-example
-/service/sentinel-exchange/config/config.json
-/service/sentinel-exchange/node_modules
+/service/exchange/node_modules
+/service/exchange/config/config.json
 /service/mock-fx-price/node_modules
+/service/data-query/node_modules
+/service/data-query/config/config.json
+/service/data-query/config/rsaKeys.json

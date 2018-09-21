@@ -8,12 +8,12 @@ RUN apk add --update --no-cache \
     python \
     git
 
-COPY services/exchange/package*.json ./
+COPY services/data-query/package*.json ./
 
 RUN npm install
 
-COPY services/exchange ./
-COPY docker/exchange-service/docker-entrypoint /usr/local/bin/
+COPY services/data-query ./
+COPY docker/data-query-service/docker-entrypoint /usr/local/bin/
 
 RUN chmod +x /usr/local/bin/docker-entrypoint
 
