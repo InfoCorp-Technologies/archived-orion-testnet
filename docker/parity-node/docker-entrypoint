@@ -6,6 +6,7 @@ set -e
 export UNLOCK=${UNLOCK:-'0x574366e84f74f2e913ad9a6782ce6ac8022e16eb'}
 export AUTHOR=${AUTHOR:-'0x574366e84f74f2e913ad9a6782ce6ac8022e16eb'}
 export ENGINE_SIGNER=${ENGINE_SIGNER:-'0x574366e84f74f2e913ad9a6782ce6ac8022e16eb'}
+export NETWORK_PORT=${NETWORK_PORT:-'30303'}
 export PASS_PATH=${PASS_PATH:-'/sentinel/password.txt'}
 export KEY_PATH=${KEY_PATH:-''}
 export NODES_PATH=${NODES_PATH:-'/sentinel/nodes/nodes.txt'}
@@ -14,8 +15,7 @@ export NODES_PATH=${NODES_PATH:-'/sentinel/nodes/nodes.txt'}
 envsubst '${UNLOCK} ${AUTHOR} ${ENGINE_SIGNER} ${PASS_PATH} ${NODES_PATH}' < /sentinel/config/config-dev.docker.toml > /sentinel/config-dev.toml
 envsubst '${UNLOCK} ${AUTHOR} ${ENGINE_SIGNER} ${PASS_PATH} ${NODES_PATH}' < /sentinel/config/config-main.docker.toml > /sentinel/config-main.toml
 envsubst '${UNLOCK} ${AUTHOR} ${ENGINE_SIGNER} ${PASS_PATH} ${NODES_PATH}' < /sentinel/config/config-validator.docker.toml > /sentinel/config-validator.toml
-cp /sentinel/config/config-provider.docker.toml /sentinel/config-provider.toml
-cp /sentinel/config/config.docker.toml /sentinel/config.toml
+envsubst '${NETWORK_PORT} ${NODES_PATH}' < /sentinel/config/config-provider.docker.toml > /sentinel/config-provider.toml
 
 # Import key
 if [ ! -z $KEY_PATH ]; then

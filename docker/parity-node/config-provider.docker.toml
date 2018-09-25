@@ -9,6 +9,7 @@ disable = true
 disable = true
 
 [network]
+port = $NETWORK_PORT
 discovery = true
 reserved_peers = "$NODES_PATH"
 
