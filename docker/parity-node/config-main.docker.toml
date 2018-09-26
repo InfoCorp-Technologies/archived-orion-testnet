@@ -22,7 +22,7 @@ hosts = ["all"]
 author = "$AUTHOR"
 engine_signer = "$ENGINE_SIGNER"
 reseal_max_period = 600000
-min_gas_price = 1000000000000000 #min gas price in WEI per GAS unit (0.001 Ether)
+min_gas_price = 8100000000 #min gas price in WEI per GAS unit (0.0000000081 Ether)
 extra_data = "0x0" # Blocks that you mine will have '0x53' in extra data field.
 
 [footprint]

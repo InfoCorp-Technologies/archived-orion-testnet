@@ -51,8 +51,8 @@ async function main() {
     const validatorBytecode = await getbytecode(compiledContracts, 'ImmediateSet.sol:Validator', [
         [
         "0x574366e84f74f2e913ad9a6782ce6ac8022e16eb",
-        "0xae9af1e1075c9fb91eec3f619181621142bfd44a",
-        "0x38c0a7d8D032dBBB322FE6ef498939Cc813bA034"
+        "0xdd9c3863dc6d56a96dc417074d0d82a33e010f94",
+        "0xe132c75a856370c4cf9ea732e77a634ba75566ad"
       ]
     ]);
     const operationsBytecode = await getbytecode(compiledContracts, 'Operations.sol:Operations', [
