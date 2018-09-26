@@ -14,7 +14,7 @@ discovery = true
 reserved_peers = "$NODES_PATH"
 
 [rpc]
-interface = "0.0.0.0"
+interface = "all"
 cors = ["all"]
 hosts = ["all"]
 apis = ["safe"]

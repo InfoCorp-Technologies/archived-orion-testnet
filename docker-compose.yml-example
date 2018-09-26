@@ -4,7 +4,7 @@ services:
   sentinel-chain-node:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: docker/parity-node/Dockerfile
     environment:
       - NODE_TYPE=dev
       - KEY_PATH=/sentinel/files/<KEY_FILENAME>

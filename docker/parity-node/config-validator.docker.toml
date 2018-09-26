@@ -9,6 +9,9 @@ password = ["$PASS_PATH"]
 [ui]
 disable = true
 
+[rpc]
+interface = "all"
+
 [network]
 discovery = true
 reserved_peers = "$NODES_PATH"
