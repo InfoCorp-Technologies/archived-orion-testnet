@@ -1,0 +1,4 @@
+node_modules/
+.env
+deploymentResults.json
+bytecodes.json

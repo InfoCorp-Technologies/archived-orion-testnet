@@ -1,0 +1,13 @@
+{
+  "name": "seninel-chain-exchange-service",
+  "version": "0.0.1",
+  "main": "endpoint.js",
+  "scripts": {
+    "start": "node endpoint.js"
+  },
+  "dependencies": {
+    "async": "^2.6.1",
+    "request": "^2.87.0",
+    "web3": "^1.0.0-beta.36"
+  }
+}

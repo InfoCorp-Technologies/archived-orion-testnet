@@ -13,6 +13,7 @@
   },
   "author": "InfoCorp",
   "dependencies": {
+    "truffle-assertions": "^0.3.1",
     "truffle-flattener": "^1.2.5",
     "zeppelin-solidity": "^1.7.0"
   },
@@ -28,7 +29,7 @@
     "lodash": "^4.17.4",
     "rimraf": "^2.6.2",
     "solc": "^0.4.23",
-    "solidity-coverage": "^0.4.9",
+    "solidity-coverage": "^0.4.15",
     "solium": "^1.0.5",
     "truffle": "^4.0.4"
   },

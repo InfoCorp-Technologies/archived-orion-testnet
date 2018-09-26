@@ -1,0 +1,15 @@
+{
+  "name": "seninel-service",
+  "version": "0.0.1",
+  "main": "endpoint.js",
+  "scripts": {
+    "start": "node endpoint.js"
+  },
+  "dependencies": {
+    "async": "^2.6.1",
+    "node-forge": "^0.7.5",
+    "node-rsa": "^1.0.0",
+    "request": "^2.87.0",
+    "web3": "^1.0.0-beta.34"
+  }
+}

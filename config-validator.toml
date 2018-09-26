@@ -3,7 +3,7 @@ chain = "sentinel.json"
 identity = "sentinel-validator"
 
 [account]
-unlock = ["0x5925A1F91285C29af9E67CdFb52E89C04a3391cf"]
+unlock = ["ETH_ADDR"]
 password = ["password-validator.txt"]
 
 [ui]
@@ -14,10 +14,10 @@ discovery = true
 reserved_peers = "nodes.txt"
 
 [mining]
-author = "0x5925A1F91285C29af9E67CdFb52E89C04a3391cf"
-engine_signer = "0x5925A1F91285C29af9E67CdFb52E89C04a3391cf"
+author = "ETH_ADDR"
+engine_signer = "ETH_ADDR"
 reseal_max_period = 600000
-min_gas_price = 100000000000000000 #min gas price in WEI per GAS unit (0.1 Ether)
+min_gas_price = 8100000000 #min gas price in WEI per GAS unit (0.0000000081 Ether)
 extra_data = "0x1" # Blocks that you mine will have '0x53' in extra data field.
 
 [misc]

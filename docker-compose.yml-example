@@ -1,0 +1,53 @@
+version: '3'
+services:
+
+  sentinel-chain-node:
+    build:
+      context: .
+      dockerfile: docker/parity-node/Dockerfile
+    environment:
+      - NODE_TYPE=dev
+      - KEY_PATH=/sentinel/files/<KEY_FILENAME>
+      - PASS_PATH=/sentinel/files/<PASSWORD_FILENAME>
+      - NODES_PATH=/sentinel/files/<NODES_FILENAME>
+      - UNLOCK=<ADDRESS>
+      - AUTHOR=<ADDRESS>
+      - ENGINE_SIGNER=<ADDRESS>
+    ports:
+      - 8545:8545
+      - 8546:8546
+      - 30303:30303
+    volumes:
+      - sentinel-chain-network-data:/sentinel/base-path
+      - <PATH_TO_FILES_FOLDER>:/sentinel/files
+
+  sentinel-chain-exchange-service:
+    build:
+      context: .
+      dockerfile: docker/exchange-service/Dockerfile
+    environment:
+      - HOST=ws://sentinel-chain-node:8546
+      - RATE_ENDPOINT=http://sentinel-chain-mock-fx-price-service:65221/rate
+    depends_on:
+      - sentinel-chain-node
+      - sentinel-chain-mock-fx-price-service
+
+  sentinel-chain-mock-fx-price-service:
+    build:
+      context: .
+      dockerfile: docker/fx-price-service/Dockerfile
+
+  sentinel-chain-data-query-service:
+    build:
+      context: .
+      dockerfile: docker/data-query-service/Dockerfile
+    environment:
+      - HOST=ws://sentinel-chain-node:8546
+    depends_on:
+      - sentinel-chain-node
+
+volumes:
+  sentinel-chain-network-data:
+    driver: local
+  sentinel-chain-network-nodes:
+    driver: local
