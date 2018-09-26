@@ -14,7 +14,8 @@ RUN groupadd -g ${GROUP_ID} sentinel \
 
 WORKDIR /sentinel
 
-RUN apt-get update && apt-get install -yq --no-install-recommends gettext \
+RUN apt-get update && apt-get install -yq --no-install-recommends \
+    gettext nano \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
