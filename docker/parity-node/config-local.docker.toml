@@ -1,0 +1,21 @@
+[parity]
+chain = "sentinel.json"
+identity = "sentinel-provider"
+
+[dapps]
+disable = true
+
+[ui]
+disable = true
+
+[network]
+discovery = true
+reserved_peers = "$NODES_PATH"
+
+[websockets]
+interface = "all"
+
+[misc]
+logging = "own_tx=trace"
+log_file = "parity-rpc.log"
+color = true
