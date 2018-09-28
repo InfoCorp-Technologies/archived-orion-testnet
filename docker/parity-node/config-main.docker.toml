@@ -21,6 +21,6 @@ fat_db = "on"
 pruning = "archive"
 
 [misc]
-logging = "external_tx=debug,network=trace,own_tx=debug,poa=info,txqueue=debug"
+logging = "external_tx=debug,network=info,own_tx=debug,poa=info,txqueue=debug"
 log_file = "parity-main.log"
 color = true
