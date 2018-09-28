@@ -1,6 +1,7 @@
 [parity]
 chain = "sentinel.json"
 identity = "sentinel-provider"
+no_persistent_txqueue = true
 
 [dapps]
 disable = true
@@ -12,10 +13,13 @@ disable = true
 discovery = true
 reserved_peers = "$NODES_PATH"
 
+[rpc]
+interface = "all"
+
 [websockets]
 interface = "all"
 
 [misc]
-logging = "own_tx=trace"
-log_file = "parity-rpc.log"
+logging = "network=info,poa=debug,txqueue=debug"
+log_file = "parity-local.log"
 color = true

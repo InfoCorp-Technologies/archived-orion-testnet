@@ -26,10 +26,10 @@ origins = ["all"]
 [mining]
 author = "$AUTHOR"
 engine_signer = "$ENGINE_SIGNER"
-reseal_max_period = 600000
-min_gas_price = 8100000000 #min gas price in WEI per GAS unit (0.0000000081 Ether)s
+reseal_max_period = 900000
+min_gas_price = 8100000000 #min gas price in WEI per GAS unit (0.0000000081 Eth
 
 [misc]
-logging = "own_tx=trace"
+logging = "network=info,poa=debug,txqueue=debug"
 log_file = "parity.log"
 color = true
