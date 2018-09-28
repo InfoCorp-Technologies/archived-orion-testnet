@@ -22,12 +22,12 @@ const Livestock = require('../build/contracts/Livestock.json');
 async function deploy() {
   let nonce = await web3.eth.getTransactionCount(DEPLOYMENT_ACCOUNT_ADDRESS);
 
-/*   console.log('\ndeploying LCToken contract');
+console.log('\ndeploying LCToken contract');
   const lCTokenDeployed = await deployContract(LCToken,
     [LCT_NAME, LCT_SYMBOL, 18, WHITELIST_ADDRESS, EXCHANGE_ADDRESS],
     {from: DEPLOYMENT_ACCOUNT_ADDRESS, nonce: nonce}
   );
-  nonce++; */
+  nonce++;
 
 
   console.log('\ndeploying LCToken contract');

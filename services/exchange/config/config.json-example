@@ -4,7 +4,7 @@
   "contract": {
     "address": "0x0000000000000000000000000000000000000008",
     "fromBlock": 0,
-    "gasPrice": 9
+    "gasPrice": 9000000000
   },
   "executer": {
     "address": "0x6415CB729a27e9b69891dadaFcbBCae21e5B6F9C",
