@@ -21,6 +21,6 @@ hosts = ["all"]
 origins = ["all"]
 
 [misc]
-logging = "own_tx=trace"
+logging = "network=info,poa=debug,txqueue=debug"
 log_file = "parity.log"
 color = true

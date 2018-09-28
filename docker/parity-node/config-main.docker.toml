@@ -1,6 +1,7 @@
 [parity]
 chain = "sentinel.json"
 identity = "sentinel-main"
+no_persistent_txqueue = true
 
 [account]
 unlock = ["$UNLOCK"]
@@ -21,9 +22,8 @@ hosts = ["all"]
 [mining]
 author = "$AUTHOR"
 engine_signer = "$ENGINE_SIGNER"
-reseal_max_period = 600000
-min_gas_price = 8100000000 #min gas price in WEI per GAS unit (0.0000000081 Ether)
-extra_data = "0x0" # Blocks that you mine will have '0x53' in extra data field.
+reseal_max_period = 900000
+min_gas_price = 8100000000 #min gas price in WEI per GAS unit (0.0000000081 Eth)
 
 [footprint]
 tracing = "on"
@@ -31,6 +31,6 @@ fat_db = "on"
 pruning = "archive"
 
 [misc]
-logging = "own_tx=trace"
-log_file = "parity.log"
+logging = "external_tx=debug,network=trace,own_tx=debug,poa=info,txqueue=debug"
+log_file = "parity-main.log"
 color = true
