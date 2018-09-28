@@ -75,9 +75,8 @@ function triggerMethod(contract, method, params, from, privkey, callback) {
         to: contract.options.address,
         data: call.encodeABI(),
         gas: 4700000,
-        gasPrice: 1000000000
+        gasPrice: web3.utils.toHex(config.contract.gasPrice),
     };
-
     (async function () {
         await web3.eth.accounts.signTransaction(tx, privkey).then(async signed => {
             let transaction = web3.eth.sendSignedTransaction(signed.rawTransaction);
@@ -108,7 +107,7 @@ async function handlePendingRequest(exchange) {
                 request.get(config.rateEndpoint, { qs: { from: fromCurrency, to: toCurrency }, json: true }, (err, result, data) => {
                     if (result.statusCode === 200 && data.rate !== -1) {
                         let value = total * data.rate;
-                        triggerMethod(contract, 'callback', [exchangeId, value], config.executer.address, config.executer.privkey, (success) => {
+                        triggerMethod(contract, 'callback', [exchangeId, value.toString()], config.executer.address, config.executer.privkey, (success) => {
                             if (success === true) {
                                 console.log('HANDLED SUCCESFULLY');
                                 resolve('HANDLED SUCCESFULLY');

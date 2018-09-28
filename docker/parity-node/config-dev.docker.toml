@@ -6,9 +6,6 @@ identity = "sentinel-dev"
 disable = false
 interface = "all"
 
-[account]
-password = ["$PASS_PATH"]
-
 [network]
 discovery = true
 reserved_peers = "$NODES_PATH"
@@ -22,12 +19,6 @@ hosts = ["all"]
 interface = "all"
 hosts = ["all"]
 origins = ["all"]
-
-[mining]
-author = "$AUTHOR"
-engine_signer = "$ENGINE_SIGNER"
-reseal_max_period = 600000
-min_gas_price = 8100000000 #min gas price in WEI per GAS unit (0.0000000081 Ether)s
 
 [misc]
 logging = "own_tx=trace"

@@ -5,7 +5,13 @@ require('dotenv').config({
 const fs = require('fs');
 const { web3 } = require('./src/utils');
 const { deployContract } = require('./src/utils');
-const { DEPLOYMENT_ACCOUNT_ADDRESS } = process.env;
+const {
+  DEPLOYMENT_ACCOUNT_ADDRESS,
+  WHITELIST_ADDRESS,
+  EXCHANGE_ADDRESS,
+  LCT_NAME,
+  LCT_SYMBOL
+} = process.env;
 
 const LCToken = require('../build/contracts/LCToken.json');
 
@@ -14,13 +20,7 @@ async function deploy() {
 
   console.log('\ndeploying LCToken contract');
   const lCTokenDeployed = await deployContract(LCToken,
-    [
-      "Local Currency Token Myanmar",
-      "LCT.MMK",
-      18,
-      "0x0000000000000000000000000000000000000007",
-      "0x0000000000000000000000000000000000000008",
-    ],
+    [LCT_NAME, LCT_SYMBOL, 18, WHITELIST_ADDRESS, EXCHANGE_ADDRESS],
     {from: DEPLOYMENT_ACCOUNT_ADDRESS, nonce: nonce}
   );
 
