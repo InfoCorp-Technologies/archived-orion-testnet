@@ -13,7 +13,7 @@ export NODES_PATH=${NODES_PATH:-'/sentinel/nodes/nodes.txt'}
 
 # Process config files
 envsubst '${UNLOCK} ${AUTHOR} ${ENGINE_SIGNER} ${PASS_PATH} ${NODES_PATH}' < /sentinel/config/config-dev.docker.toml > /sentinel/config-dev.toml
-envsubst '${UNLOCK} ${AUTHOR} ${ENGINE_SIGNER} ${PASS_PATH} ${NODES_PATH}' < /sentinel/config/config-main.docker.toml > /sentinel/config-main.toml
+envsubst '${NODES_PATH}' < /sentinel/config/config-main.docker.toml > /sentinel/config-main.toml
 envsubst '${UNLOCK} ${AUTHOR} ${ENGINE_SIGNER} ${PASS_PATH} ${NODES_PATH}' < /sentinel/config/config-validator.docker.toml > /sentinel/config-validator.toml
 envsubst '${NETWORK_PORT} ${NODES_PATH}' < /sentinel/config/config-provider.docker.toml > /sentinel/config-provider.toml
 envsubst '${NODES_PATH}' < /sentinel/config/config-local.docker.toml > /sentinel/config-local.toml
