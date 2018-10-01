@@ -7,7 +7,7 @@
     "gasPrice": 9000000000
   },
   "executer": {
-    "address": "0x6415CB729a27e9b69891dadaFcbBCae21e5B6F9C",
-    "privkey": "0x4E805C7822DB4FC8BB15489D9C0497F2A939930DD85BA2817C234C7D507C844C"
+    "address": "0x...",
+    "privkey": "0x..."
   }
 }
