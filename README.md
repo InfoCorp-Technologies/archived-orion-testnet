@@ -23,9 +23,9 @@
 * **Validator**
   * This contract starts with an initial set of validators supporting each other. Validator can add or remove support given to as many addresses as they want.
 * **Operation**
-  * Is used to upload information about fork, all nodes receive that information and decide to accept the fork or not.
+  * It is used to upload information about forks, all nodes receive information and decide to accept whether to vote fork     approval or not.
 * **Whitelist**
-  * In this contract are stored the address of the users that can be trade or receive SENI, LCT and Livestock Tokens.
+  * In this contract is stored the address of the users that can be trade or receive SENI, LCT and Livestock Tokens.
 * **Exchange Service**
   * With this contract the users can exchange SENI to LCT or vice versa. As a requirement the exchange can only be executed by whitelisted addresses previously registered in the Whitelist contract.
 
