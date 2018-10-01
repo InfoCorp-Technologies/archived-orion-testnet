@@ -16,7 +16,7 @@
 
 ### Cross-Chain Architecture
 
-![Cross-Chain Architecture](https://raw.githubusercontent.com/InfoCorp-Technologies/sentinel-chain-network/develop/cross-chain-arch.png "Cross-Chain Architecture")
+![Cross-Chain Architecture](https://github.com/InfoCorp-Technologies/sentinel-chain-network/blob/develop/cross-chain-arch.png "Cross-Chain Architecture")
 
 ### Contracts
 
