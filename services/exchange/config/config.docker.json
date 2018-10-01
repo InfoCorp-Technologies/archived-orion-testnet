@@ -3,7 +3,8 @@
   "rateEndpoint": "$RATE_ENDPOINT",
   "contract": {
     "address": "$CONTRACT_ADDRESS",
-    "fromBlock": $FROM_BLOCK
+    "fromBlock": $FROM_BLOCK,
+    "gasPrice": $GAS_PRICE
   },
   "executer": {
     "address": "$ORACLE_ADDRESS",
