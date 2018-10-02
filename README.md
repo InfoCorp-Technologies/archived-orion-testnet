@@ -2,82 +2,72 @@
 
 # Sentinel Chain Network
 
-## Getting started
+## The Orion testnet
 
-To start Sentinel Chain node just run:
+### Components
+* **Consortium nodes**
+  * This nodes maintain blockchain integrity and help strengthen the network keeping an exact same copy of the entire transaction history
+* **Validator nodes**
+  * This is a special type of node which is able to create or issue blocks. In PoA type of blockchain a miner is rather called “validator”
+* **Bridge Authorities**
+  * This nodes are the ones who will provided the required signatures to be able to perform cross-chain transaction between Orion and other EVM based blockchain. More details will be provided below.
+* **RPC nodes**
+  * The purpose of RPC nodes is to provide a way to interact programmatically with the blockchain without having to install the client and download the entire transaction history
 
-```
-$ parity --config config.toml
-```
+### Cross-Chain Architecture
 
-## Parameters
-### Chain
+![Cross-Chain Architecture](https://github.com/InfoCorp-Technologies/sentinel-chain-network/blob/develop/cross-chain-arch.png "Cross-Chain Architecture")
 
-* **Chain Name:** "Sentinel Chain"
-* **Balances:**
-  * Initial miner 0x574366e84f74f2e913ad9a6782ce6ac8022e16eb starts with 1 ETH.
+### Contracts
 
-### Block configuration
+* **Validator**
+  * This contract starts with an initial set of validators supporting each other. Validator can add or remove support given to as many addresses as they want.
+* **Operation**
+  * It is used to upload information about forks, all nodes receive information and decide to accept whether to vote fork     approval or not.
+* **Whitelist**
+  * In this contract is stored the address of the users that can be trade or receive SENI, LCT and Livestock Tokens.
+* **Exchange Service**
+  * With this contract the users can exchange SENI to LCT or vice versa. As a requirement the exchange can only be executed by whitelisted addresses previously registered in the Whitelist contract.
 
-* **stepDuration:** 60 seconds per block, if no TX found
-* **blockReward:** 0x16345785D8A0000 --> 0.1 ETH as reword per block sealed
-* **reseal_on_tx:** yes because of Aura consensus.
+#### Address
 
-### Network
+| Name | Address |
+|------|---------|
+|Validator|[0x0000000000000000000000000000000000000005](https://orion-explorer.sentinel-chain.org/account/0x0000000000000000000000000000000000000005)|
+|Operation|[0x0000000000000000000000000000000000000006](https://orion-explorer.sentinel-chain.org/account/0x0000000000000000000000000000000000000006)|
+|Whitelist|[0x0000000000000000000000000000000000000007](https://orion-explorer.sentinel-chain.org/account/0x0000000000000000000000000000000000000007)|
+|Exchange service|[0x0000000000000000000000000000000000000008](https://orion-explorer.sentinel-chain.org/account/0x0000000000000000000000000000000000000008)|
+|Registry|[0x0000000000000000000000000000000000000009](https://orion-explorer.sentinel-chain.org/account/0x0000000000000000000000000000000000000009)|
+|Data query oracle|[0x0000000000000000000000000000000000000010](https://orion-explorer.sentinel-chain.org/account/0x0000000000000000000000000000000000000010)|
 
-* **RPC Port:** 30303
+### Bridge Contracts
 
-### Mining Configuration
+* **Orion Bridge**
+  * This contract is in charge to lock and unlock SENI tokens in Sentinel Chain when a relay event will be performed.
+* **Orion Validator**
+  * In this contract are stored the address of who will provided the signature.
+* **Kovan Bridge**
+  * It carry out the same function as Orion Bridge contract, but this contract is in charge to lock and unlock a replic of the SENC Tokens, deployed on Kovan testnet.
+* **Kovan Validator**
 
-**Multi-set enabled:**
+#### Address
 
-* **From block 0 to 1000:**  Validator List Array
-  * **address** 0x574366e84f74f2e913ad9a6782ce6ac8022e16eb
+| Name | Address |
+|------|---------|
+|Orion Bridge|[0xC1949F417Cb8f847d040F47C9206789445E421eF](https://orion-explorer.sentinel-chain.org/account/0xC1949F417Cb8f847d040F47C9206789445E421eF)|
+|Orion Validator|[0xBDabF208E23c0417c78B9F254DBbd155fCB4667C](https://orion-explorer.sentinel-chain.org/account/0xBDabF208E23c0417c78B9F254DBbd155fCB4667C)|
+|Kovan Bridge|[0xC705BFaF78d952273EF98bd2C6B9b373AdC53f8e](https://kovan.etherscan.io/address/0xC705BFaF78d952273EF98bd2C6B9b373AdC53f8e)|
+|Kovan Validator|[0x07c7F15B4f6f1AD0C0E8bD346AF0d05396C97c57](https://kovan.etherscan.io/address/0x07c7F15B4f6f1AD0C0E8bD346AF0d05396C97c57)|
 
-* **From block 1000 to N:** ImmediateSet Validator
-  * **Contract at address:** 0x0000000000000000000000000000000000000005
+### Services
 
-### Troubleshooting
-
-* **Log:** can be found at parity.log file.
-
-## Run Sentinel Chain node whit Docker
-
-First edit docker-compose.yml file, set the ports and choice the NODE_TYPE, according to the corresponding configuration:
-
-  * **default:** config.toml
-  * **main:** config-main.toml
-  * **rpc:** config-rpc.toml
-  * **validator:** config-validator.toml
-
-Then run the node with:
-
-```
-$ docker-compose up
-```
-### Copy files to container
-The genesis and config files are in the folder `/sentinel` and the keys path on `/sentinel/keys/Sentinel\ Chain/` inside the container, so if you need to send files to container like private keys or password.txt, you can do it by follow this steps.
-
-Create the container:
-```
-$ docker-compose up --no-start
-```
-
-Get the container name:
-
-```
-$ docker ps -a
-```
-
-Then, for example, copy the private key file usin this command:
-```
-$ docker cp PATH_TO_YOUR_KEY CONTAINER_NAME:/sentinel/keys/Sentinel\ Chain/
-```
-or, the password.txt file like these:
-```
-$ docker cp PATH_TO_PASSWORD.TXT CONTAINER_NAME:/sentinel/
-```
-And finally start the container:
-```
-$ docker-compose up
-```
+* **Explorer**
+  * https://orion-explorer.sentinel-chain.org
+* **Statistics**
+  * https://orion-stats.sentinel-chain.org
+* **Cross-Chain Bridge**
+  * https://orion-bridge.sentinel-chain.org/
+* **Oracle services**
+* **RPC Service**
+  * RPC https://orion-rpc.sentinel-chain.org
+  * Websocker https://orion-rpc.sentinel-chain.org/ws

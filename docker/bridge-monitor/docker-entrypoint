@@ -1,0 +1,11 @@
+#!/bin/sh
+
+set -e
+
+# Run cron
+crond
+# Create json files
+node checkWorker.js
+node checkWorker2.js
+# Start app
+npm start
