@@ -54,10 +54,10 @@
 
 | Name | Address |
 |------|---------|
-|Orion Bridge|[0xC1949F417Cb8f847d040F47C9206789445E421eF](https://orion-explorer.sentinel-chain.org/account/0xC1949F417Cb8f847d040F47C9206789445E421eF)|
-|Orion Validator|[0xBDabF208E23c0417c78B9F254DBbd155fCB4667C](https://orion-explorer.sentinel-chain.org/account/0xBDabF208E23c0417c78B9F254DBbd155fCB4667C)|
-|Kovan Bridge|[0xC705BFaF78d952273EF98bd2C6B9b373AdC53f8e](https://kovan.etherscan.io/address/0xC705BFaF78d952273EF98bd2C6B9b373AdC53f8e)|
-|Kovan Validator|[0x07c7F15B4f6f1AD0C0E8bD346AF0d05396C97c57](https://kovan.etherscan.io/address/0x07c7F15B4f6f1AD0C0E8bD346AF0d05396C97c57)|
+|Orion Bridge|[0x2ae1C6F57A81caeD383658535d6312B836dE9295](https://orion-explorer.sentinel-chain.org/account/0x2ae1C6F57A81caeD383658535d6312B836dE9295)|
+|Orion Validator|[0x897a111Aa54dfCb4836699e7fb97c16cB48111fc](https://orion-explorer.sentinel-chain.org/account/0x897a111Aa54dfCb4836699e7fb97c16cB48111fc)|
+|Kovan Bridge|[0xF0e9eA91c31b8127823F0ba452Cae70c87bFf116](https://kovan.etherscan.io/address/0xF0e9eA91c31b8127823F0ba452Cae70c87bFf116)|
+|Kovan Validator|[0x6170CE930A78883B2516Ba9a46A66bCF485580fe](https://kovan.etherscan.io/address/0x6170CE930A78883B2516Ba9a46A66bCF485580fe)|
 
 ### Services
 
