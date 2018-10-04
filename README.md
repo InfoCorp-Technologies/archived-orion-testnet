@@ -119,7 +119,7 @@ and interact programmatically with Orion testnet
 
 |  Contract  |         Type        |       Bases      |                  |                 |
 |:----------:|:-------------------:|:----------------:|:----------------:|:---------------:|
-|     Name      |  **Function Name**  |  **Visibility**  |  **Mutability**  |  **Modifiers**  |
+|     **Name**      |  **Function Name**  |  **Visibility**  |  **Mutability**  |  **Modifiers**  |
 ||||||
 | **Validator** | Implementation |  |||
 | | \<Constructor\> | Public ❗️ | 🛑  | |
