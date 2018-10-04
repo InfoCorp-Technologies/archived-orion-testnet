@@ -16,6 +16,44 @@
 * **RPC nodes**
   * The purpose of RPC nodes is to provide a way to interact programmatically with the blockchain without having to install the client and download the entire transaction history
 
+## Services
+
+* **Explorer** https://orion-explorer.sentinel-chain.org
+  * As with all types of blockchains, a block explorer is required for users to track
+transaction status, check block issuance, inspect or deploy Smart Contracts, and get the
+general state of the blockchain.
+* **Statistics** https://orion-stats.sentinel-chain.org
+  * Orion statistics page site, which will provide users with real-time and easy to read core information like:
+    * Latest transactions
+    * Current GASPrice
+    * Block creation speed
+    * Latest ‘block number’ and
+    * Validators list
+* **Cross-Chain Bridge** https://orion-bridge.sentinel-chain.org/
+  * This service is comprised of different applications to manage:
+    * Transaction queue
+    * Real time event listenersiii. Signature collection
+    * Transaction execution
+* **Oracle services**
+  * Sentinel Oracle Services
+    * Are used to gain access to ​ vital market information
+such as prices and exchange rates. They also interact with Sentinel Chain’s
+data-query service to perform cross-chain information retrieval.
+  * Cross-Chain Oracle Services
+    * Are used to gain access to data stored on the
+CrossPay private blockchain utilising the block number and transaction id on the
+private blockchain.
+* **RPC Service**
+  * The public RPC service that connects with MetaMask, MeW or other application
+and interact programmatically with Orion testnet
+    * RPC: https://orion-rpc.sentinel-chain.org
+    * Websocker: https://orion-rpc.sentinel-chain.org/ws
+
+
+## Cross-Chain Architecture
+
+![Cross-Chain Architecture](https://github.com/InfoCorp-Technologies/orion-testnet-private/blob/master/cross-chain-arch.png "Cross-Chain Architecture")
+
 ## Contracts
 
 * **Validator**
@@ -42,22 +80,19 @@
 * **Livestock Token**
   * This token reprecents the real world assets livestock as a token. As LCT token there will be multiple Livestock Token contracts for each type of livestock, for example, there will be an Livestock Token for cows with the symbol "COW". Each token from a type it will related to one Multichain address and this data is registered in the Registry Contract.
 
-## Cross-Chain Architecture
-
-![Cross-Chain Architecture](https://github.com/InfoCorp-Technologies/orion-testnet-private/blob/master/cross-chain-arch.png "Cross-Chain Architecture")
-
-### Contracts
-
 * **Orion Bridge**
   * This contract is in charge to lock and unlock SENI tokens in Sentinel Chain when a relay event will be performed.
+
 * **Orion Validator**
   * In this contract are stored the address of who will provided the signature.
+
 * **Kovan Bridge**
   * It carry out the same function as Orion Bridge contract, but this contract is in charge to lock and unlock a replic of the SENC Tokens, deployed on Kovan testnet.
+
 * **Kovan Validator**
   * In this contract are stored the address of who will provided the signature
 
-## Contract address
+### Contract address
 
 | Name | Address |
 |------|---------|
@@ -74,9 +109,9 @@
 |Kovan Bridge|[0xF0e9eA91c31b8127823F0ba452Cae70c87bFf116](https://kovan.etherscan.io/address/0xF0e9eA91c31b8127823F0ba452Cae70c87bFf116)|
 |Kovan Validator|[0x6170CE930A78883B2516Ba9a46A66bCF485580fe](https://kovan.etherscan.io/address/0x6170CE930A78883B2516Ba9a46A66bCF485580fe)|
 
-## Contracts Description Table
+### Description Table
 
-### Legend
+#### Legend
 
 |  Symbol  |  Meaning  |
 |:--------:|-----------|
@@ -184,36 +219,3 @@
 | └ | mint | External ❗️ | 🛑  | onlyOwner |
 | └ | burn | External ❗️ | 🛑  | onlyOwner |
 | └ | setWhitelist | External ❗️ | 🛑  | onlyOwner |
-
-## Services
-
-* **Explorer** https://orion-explorer.sentinel-chain.org
-  * As with all types of blockchains, a block explorer is required for users to track
-transaction status, check block issuance, inspect or deploy Smart Contracts, and get the
-general state of the blockchain.
-* **Statistics** https://orion-stats.sentinel-chain.org
-  * Orion statistics page site, which will provide users with real-time and easy to read core information like:
-    * Latest transactions
-    * Current GASPrice
-    * Block creation speed
-    * Latest ‘block number’ and
-    * Validators list
-* **Cross-Chain Bridge** https://orion-bridge.sentinel-chain.org/
-  * This service is comprised of different applications to manage:
-    * Transaction queue
-    * Real time event listenersiii. Signature collection
-    * Transaction execution
-* **Oracle services**
-  * Sentinel Oracle Services
-    * Are used to gain access to ​ vital market information
-such as prices and exchange rates. They also interact with Sentinel Chain’s
-data-query service to perform cross-chain information retrieval.
-  * Cross-Chain Oracle Services
-    * Are used to gain access to data stored on the
-CrossPay private blockchain utilising the block number and transaction id on the
-private blockchain.
-* **RPC Service**
-  * The public RPC service that connects with MetaMask, MeW or other application
-and interact programmatically with Orion testnet
-    * RPC: https://orion-rpc.sentinel-chain.org
-    * Websocker: https://orion-rpc.sentinel-chain.org/ws
