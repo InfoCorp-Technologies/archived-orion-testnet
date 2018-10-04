@@ -5,10 +5,10 @@ set -e
 # Set default values for ENV's variables
 export HOST=${HOST:-'ws://localhost:8546'}
 export CONTRACT_ADDRESS=${CONTRACT_ADDRESS:-'0x0000000000000000000000000000000000000010'}
-export ORACLE_ADDRESS=${ORACLE_ADDRESS:-'0x00DC7B3229F23C975E0510FDb9cBcC4e695729Fd'}
-export ORACLE_PK=${ORACLE_PK:-''}
-export RSA_PUBLIC=${RSA_PUBLIC:-''}
-export RSA_PRIVATE=${RSA_PRIVATE:-''}
+export ORACLE_ADDRESS=${ORACLE_ADDRESS:-'0x...'}
+export ORACLE_PK=${ORACLE_PK:-'0x...'}
+export RSA_PUBLIC=${RSA_PUBLIC:-'...'}
+export RSA_PRIVATE=${RSA_PRIVATE:-'...'}
 
 # Process config files
 envsubst '${HOST} ${CONTRACT_ADDRESS} ${ORACLE_ADDRESS} ${ORACLE_PK}' < /app/config/config.docker.json > /app/config/config.json

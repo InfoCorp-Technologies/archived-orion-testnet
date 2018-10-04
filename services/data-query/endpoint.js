@@ -26,7 +26,7 @@ function foo() {
 
             let contract = new web3.eth.Contract(contractAbi, contractAddress);
             contract.once('Query', {
-                fromBlock: 0,
+                fromBlock: config.contract.fromBlock,
                 toBlock: 'latest'
             }, (error, result) => {
                 let queryId = result.returnValues[0];
@@ -112,7 +112,7 @@ function triggerMethod(contract, method, params, from, privkey, callback) {
         to: contract.options.address,
         data: call.encodeABI(),
         gas: 4700000,
-        gasPrice: 1000000000
+        gasPrice: config.contract.gasPrice
     };
 
     (async function () {

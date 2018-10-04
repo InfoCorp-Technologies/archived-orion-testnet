@@ -1,7 +1,9 @@
 {
   "host": "ws://localhost:8546",
   "contract": {
-    "address": "0x0000000000000000000000000000000000000010"
+    "address": "0x0000000000000000000000000000000000000010",
+    "fromBlock": 0,
+    "gasPrice": 9000000000
   },
   "query": {
     "name": "attestator",

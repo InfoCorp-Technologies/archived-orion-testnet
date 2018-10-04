@@ -75,7 +75,7 @@ function triggerMethod(contract, method, params, from, privkey, callback) {
         to: contract.options.address,
         data: call.encodeABI(),
         gas: 4700000,
-        gasPrice: contract.gasPrice,
+        gasPrice: config.contract.gasPrice,
     };
     (async function () {
         await web3.eth.accounts.signTransaction(tx, privkey).then(async signed => {

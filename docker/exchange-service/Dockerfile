@@ -3,10 +3,10 @@ FROM node:8-alpine
 WORKDIR /app
 
 RUN apk add --update --no-cache \
-    build-base \
-    gettext \
-    python \
-    git
+        build-base \
+        gettext \
+        python \
+        git
 
 COPY services/exchange/package*.json ./
 

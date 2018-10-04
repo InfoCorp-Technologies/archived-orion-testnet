@@ -24,9 +24,6 @@ contract Oracle is Ownable {
         require(_oracle != address(0), "Oracle address is required");
         owner = _owner;
         oracle = _oracle;
-        // setAPI("user", "http://104.211.59.231/user/");
-        // setAPI("attestator", "http://104.211.59.231/attestator/");
-        // setAPI("livestock", "http://104.211.59.231/livestock/");
     }
 
     function api(string name) view external returns(string) {
