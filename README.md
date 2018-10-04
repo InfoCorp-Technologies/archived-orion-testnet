@@ -5,13 +5,13 @@
 ## Components
 
 * **Consortium nodes**
-  * This nodes maintain blockchain integrity and help strengthen the network keeping an exact same copy of the entire transaction history
+  * This nodes maintain blockchain integrity and help strengthen the network keeping an exact same copy of the entire transaction history.
 
 * **Validator nodes**
-  * This is a special type of node which is able to create or issue blocks. In PoA type of blockchain a miner is rather called “validator”
+  * This is a special type of node which is able to create or issue blocks. In any PoA type of blockchain a miner is rather called “validator”
 
 * **Bridge Authorities**
-  * This nodes are the ones who will provided the required signatures to be able to perform cross-chain transaction between Orion and other EVM based blockchain.
+  * This nodes are the ones who will provided the required signatures to be able to perform cross-chain transaction between Orion and other EVM based blockchains.
 
 * **RPC nodes**
   * The purpose of RPC nodes is to provide a way to interact programmatically with the blockchain without having to install the client and download the entire transaction history
@@ -32,22 +32,21 @@ general state of the blockchain.
 * **Cross-Chain Bridge** https://orion-bridge.sentinel-chain.org/
   * This service is comprised of different applications to manage:
     * Transaction queue
-    * Real time event listenersiii. Signature collection
+    * Real time event listeners. Signature collection
     * Transaction execution
 * **Oracle services**
   * Sentinel Oracle Services
-    * Are used to gain access to ​ vital market information
+    * Oracles are used to gain access to​ vital market information
 such as prices and exchange rates. They also interact with Sentinel Chain’s
 data-query service to perform cross-chain information retrieval.
   * Cross-Chain Oracle Services
     * Are used to gain access to data stored on the
-CrossPay private blockchain utilising the block number and transaction id on the
-private blockchain.
+CrossPay private blockchain.
 * **RPC Service**
   * The public RPC service that connects with MetaMask, MeW or other application
 and interact programmatically with Orion testnet
     * RPC: https://orion-rpc.sentinel-chain.org
-    * Websocker: https://orion-rpc.sentinel-chain.org/ws
+    * Websocket: https://orion-rpc.sentinel-chain.org/ws
 
 
 ## Cross-Chain Architecture
@@ -57,13 +56,13 @@ and interact programmatically with Orion testnet
 ## Contracts
 
 * **Validator**
-  * This contract starts with an initial set of validators supporting each other. Validator can add or remove support given to as many addresses as they want.
+  * This contract starts with an initial set of fixed validators. Existing Validators can add or remove block issuing permission.
 
 * **Operation**
-  * It is used to upload information about forks, all nodes receive information and decide to accept whether to vote fork approval or not.
+  * It is used to plan and execute chain forks. Validator nodes receives the information and they can vote whether to accept and approve the fork plan or not. 
 
 * **Whitelist**
-  * In this contract is stored the address of the users that can be trade or receive SENI, LCT and Livestock Tokens.
+  * This contract provides a whitelisting mechanism to include or not addressess that can peform certain type of transactions.
 
 * **Exchange Service**
   * With this contract the users can exchange SENI to LCT or vice versa. As a requirement the exchange can only be executed by whitelisted addresses previously registered in the Whitelist contract.
@@ -72,25 +71,25 @@ and interact programmatically with Orion testnet
   * In Multichain-based CrossPay Blockchain, wallet addresses can represent different entities: farmer, attestor, livestock, etc, and each entities contain different data structure to be stored. These information can be query by users in the Sentinel Chain Blockchain using the Data Query Contract, through the CrossPay addresses of those entities and then stored the results in the Registry Contract.
 
 * **Data Query**
-  * With this contract the users can start an query to the CrossPay server to get the information of an Multichain address in CrossPay's Multichain streams. The query transaction can be called by anyone.
+  * With this contract users can start querying to the CrossPay server to get the information of an Multichain address in CrossPay's Multichain streams.
 
 * **LCT Token**
-  * It is a ERC2-compaitble token that is only transferable between addresses stored in the Whitelist contract. There will be multiple LCT Token contracts for each of the countries in the CrossPay network. The symbol of each token will be composed for the "LCT" prefix and the country currency symbol, for example, the Myanmar token symbol would be "LCT.MMK".
+  * It's an ERC20-compaitble token that can only be transfered between addresses stored in the Whitelist contract. There will be multiple LCT Token contracts for each of the countries in the CrossPay network. The symbol of each token will be composed for the "LCT" prefix and the country currency symbol, for example, the Myanmar token symbol would be "LCT.MMK".
 
 * **Livestock Token**
   * This token reprecents the real world assets livestock as a token. As LCT token there will be multiple Livestock Token contracts for each type of livestock, for example, there will be an Livestock Token for cows with the symbol "COW". Each token from a type it will related to one Multichain address and this data is registered in the Registry Contract.
 
 * **Orion Bridge**
-  * This contract is in charge to lock and unlock SENI tokens in Sentinel Chain when a relay event will be performed.
+  * This contract is in charge to lock and unlock SENI tokens in Sentinel Chain when a relay event is triggered.
 
 * **Orion Validator**
-  * In this contract are stored the address of who will provided the signature.
+  * This contract store the address(es) that needs to sign transactions for the bridge service in order to accept cross-chain swaps.
 
 * **Kovan Bridge**
-  * It carry out the same function as Orion Bridge contract, but this contract is in charge to lock and unlock a replic of the SENC Tokens, deployed on Kovan testnet.
+  * Same function as Orion Bridge contract, but this contract is in charge to lock and unlock a copy of the SENC Tokens, deployed on Kovan testnet.
 
 * **Kovan Validator**
-  * In this contract are stored the address of who will provided the signature
+  * This contract store the address(es) that needs to sign transactions for the bridge service in order to accept cross-chain swaps.
 
 ### Address
 
