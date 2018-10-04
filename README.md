@@ -92,7 +92,7 @@ and interact programmatically with Orion testnet
 * **Kovan Validator**
   * In this contract are stored the address of who will provided the signature
 
-### Contract address
+### Address
 
 | Name | Address |
 |------|---------|
