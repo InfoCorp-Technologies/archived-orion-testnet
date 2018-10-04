@@ -119,102 +119,102 @@ and interact programmatically with Orion testnet
 
 |  Contract  |         Type        |       Bases      |                  |                 |
 |:----------:|:-------------------:|:----------------:|:----------------:|:---------------:|
-|     └      |  **Function Name**  |  **Visibility**  |  **Mutability**  |  **Modifiers**  |
+|     Name      |  **Function Name**  |  **Visibility**  |  **Mutability**  |  **Modifiers**  |
 ||||||
 | **Validator** | Implementation |  |||
-| └ | \<Constructor\> | Public ❗️ | 🛑  | |
-| └ | isValidator | External ❗️ |   | |
-| └ | getValidators | Public ❗️ |   | |
-| └ | getPendings | Public ❗️ |   | |
-| └ | addValidator | Public ❗️ | 🛑  | is_finalized is_validator |
-| └ | removeValidator | Public ❗️ | 🛑  | is_finalized is_validator |
-| └ | initiateChange | Private 🔐 | 🛑  | |
-| └ | finalizeChange | Public ❗️ | 🛑  | |
-| └ | setRequiredSignatures | External ❗️ | 🛑  | is_validator |
+| | \<Constructor\> | Public ❗️ | 🛑  | |
+|  | isValidator | External ❗️ |   | |
+|  | getValidators | Public ❗️ |   | |
+|  | getPendings | Public ❗️ |   | |
+|  | addValidator | Public ❗️ | 🛑  | is_finalized is_validator |
+|  | removeValidator | Public ❗️ | 🛑  | is_finalized is_validator |
+|  | initiateChange | Private 🔐 | 🛑  | |
+|  | finalizeChange | Public ❗️ | 🛑  | |
+|  | setRequiredSignatures | External ❗️ | 🛑  | is_validator |
 ||||||
 | **Operations** | Implementation |  |||
-| └ | \<Constructor\> | Public ❗️ | 🛑  | |
-| └ | clientList | Public ❗️ |   | |
-| └ | clientsRequired | Public ❗️ |   | |
-| └ | proposeTransaction | Public ❗️ | 🛑  | only_client_owner only_when_no_proxy |
-| └ | confirmTransaction | Public ❗️ | 🛑  | only_client_owner only_when_proxy only_when_proxy_undecided |
-| └ | rejectTransaction | Public ❗️ | 🛑  | only_client_owner only_when_proxy only_when_proxy_undecided |
-| └ | proposeFork | Public ❗️ | 🛑  | only_client_owner only_when_none_proposed |
-| └ | acceptFork | Public ❗️ | 🛑  | only_when_proposed only_undecided_client_owner |
-| └ | rejectFork | Public ❗️ | 🛑  | only_when_proposed only_undecided_client_owner only_unratified |
-| └ | addRelease | Public ❗️ | 🛑  | only_client_owner |
-| └ | addChecksum | Public ❗️ | 🛑  | only_client_owner |
-| └ | isLatest | Public ❗️ |   | |
-| └ | track | Public ❗️ |   | |
-| └ | latestInTrack | Public ❗️ |   | |
-| └ | build | Public ❗️ |   | |
-| └ | release | Public ❗️ |   | |
-| └ | checksum | Public ❗️ |   | |
-| └ | noteAccepted | Internal 🔒 | 🛑  | when_is_client |
-| └ | noteRejected | Internal 🔒 | 🛑  | when_is_client |
-| └ | checkFork | Internal 🔒 | 🛑  | when_have_all_required |
-| └ | checkProxy | Internal 🔒 | 🛑  | when_proxy_confirmed |
+|  | \<Constructor\> | Public ❗️ | 🛑  | |
+|  | clientList | Public ❗️ |   | |
+|  | clientsRequired | Public ❗️ |   | |
+|  | proposeTransaction | Public ❗️ | 🛑  | only_client_owner only_when_no_proxy |
+|  | confirmTransaction | Public ❗️ | 🛑  | only_client_owner only_when_proxy only_when_proxy_undecided |
+|  | rejectTransaction | Public ❗️ | 🛑  | only_client_owner only_when_proxy only_when_proxy_undecided |
+|  | proposeFork | Public ❗️ | 🛑  | only_client_owner only_when_none_proposed |
+|  | acceptFork | Public ❗️ | 🛑  | only_when_proposed only_undecided_client_owner |
+|  | rejectFork | Public ❗️ | 🛑  | only_when_proposed only_undecided_client_owner only_unratified |
+|  | addRelease | Public ❗️ | 🛑  | only_client_owner |
+|  | addChecksum | Public ❗️ | 🛑  | only_client_owner |
+|  | isLatest | Public ❗️ |   | |
+|  | track | Public ❗️ |   | |
+|  | latestInTrack | Public ❗️ |   | |
+|  | build | Public ❗️ |   | |
+|  | release | Public ❗️ |   | |
+|  | checksum | Public ❗️ |   | |
+|  | noteAccepted | Internal 🔒 | 🛑  | when_is_client |
+|  | noteRejected | Internal 🔒 | 🛑  | when_is_client |
+|  | checkFork | Internal 🔒 | 🛑  | when_have_all_required |
+|  | checkProxy | Internal 🔒 | 🛑  | when_proxy_confirmed |
 ||||||
 | **Whitelist** | Implementation | Ownable |||
-| └ | \<Constructor\> | Public ❗️ | 🛑  | |
-| └ | addWhitelist | External ❗️ | 🛑  | onlyOwner |
-| └ | removeWhitelist | External ❗️ | 🛑  | onlyOwner |
+|  | \<Constructor\> | Public ❗️ | 🛑  | |
+|  | addWhitelist | External ❗️ | 🛑  | onlyOwner |
+|  | removeWhitelist | External ❗️ | 🛑  | onlyOwner |
 ||||||
 | **SentinelExchange** | Implementation | Ownable |||
-| └ | \<Constructor\> | Public ❗️ | 🛑  | |
-| └ | startExchange | Internal 🔒 | 🛑  | |
-| └ | exchangeSeni | External ❗️ |  💵 | isCurrency |
-| └ | exchangeLct | External ❗️ | 🛑  | isCurrency |
-| └ | callback | External ❗️ | 🛑  | |
-| └ | claimTokens | External ❗️ | 🛑  | onlyOwner |
-| └ | currency | External ❗️ |   | |
-| └ | setCurrency | External ❗️ | 🛑  | onlyOwner |
-| └ | removeCurrency | External ❗️ | 🛑  | onlyOwner |
-| └ | setOracle | External ❗️ | 🛑  | onlyOwner |
-| └ | setWhitelist | External ❗️ | 🛑  | onlyOwner |
+|  | \<Constructor\> | Public ❗️ | 🛑  | |
+|  | startExchange | Internal 🔒 | 🛑  | |
+|  | exchangeSeni | External ❗️ |  💵 | isCurrency |
+|  | exchangeLct | External ❗️ | 🛑  | isCurrency |
+|  | callback | External ❗️ | 🛑  | |
+|  | claimTokens | External ❗️ | 🛑  | onlyOwner |
+|  | currency | External ❗️ |   | |
+|  | setCurrency | External ❗️ | 🛑  | onlyOwner |
+|  | removeCurrency | External ❗️ | 🛑  | onlyOwner |
+|  | setOracle | External ❗️ | 🛑  | onlyOwner |
+|  | setWhitelist | External ❗️ | 🛑  | onlyOwner |
 ||||||
 | **Registry** | Implementation | Administration |||
-| └ | \<Constructor\> | Public ❗️ | 🛑  | |
-| └ | getManager | Public ❗️ |   | |
-| └ | setManager | External ❗️ | 🛑  | canManage |
-| └ | getLivestock | External ❗️ |   | |
-| └ | setLivestock | External ❗️ | 🛑  | onlyOwner |
-| └ | removeLivestock | External ❗️ | 🛑  | onlyOwner |
-| └ | interfaceHash | Public ❗️ |   | |
-| └ | getInterfaceImplementer | Public ❗️ |   | |
-| └ | setInterfaceImplementer | External ❗️ | 🛑  | canManage |
-| └ | verifyInterfaceImplementer | External ❗️ | 🛑  | |
-| └ | removeInterfaceImplementer | External ❗️ | 🛑  | canManage |
-| └ | verifyInterfaceRemoval | External ❗️ | 🛑  | |
-| └ | _getInterfaces | Internal 🔒 |   | |
-| └ | _isFitWithRule | Internal 🔒 |   | |
-| └ | decodeHash | Public ❗️ |   | |
+|  | \<Constructor\> | Public ❗️ | 🛑  | |
+|  | getManager | Public ❗️ |   | |
+|  | setManager | External ❗️ | 🛑  | canManage |
+|  | getLivestock | External ❗️ |   | |
+|  | setLivestock | External ❗️ | 🛑  | onlyOwner |
+|  | removeLivestock | External ❗️ | 🛑  | onlyOwner |
+|  | interfaceHash | Public ❗️ |   | |
+|  | getInterfaceImplementer | Public ❗️ |   | |
+|  | setInterfaceImplementer | External ❗️ | 🛑  | canManage |
+|  | verifyInterfaceImplementer | External ❗️ | 🛑  | |
+|  | removeInterfaceImplementer | External ❗️ | 🛑  | canManage |
+|  | verifyInterfaceRemoval | External ❗️ | 🛑  | |
+|  | _getInterfaces | Internal 🔒 |   | |
+|  | _isFitWithRule | Internal 🔒 |   | |
+|  | decodeHash | Public ❗️ |   | |
 ||||||
 | **Oracle** | Implementation | Ownable |||
-| └ | \<Constructor\> | Public ❗️ | 🛑  | |
-| └ | api | External ❗️ |   | |
-| └ | query | External ❗️ | 🛑  | |
-| └ | callback | Public ❗️ | 🛑  | |
-| └ | result | External ❗️ |   | |
-| └ | setAPI | Public ❗️ | 🛑  | onlyOwner |
-| └ | setOracle | External ❗️ | 🛑  | onlyOwner |
-| └ | strConcat | Internal 🔒 |   | |
+|  | \<Constructor\> | Public ❗️ | 🛑  | |
+|  | api | External ❗️ |   | |
+|  | query | External ❗️ | 🛑  | |
+|  | callback | Public ❗️ | 🛑  | |
+|  | result | External ❗️ |   | |
+|  | setAPI | Public ❗️ | 🛑  | onlyOwner |
+|  | setOracle | External ❗️ | 🛑  | onlyOwner |
+|  | strConcat | Internal 🔒 |   | |
 ||||||
 | **LCToken** | Implementation | DetailedERC20, MintableToken, BurnableToken |||
-| └ | \<Constructor\> | Public ❗️ | 🛑  | DetailedERC20 |
-| └ | transfer | Public ❗️ | 🛑  | canTransfer |
-| └ | transferFrom | Public ❗️ | 🛑  | canTransfer |
-| └ | transferFromOwner | External ❗️ | 🛑  | onlyOwner |
-| └ | exchange | Public ❗️ | 🛑  | |
-| └ | setWhitelist | External ❗️ | 🛑  | onlyOwner |
+|  | \<Constructor\> | Public ❗️ | 🛑  | DetailedERC20 |
+|  | transfer | Public ❗️ | 🛑  | canTransfer |
+|  | transferFrom | Public ❗️ | 🛑  | canTransfer |
+|  | transferFromOwner | External ❗️ | 🛑  | onlyOwner |
+|  | exchange | Public ❗️ | 🛑  | |
+|  | setWhitelist | External ❗️ | 🛑  | onlyOwner |
 ||||||
 | **Livestock** | Implementation | ERC721Token, Ownable |||
-| └ | \<Constructor\> | Public ❗️ | 🛑  | ERC721Token |
-| └ | tokensOfOwner | External ❗️ |   | |
-| └ | transfer | Public ❗️ | 🛑  | isWhitelisted |
-| └ | safeTransfer | Public ❗️ | 🛑  | |
-| └ | safeTransfer | Public ❗️ | 🛑  | |
-| └ | transferFrom | Public ❗️ | 🛑  | isWhitelisted |
-| └ | mint | External ❗️ | 🛑  | onlyOwner |
-| └ | burn | External ❗️ | 🛑  | onlyOwner |
-| └ | setWhitelist | External ❗️ | 🛑  | onlyOwner |
+|  | \<Constructor\> | Public ❗️ | 🛑  | ERC721Token |
+|  | tokensOfOwner | External ❗️ |   | |
+|  | transfer | Public ❗️ | 🛑  | isWhitelisted |
+|  | safeTransfer | Public ❗️ | 🛑  | |
+|  | safeTransfer | Public ❗️ | 🛑  | |
+|  | transferFrom | Public ❗️ | 🛑  | isWhitelisted |
+|  | mint | External ❗️ | 🛑  | onlyOwner |
+|  | burn | External ❗️ | 🛑  | onlyOwner |
+|  | setWhitelist | External ❗️ | 🛑  | onlyOwner |
