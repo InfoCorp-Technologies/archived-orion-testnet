@@ -72,7 +72,7 @@ and interact programmatically with Orion testnet
   * In Multichain-based CrossPay Blockchain, wallet addresses can represent different entities: farmer, attestor, livestock, etc, and each entities contain different data structure to be stored. These information can be query by users in the Sentinel Chain Blockchain using the Data Query Contract, through the CrossPay addresses of those entities and then stored the results in the Registry Contract.
 
 * **Data Query**
-  * With this contract the users can start an query to the CrossPay server to get the information of an Multichain address in CrossPay's Multichain streams. The query transaction can be called by anyone and is free from fee.
+  * With this contract the users can start an query to the CrossPay server to get the information of an Multichain address in CrossPay's Multichain streams. The query transaction can be called by anyone.
 
 * **LCT Token**
   * It is a ERC2-compaitble token that is only transferable between addresses stored in the Whitelist contract. There will be multiple LCT Token contracts for each of the countries in the CrossPay network. The symbol of each token will be composed for the "LCT" prefix and the country currency symbol, for example, the Myanmar token symbol would be "LCT.MMK".
