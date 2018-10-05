@@ -107,7 +107,7 @@ and interact programmatically with Orion testnet
 |Orion Validator|[0x897a111Aa54dfCb4836699e7fb97c16cB48111fc](https://orion-explorer.sentinel-chain.org/account/0x897a111Aa54dfCb4836699e7fb97c16cB48111fc)|
 |Kovan Bridge|[0xF0e9eA91c31b8127823F0ba452Cae70c87bFf116](https://kovan.etherscan.io/address/0xF0e9eA91c31b8127823F0ba452Cae70c87bFf116)|
 |Kovan Validator|[0x6170CE930A78883B2516Ba9a46A66bCF485580fe](https://kovan.etherscan.io/address/0x6170CE930A78883B2516Ba9a46A66bCF485580fe)|
-
+|Kovan SENC ERC20 Token|[0xFd06ABc52da2f7877d210F7FFb341cE7fAF31927](https://kovan.etherscan.io/address/0xfd06abc52da2f7877d210f7ffb341ce7faf31927)|
 ### Description Table
 
 #### Legend
