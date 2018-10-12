@@ -5,14 +5,17 @@ set -e
 # Set default values for ENV's variables
 export HOST=${HOST:-'ws://localhost:8546'}
 export CONTRACT_ADDRESS=${CONTRACT_ADDRESS:-'0x0000000000000000000000000000000000000010'}
+export FROM_BLOCK=${FROM_BLOCK:-'0'}
+export GAS_PRICE=${GAS_PRICE:-'9'}
 export ORACLE_ADDRESS=${ORACLE_ADDRESS:-'0x...'}
 export ORACLE_PK=${ORACLE_PK:-'0x...'}
 export RSA_PUBLIC=${RSA_PUBLIC:-'...'}
 export RSA_PRIVATE=${RSA_PRIVATE:-'...'}
 
 # Process config files
-envsubst '${HOST} ${CONTRACT_ADDRESS} ${ORACLE_ADDRESS} ${ORACLE_PK}' < /app/config/config.docker.json > /app/config/config.json
+envsubst '${HOST} ${CONTRACT_ADDRESS} ${ORACLE_ADDRESS} ${ORACLE_PK} ${FROM_BLOCK} ${GAS_PRICE}' < /app/config/config.docker.json > /app/config/config.json
 envsubst '${RSA_PUBLIC} ${RSA_PRIVATE}' < /app/config/rsaKeys.docker.json > /app/config/rsaKeys.json
 
 # Start app
+cat /app/config/config.json
 npm start

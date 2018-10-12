@@ -1,0 +1,41 @@
+{
+  "results": [
+    {
+      "gender": "male",
+      "name": {
+        "title": "mr",
+        "first": "rolf",
+        "last": "hegdal"
+      },
+      "location": {
+        "street": "ljan terrasse 346",
+        "city": "vear",
+        "state": "rogaland",
+        "postcode": "3095",
+        "coordinates": {
+          "latitude": "54.8646",
+          "longitude": "-97.3136"
+        },
+        "timezone": {
+          "offset": "-10:00",
+          "description": "Hawaii"
+        }
+      },
+      "email": "rolf.hegdal@example.com",
+      "dob": {
+        "date": "1975-11-12T06:34:44Z",
+        "age": 42
+      },
+      "registered": {
+        "date": "2015-11-04T22:09:36Z",
+        "age": 2
+      },
+      "phone": "66976498",
+      "cell": "40652479",
+      "id": {
+        "name": "FN",
+        "value": "12117533881"
+      }
+    }
+  ]
+}
