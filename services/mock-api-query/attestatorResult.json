@@ -1,7 +1,6 @@
 {
-  "results": [
-    {
-      "user": {
+  "result": {
+      "attestator": {
         "gender": "male",
         "name": {
           "title": "mr",
@@ -20,6 +19,6 @@
         "cell": "(117)-913-6058",
         "SSN": "492-39-6289"
       }
-    }
-  ]
+    },
+  "ErrorCode": 200
 }

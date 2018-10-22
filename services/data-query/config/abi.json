@@ -11,7 +11,7 @@
                 "type": "string"
             }
         ],
-        "name": "__callback",
+        "name": "callback",
         "outputs": [],
         "payable": false,
         "stateMutability": "nonpayable",

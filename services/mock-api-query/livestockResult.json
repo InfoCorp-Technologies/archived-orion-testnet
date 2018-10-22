@@ -1,6 +1,5 @@
 {
-  "results": [
-    {
+  "result": {
       "livestock": {
         "type": "cow",
         "owner_location": {
@@ -10,6 +9,6 @@
           "zip": "21007"
         }
       }
-    }
-  ]
+    },
+  "ErrorCode": 200
 }
