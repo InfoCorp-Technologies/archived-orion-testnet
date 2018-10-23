@@ -4,7 +4,7 @@ import "zeppelin-solidity/contracts/token/ERC20/MintableToken.sol";
 import "zeppelin-solidity/contracts/token/ERC20/BurnableToken.sol";
 import "zeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol";
 import "./Whitelist.sol";
-import "./SentinelExchange.sol";
+import "./Exchange.sol";
 
 contract LCToken is DetailedERC20, MintableToken, BurnableToken {
 
@@ -20,8 +20,8 @@ contract LCToken is DetailedERC20, MintableToken, BurnableToken {
         string _name,
         string _symbol,
         uint8 _decimals,
-        Whitelist _whitelist,
-        SentinelExchange _exchange
+        address _whitelist,
+        address _exchange
     ) public DetailedERC20(_name, _symbol, _decimals) {
         whitelist = _whitelist;
         owner = _exchange;
@@ -47,7 +47,7 @@ contract LCToken is DetailedERC20, MintableToken, BurnableToken {
     function exchange(uint256 _value) public {
         require(whitelist.isWhitelist(msg.sender));
         super.transfer(owner, _value);
-        SentinelExchange(owner).exchangeLct(msg.sender, _value, symbol);
+        Exchange(owner).exchangeLct(msg.sender, _value, symbol);
     }
 
     function setWhitelist(Whitelist _whitelist) external onlyOwner {
