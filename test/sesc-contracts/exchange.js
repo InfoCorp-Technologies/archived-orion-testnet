@@ -1,118 +1,89 @@
 const { ERROR_MSG, ZERO_ADDRESS } = require('../setup');
-const Whitelist = artifacts.require("Whitelist.sol");
 const LCToken = artifacts.require("LCToken.sol");
-const SentinelExchange = artifacts.require("SentinelExchange.sol");
+const Exchange = artifacts.require("Exchange.sol");
+const Escrow = artifacts.require("Escrow.sol");
 
-contract('SentinelExchange', async (accounts) => {
+const escrowState = {
+    'Created': 0,
+    'Initialized': 1,
+    'Active': 2,
+    'Finalized': 3
+};
+
+contract('Exchange', async (accounts) => {
     let owner = accounts[0];
     let whiteUser = accounts[1];
     let blackUser = accounts[2];
     let oracle = accounts[3];
 
     beforeEach(async () => {
-        whitelist = await Whitelist.new(owner);
-        await whitelist.addWhitelist([whiteUser], { from: owner });
-        exchange = await SentinelExchange.new(owner, oracle, whitelist.address);
-        token = await LCToken.new("Local Currency Token Myanmar", "LCT.MMK", 18, whitelist.address, exchange.address, { from: owner });
+        exchange = await Exchange.new(owner, oracle);
+        token = await LCToken.new("Local Currency Token Myanmar", "LCT.MMK", 18, exchange.address, { from: owner });
         await exchange.setCurrency(token.address);
     })
 
-    // Sentinel Exchange contract receive _value SENI to mint _value LCT.MMK  to _user
-    async function mintLCT(_user, _value) {
-        let exchangeTx = await exchange.exchangeSeni("LCT.MMK", { from: _user, value: _value });
-        let exchangeId = exchangeTx['logs'][0].args.exchangeId;
-        await exchange.callback(exchangeId, _value, { from: oracle });
-    }
+    describe('Create and interact with Escrow', function() {
 
-    it('Add/Remove currecy', async () => {
-        let otherToken = await LCToken.new("Local Currency Token ASD", "LCT.ASD", 18, whitelist.address, exchange.address, { from: owner });
-        const addTx = await exchange.setCurrency(otherToken.address, { from: owner }).should.be.fulfilled;
-        addTx['logs'][0].event.should.be.equal("CurrencyAdded");
-        (otherToken.address).should.be.equal(await exchange.currency("LCT.ASD"));
-        (exchange.address).should.be.equal(await otherToken.owner());
-        const rmTx = await exchange.removeCurrency("LCT.ASD", { from: owner }).should.be.fulfilled;
-        rmTx['logs'][0].event.should.be.equal("OwnershipTransferred");
-        rmTx['logs'][1].event.should.be.equal("CurrencyRemoved");
-        (ZERO_ADDRESS).should.be.equal(await exchange.currency("LCT.ASD"));
-        (owner).should.be.equal(await otherToken.owner());
-    });
+        const oneSeni = 1000000000000000000;
 
-    it('Whitelisted user exchange 1 SENI to get nonexistent currency (USD)', async () => {
-        let value = 1000000000000000000;
-        await exchange.exchangeSeni("USD", { from: whiteUser, value: value }).should.be.rejectedWith(ERROR_MSG);
-    });
-
-    it('Non-whitelisted user exchange 1 SENI to get LCT.MMK', async () => {
-        let value = 1000000000000000000;
-        await exchange.exchangeSeni("LCT.MMK", { from: blackUser, value: value }).should.be.rejectedWith(ERROR_MSG);
-    });
-
-    it('Whitelisted user exchange 0 SENI to get LCT.MMK', async () => {
-        await exchange.exchangeSeni("LCT.MMK", { from: whiteUser, value: 0 }).should.be.rejectedWith(ERROR_MSG);
-    });
-
-    it('Whitelisted user exchange 1 SENI with SENI-LCT.MMK rate 2:1', async () => {
-        (await token.balanceOf(whiteUser)).toNumber().should.be.equal(0);
-        let value = 1000000000000000000;
-        let exchangeTx = await exchange.exchangeSeni("LCT.MMK", { from: whiteUser, value: value }).should.be.fulfilled;
-        let exchangeId = exchangeTx['logs'][0].args.exchangeId.toNumber();
-        let resultTx = await exchange.callback(exchangeId, value / 2, { from: oracle }).should.be.fulfilled
-        resultTx['logs'][0].event.should.be.equal("Success");
-        (await token.balanceOf(whiteUser)).toNumber().should.be.equal(value / 2);
-        let exchangeInfo = await exchange.exchangeMap(exchangeId);
-        false.should.be.equal(exchangeInfo[0]);
-    });
-
-    describe('Whitelisted user must exchange 1 SENI to get 1 LCT.MMK first', function () {
-        it('Whitelisted user exchange 0.5 LCT.MMK directly to Exchange contract to get SENI', async () => {
-            let value = 1000000000000000000;
-            await mintLCT(whiteUser, value);
-            await exchange.exchangeLct(whiteUser, value / 2, "LCT.MMK", { from: whiteUser }).should.be.rejectedWith(ERROR_MSG);
+        it('Add/Remove currecy', async () => {
+            let otherToken = await LCToken.new("Local Currency Token ASD", "LCT.ASD", 18, exchange.address, { from: owner });
+            const addTx = await exchange.setCurrency(otherToken.address, { from: owner }).should.be.fulfilled;
+            addTx['logs'][0].event.should.be.equal("CurrencyAdded");
+            (otherToken.address).should.be.equal(await exchange.currency("LCT.ASD"));
+            (exchange.address).should.be.equal(await otherToken.owner());
+            const rmTx = await exchange.removeCurrency("LCT.ASD", { from: owner }).should.be.fulfilled;
+            rmTx['logs'][0].event.should.be.equal("OwnershipTransferred");
+            rmTx['logs'][1].event.should.be.equal("CurrencyRemoved");
+            (ZERO_ADDRESS).should.be.equal(await exchange.currency("LCT.ASD"));
+            (owner).should.be.equal(await otherToken.owner());
         });
 
-        it('Whitelisted user exchange 0 LCT.MMK to get SENI', async () => {
-            let value = 1000000000000000000;
-            await mintLCT(whiteUser, value);
-            await token.exchange(0, { from: whiteUser }).should.be.rejectedWith(ERROR_MSG);
+        it('User exchange 1 LCT.ARG nonexistent currency', async () => {
+            await exchange.exchange(oneSeni, "LCT.ARG", { from: whiteUser }).should.be.rejectedWith(ERROR_MSG);
         });
 
-        it('Whitelisted user exchange 0.5 LCT.MMK with LCT.MMK-SENI rate 1:4 through LCToken contract', async () => {
-            let value = 1000000000000000000;
-            await mintLCT(whiteUser, value);
-            (await token.balanceOf(whiteUser)).toNumber().should.be.equal(value);
-            await token.exchange(value / 2, { from: whiteUser }).should.be.fulfilled;
-            let event = exchange.Exchange({});
-            let watcher = async function (err, result) {
-                event.stopWatching();
-                let exchangeId = result.args.exchangeId;
-                let oldBalance = web3.eth.getBalance(whiteUser).toNumber();
-                let resultTx = await exchange.callback(exchangeId, value * 2, { from: oracle }).should.be.fulfilled;
-                let newBalance = web3.eth.getBalance(whiteUser).toNumber();
-                resultTx['logs'][0].event.should.be.equal("Fail");
-                (newBalance - oldBalance).should.be.equal(0);
-                (await token.balanceOf(whiteUser)).toNumber().should.be.equal(value);
-            }
-            await awaitEvent(event, watcher);
+        it('User exchange 0 LCT.MMK', async () => {
+            await exchange.exchange(0, "LCT.MMK", { from: whiteUser }).should.be.rejectedWith(ERROR_MSG);
         });
 
-        it('Whitelisted user exchange 0.5 LCT.MMK with LCT.MMK-SENI rate 1:2 through LCToken contract', async () => {
-            let value = 1000000000000000000;
-            await mintLCT(whiteUser, value);
-            (await token.balanceOf(whiteUser)).toNumber().should.be.equal(value);
-            await token.exchange(value / 2, { from: whiteUser }).should.be.fulfilled;
-            let event = exchange.Exchange({});
-            let watcher = async function (err, result) {
-                event.stopWatching();
-                let exchangeId = result.args.exchangeId;
-                let oldBalance = web3.eth.getBalance(whiteUser).toNumber();
-                let resultTx = await exchange.callback(exchangeId, value, { from: oracle }).should.be.fulfilled;
-                let newBalance = web3.eth.getBalance(whiteUser).toNumber();
-                resultTx['logs'][0].event.should.be.equal("Success");
-                (newBalance - oldBalance).should.be.equal(value);
-                (await token.balanceOf(whiteUser)).toNumber().should.be.equal(value / 2);
-            }
-            await awaitEvent(event, watcher);
+        it('User exchange 1 LCT.MMK with SENI<->LCT.MMK rate 1:2', async () => {
+            '0'.should.be.bignumber.equal(await token.balanceOf(whiteUser));
+            // create escrow contract
+            const exchangeTx = await exchange.exchange(oneSeni, "LCT.MMK", { from: whiteUser }).should.be.fulfilled;
+            exchangeTx['logs'][0].args.buyer.should.be.equal(whiteUser);
+            const escrow = await Escrow.at(exchangeTx['logs'][0].args.escrow);
+            (escrowState.Created).should.be.bignumber.equal(await escrow.state());
+            // oracle initializ escrow with rate 1:2
+            const oracleTx = await escrow.initialize(oneSeni / 2, { from: oracle }).should.be.fulfilled;
+            (escrowState.Initialized).should.be.bignumber.equal(await escrow.state());
+            const seniNedeed = oracleTx['logs'][0].args.value.toNumber();
+            // oralce try to re-initialize escrow
+            await escrow.initialize(oneSeni / 3, { from: oracle }).should.be.rejectedWith(ERROR_MSG);
+            // user deposit seni to active escrow and receive LCT
+            await escrow.sendTransaction({ from: whiteUser, value: oneSeni * 2}).should.be.fulfilled;
+            seniNedeed.should.be.bignumber.equal(await web3.eth.getBalance(escrow.address));
+            (escrowState.Active).should.be.bignumber.equal(await escrow.state());
+            oneSeni.should.be.bignumber.equal(await token.balanceOf(whiteUser));
         });
+
+        it('User try to send SENI to Escrow before the rate is set', async () => {
+            const exchangeTx = await exchange.exchange(oneSeni, "LCT.MMK", { from: whiteUser }).should.be.fulfilled;
+            const escrow = await Escrow.at(exchangeTx['logs'][0].args.escrow);
+            await escrow.sendTransaction({ from: whiteUser, value: oneSeni * 2}).should.be.rejectedWith(ERROR_MSG);
+        });
+
+        it('Create an Escrow from outside of Exchange', async () => {
+            const escrow = await Escrow.new(oneSeni, whiteUser, exchange.address, token.address, oracle, { from: blackUser }).should.be.fulfilled;
+            // user whitout permisssion try to initializ escrow with rate 1:2
+            await escrow.initialize(oneSeni / 2, { from: blackUser }).should.be.rejectedWith(ERROR_MSG);
+            // user whitout permisssion try to deposit seni to active escrow and receive LCT
+            await escrow.sendTransaction({ from: whiteUser, value: oneSeni * 2}).should.be.rejectedWith(ERROR_MSG);
+        });
+    });
+
+    describe('Withdraw SENI from Escrow', function() {
+
     });
 });
 

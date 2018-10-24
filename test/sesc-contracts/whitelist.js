@@ -38,7 +38,7 @@ contract('Whitelist', async (accounts) => {
     })
 });
 
-contract('LCToken', async (accounts) => {
+/* contract('LCToken', async (accounts) => {
     let whitelist;
     let token;
 
@@ -79,4 +79,4 @@ contract('LCToken', async (accounts) => {
         await token.approve(blackOne, 1, { from: whiteUserOne }).should.be.fulfilled;
         await token.transferFrom(whiteUserOne, blackOne, 1, { from: blackOne }).should.be.rejectedWith(ERROR_MSG);
     });
-});
+}); */

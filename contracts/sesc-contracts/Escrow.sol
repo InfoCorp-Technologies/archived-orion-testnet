@@ -1,12 +1,13 @@
 pragma solidity ^0.4.23;
 
-import "zeppelin-solidity/contracts/ownership/Ownable.sol";
+import "./ERC677/IBurnableMintableERC677Token.sol";
+import "./ERC677/ERC677Receiver.sol";
 import "./Exchange.sol";
 
 /**
   * @title Escrow Contract.
   */
-contract Escrow is Ownable {
+contract Escrow is ERC677Receiver {
 
     address public buyer;
     address public exchange;
@@ -18,16 +19,11 @@ contract Escrow is Ownable {
     enum State { Created, Initialized, Active, Finalized }
     State public state;
 
-    event Withdraw(address indexed buyer, uint256 value);
+    event Withdraw(uint256 value);
     event Initialized(uint256 value);
 
     modifier inState(State _state) {
         require(state == _state, "Invalid state.");
-        _;
-    }
-
-    modifier sufficientFunds(uint256 _value) {
-        require(this.balance >= _value, "Insuficient funds.");
         _;
     }
 
@@ -46,13 +42,6 @@ contract Escrow is Ownable {
         state = State.Created;
     }
 
-    function () public payable inState(State.Initialized) {
-        require(msg.sender == buyer, "Only buyer can send SENI to contract.");
-        require(msg.value == convertLct(value), "The amount of SENI is incorrect");
-        state = State.Active;
-        Exchange(exchange).escrowActived();
-    }
-
     function initialize(uint256 _rate) external inState(State.Created) {
         require(msg.sender == oracle, "Only Oracle can initialize escrow.");
         require(_rate != 0, "Rate is required");
@@ -61,27 +50,32 @@ contract Escrow is Ownable {
         emit Initialized(convertLct(value));
     }
 
-    function withdraw(uint256 _value) public
+    function () public payable inState(State.Initialized) {
+        require(msg.sender == buyer, "Only buyer can send SENI to contract.");
+        require(msg.value == convertLct(value), "The amount of SENI is incorrect");
+        state = State.Active;
+        require(Exchange(exchange).escrowActived(buyer, value, token), "Token minting is required");
+    }
+
+    function onTokenTransfer(address _from, uint256 _value, bytes /*_data*/)
+        external
         inState(State.Active)
-        sufficientFunds(_value)
+        returns(bool)
     {
         require(msg.sender == token, "Only LCT contract can execute withdraws.");
-        buyer.transfer(_value);
-        if (this.balance == 0) {
+        require(_from == buyer, "Only Buyer can execute witdraw function");
+        require(address(this).balance >= convertLct(_value), "Insuficient funds.");
+
+        IBurnableMintableERC677Token(token).burn(_value);
+        buyer.transfer(convertLct(_value));
+        if (address(this).balance == 0) {
             state = State.Finalized;
         }
-        emit Withdraw(owner, _value);
+
+        emit Withdraw(_value);
     }
 
-    // TODO: remove this function (only for testing)
-    // return: seni
     function convertLct(uint256 _value) public view returns(uint256) {
         return _value * 10 ** 18 / rate;
-    }
-
-    // TODO: remove this function (only for testing)
-    // return: lct
-    function convertSeni(uint256 _value) public view returns(uint256) {
-        return _value * rate / 10 ** 18;
     }
 }
