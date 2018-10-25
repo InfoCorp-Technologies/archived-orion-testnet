@@ -4,8 +4,6 @@ import "zeppelin-solidity/contracts/token/ERC20/MintableToken.sol";
 import "zeppelin-solidity/contracts/token/ERC20/BurnableToken.sol";
 import "zeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol";
 import "./ERC677/IBurnableMintableERC677Token.sol";
-// TODO: Check this import:
-//import "./ERC677/ERC677Receiver.sol";
 // TODO: Check this whitelisting:
 //import "./Whitelist.sol";
 import "./Exchange.sol";
