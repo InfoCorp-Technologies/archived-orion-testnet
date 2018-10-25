@@ -13,6 +13,7 @@ contract Exchange is Ownable {
 
     address public oracle;
     uint256 public vesting;
+    uint256 public expiration;
 //    Whitelist public whitelist;
 
     struct User {
@@ -41,12 +42,13 @@ contract Exchange is Ownable {
 //        whitelist = _whitelist;
 //    }
 
-    constructor(address _owner, address _oracle, uint256 _vesting) public {
+    constructor(address _owner, address _oracle, uint256 _vesting, uint256 _expiration) public {
         require(_owner != address(0), "Owner address is required");
         require(_oracle != address(0), "Oracle address is required");
         owner = _owner;
         oracle = _oracle;
         vesting = _vesting;
+        expiration = _expiration;
     }
 
     function exchange(uint256 _value, string _symbol)
@@ -59,6 +61,7 @@ contract Exchange is Ownable {
         Escrow escrow = new Escrow(
             _value,
             vesting,
+            expiration,
             msg.sender,
             address(this),
             currency(_symbol)
@@ -111,26 +114,26 @@ contract Exchange is Ownable {
     }
 
     /**
-     * @dev This function retrieves the address of an registered currency
-     * @param _symbol The symbol of the currency
-     * @return The address of the currency
+     * @dev This function retrieves the address of an registered currency.
+     * @param _symbol The symbol of the currency.
+     * @return The address of the currency.
      */
     function currency(string _symbol) public view returns(LCToken) {
         return currencyMap[bytes(_symbol)];
     }
 
     /**
-     * @dev This function set the the currency to the mapping
-     * @param _symbol The symbol of the currency
-     * @param _currency The currency contract
+     * @dev This function set the the currency to the mapping.
+     * @param _symbol The symbol of the currency.
+     * @param _currency The currency contract.
      */
     function setCurrency(string _symbol, LCToken _currency) internal {
         currencyMap[bytes(_symbol)] = _currency;
     }
 
     /**
-     * @dev The oracle variable setter
-     * @param _oracle The address of the oracle
+     * @dev The oracle variable setter.
+     * @param _oracle The address of the oracle.
      */
     function setOracle(address _oracle) external onlyOwner {
         require(_oracle != address(0), "Oracle address is required");
@@ -138,16 +141,24 @@ contract Exchange is Ownable {
     }
 
     /**
-     * @dev The vesting variable setter
-     * @param _vesting The address of the oracle
+     * @dev The vesting variable setter.
+     * @param _vesting The timestamp value for vesting.
      */
-    function setOracle(uint256 _vesting) external onlyOwner {
+    function setVesting(uint256 _vesting) external onlyOwner {
         vesting = _vesting;
     }
 
+    /**
+     * @dev The expiration variable setter.
+     * @param _expiration The timestamp value for expiration.
+     */
+    function setExpiration(uint256 _expiration) external onlyOwner {
+        expiration = _expiration;
+    }
+
 //    /**
-//     * @dev The whitelist variable setter
-//     * @param _whitelist The address of the whitelist
+//     * @dev The whitelist variable setter.
+//     * @param _whitelist The address of the whitelist.
 //     */
 //    function setWhitelist(Whitelist _whitelist) external onlyOwner {
 //        require(_whitelist != address(0), "Whitelist is required");

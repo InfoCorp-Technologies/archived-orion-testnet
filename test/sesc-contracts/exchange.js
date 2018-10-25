@@ -10,7 +10,8 @@ const escrowState = {
     'Finalized': 3
 };
 
-const VESTING = 5;
+const VESTING = 4;
+const EXPIRATION = 4;
 const ONE_SENI = 1000000000000000000;
 
 contract('Exchange', async (accounts) => {
@@ -20,26 +21,33 @@ contract('Exchange', async (accounts) => {
     let oracle = accounts[3];
 
     beforeEach(async () => {
-        exchange = await Exchange.new(owner, oracle, VESTING);
+        exchange = await Exchange.new(owner, oracle, VESTING, EXPIRATION);
         token = await LCToken.new("Local Currency Token Myanmar", "LCT.MMK", 18, exchange.address, { from: owner });
         await exchange.addCurrency(token.address);
     })
 
-    if('Set oracle', async () => {
+    it('Set oracle', async () => {
         const anotherOracle = accounts[4];
         await exchange.setOracle(anotherOracle, { from: whiteUser }).should.be.rejectedWith(ERROR_MSG);
         await exchange.setOracle(anotherOracle, { from: owner }).should.be.fulfilled;
         anotherOracle.should.be.equal(await exchange.oracle());
     });
 
-    if('Set vesting', async () => {
+    it('Set vesting', async () => {
         const anotherVesting = 40;
-        await exchange.setOracle(anotherVesting, { from: whiteUser }).should.be.rejectedWith(ERROR_MSG);
-        await exchange.setOracle(anotherVesting, { from: owner }).should.be.fulfilled;
-        anotherVesting.should.be.equal(await exchange.vesting());
+        await exchange.setVesting(anotherVesting, { from: whiteUser }).should.be.rejectedWith(ERROR_MSG);
+        await exchange.setVesting(anotherVesting, { from: owner }).should.be.fulfilled;
+        anotherVesting.should.be.bignumber.equal(await exchange.vesting());
     });
 
-    describe('Create and interact with Escrow', function() {
+    it('Set expiration', async () => {
+        const anotherExpiration = 50;
+        await exchange.setExpiration(anotherExpiration, { from: whiteUser }).should.be.rejectedWith(ERROR_MSG);
+        await exchange.setExpiration(anotherExpiration, { from: owner }).should.be.fulfilled;
+        anotherExpiration.should.be.bignumber.equal(await exchange.expiration());
+    });
+
+    describe('Create and interact with Escrow', function () {
         it('Add/Remove currecy', async () => {
             let otherToken = await LCToken.new("Local Currency Token ASD", "LCT.ASD", 18, exchange.address, { from: owner });
             const addTx = await exchange.addCurrency(otherToken.address, { from: owner }).should.be.fulfilled;
@@ -75,43 +83,57 @@ contract('Exchange', async (accounts) => {
             // oralce try to re-initialize escrow
             await escrow.initialize(ONE_SENI / 3, { from: oracle }).should.be.rejectedWith(ERROR_MSG);
             // user deposit seni to active escrow and receive LCT
-            await escrow.sendTransaction({ from: whiteUser, value: ONE_SENI}).should.be.rejectedWith(ERROR_MSG);
-            await escrow.sendTransaction({ from: whiteUser, value: ONE_SENI * 2}).should.be.fulfilled;
+            await escrow.sendTransaction({ from: whiteUser, value: ONE_SENI }).should.be.rejectedWith(ERROR_MSG);
+            await escrow.sendTransaction({ from: whiteUser, value: ONE_SENI * 2 }).should.be.fulfilled;
             seniNedeed.should.be.bignumber.equal(await web3.eth.getBalance(escrow.address));
             (escrowState.Active).should.be.bignumber.equal(await escrow.state());
             ONE_SENI.should.be.bignumber.equal(await token.balanceOf(whiteUser));
         });
 
+        it("Escrow doesn't allow deposits after expiration period", async () => {
+            const exchangeTx = await exchange.exchange(ONE_SENI, "LCT.MMK", { from: whiteUser }).should.be.fulfilled;
+            exchangeTx['logs'][0].args.buyer.should.be.equal(whiteUser);
+            const escrow = await Escrow.at(exchangeTx['logs'][0].args.escrow);
+            const oracleTx = await escrow.initialize(ONE_SENI / 2, { from: oracle }).should.be.fulfilled;
+            const seniNedeed = oracleTx['logs'][0].args.value.toNumber();
+            await sleep(EXPIRATION + 1);
+            // user deposit seni to active escrow and receive LCT after expiration period
+            const balanceBefore = await web3.eth.getBalance(escrow.address);
+            await escrow.sendTransaction({ from: whiteUser, value: seniNedeed }).should.be.rejectedWith(ERROR_MSG);
+            const balanceAfter = web3.eth.getBalance(escrow.address);
+            balanceBefore.should.be.bignumber.equal(balanceAfter);
+        });
+
         it('User try to send SENI to Escrow before the rate is set', async () => {
             const exchangeTx = await exchange.exchange(ONE_SENI, "LCT.MMK", { from: whiteUser }).should.be.fulfilled;
             const escrow = await Escrow.at(exchangeTx['logs'][0].args.escrow);
-            await escrow.sendTransaction({ from: whiteUser, value: ONE_SENI * 2}).should.be.rejectedWith(ERROR_MSG);
+            await escrow.sendTransaction({ from: whiteUser, value: ONE_SENI * 2 }).should.be.rejectedWith(ERROR_MSG);
         });
 
         it('Create an Escrow from outside of Exchange', async () => {
-            const escrow = await Escrow.new(ONE_SENI, VESTING, whiteUser, exchange.address, token.address, { from: blackUser }).should.be.fulfilled;
+            const escrow = await Escrow.new(ONE_SENI, VESTING, EXPIRATION, whiteUser, exchange.address, token.address, { from: blackUser }).should.be.fulfilled;
             // user whitout permisssion try to initializ escrow with rate 1:2
             await escrow.initialize(ONE_SENI / 2, { from: blackUser }).should.be.rejectedWith(ERROR_MSG);
             // user whitout permisssion try to deposit seni to active escrow and receive LCT
-            await escrow.sendTransaction({ from: whiteUser, value: ONE_SENI * 2}).should.be.rejectedWith(ERROR_MSG);
+            await escrow.sendTransaction({ from: whiteUser, value: ONE_SENI * 2 }).should.be.rejectedWith(ERROR_MSG);
             // user whitout permisssion try to activate the escrow manually
-            await exchange.escrowActived(whiteUser, ONE_SENI, token.address, { from: whiteUser}).should.be.rejectedWith(ERROR_MSG);
+            await exchange.escrowActived(whiteUser, ONE_SENI, token.address, { from: whiteUser }).should.be.rejectedWith(ERROR_MSG);
         });
     });
 
-    describe('Withdraw SENI from Escrow', function() {
+    describe('Withdraw SENI from Escrow', function () {
         it('User withdraw SENI until the deposit is empty', async () => {
             const exchangeTx = await exchange.exchange(ONE_SENI, "LCT.MMK", { from: whiteUser }).should.be.fulfilled;
             const escrow = await Escrow.at(exchangeTx['logs'][0].args.escrow);
             // Oracle set SENI<->LCT.MMK rate 1:2
             await escrow.initialize(ONE_SENI / 2, { from: oracle }).should.be.fulfilled;
             // User deposit 2 SENI and get 1 LCT
-            await escrow.sendTransaction({ from: whiteUser, value: ONE_SENI * 2}).should.be.fulfilled;
+            await escrow.sendTransaction({ from: whiteUser, value: ONE_SENI * 2 }).should.be.fulfilled;
             // Withdraw
             const withdrawValue = 500000000000000000; // 0.5 LCT
             // User try to withdraw before vesting period.
             await token.transferAndCall(escrow.address, withdrawValue, '0x0', { from: whiteUser }).should.be.rejectedWith(ERROR_MSG);
-            await sleep(5000);
+            await sleep(VESTING + 1);
             await token.transferAndCall(escrow.address, withdrawValue, '0x0', { from: whiteUser }).should.be.fulfilled;
             (escrowState.Active).should.be.bignumber.equal(await escrow.state());
             await token.transferAndCall(escrow.address, withdrawValue, '0x0', { from: whiteUser }).should.be.fulfilled;
@@ -122,6 +144,6 @@ contract('Exchange', async (accounts) => {
     });
 });
 
-function sleep(millis) {
-    return new Promise(resolve => setTimeout(resolve, millis));
+function sleep(seconds) {
+    return new Promise(resolve => setTimeout(resolve, seconds * 1000));
 }

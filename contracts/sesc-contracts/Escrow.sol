@@ -14,7 +14,10 @@ contract Escrow is ERC677Receiver {
     address public token;
     uint256 public value;
     uint256 public rate;
-    uint256 public unlockDate;
+    uint256 public vesting;
+    uint256 public expiration;
+    uint256 public unlockVesting;
+    uint256 public expirationDate;
 
     enum State { Created, Initialized, Active, Finalized }
     State public state;
@@ -32,31 +35,36 @@ contract Escrow is ERC677Receiver {
     constructor(
         uint256 _value,
         uint256 _vesting,
+        uint256 _expiration,
         address _buyer,
         address _exchange,
         address _token
     ) public {
         value = _value;
+        vesting = _vesting;
+        expiration = _expiration;
         buyer = _buyer;
         exchange = _exchange;
         token = _token;
-        unlockDate = now + _vesting;
         state = State.Created;
     }
 
     function initialize(uint256 _rate) external inState(State.Created) {
         require(msg.sender == Exchange(exchange).oracle(), "Only Oracle can initialize escrow.");
-        require(_rate != 0, "Rate is required");
+        require(_rate != 0, "Rate is required.");
         rate = _rate;
+        expirationDate = now + expiration;
         state = State.Initialized;
         emit Initialized(convertToSeni(value));
     }
 
     function () public payable inState(State.Initialized) {
         require(msg.sender == buyer, "Only buyer can send SENI to contract.");
-        require(msg.value == convertToSeni(value), "The amount of SENI is incorrect");
+        require(msg.value == convertToSeni(value), "The amount of SENI is incorrect.");
+        require(now <= expirationDate, "Escrow expired.");
+        unlockVesting = now + vesting;
         state = State.Active;
-        require(Exchange(exchange).escrowActived(buyer, value, token), "Token minting is required");
+        require(Exchange(exchange).escrowActived(buyer, value, token), "Token minting is required.");
     }
 
     function onTokenTransfer(address _from, uint256 _value, bytes /*_data*/)
@@ -67,7 +75,7 @@ contract Escrow is ERC677Receiver {
         require(msg.sender == token, "Only LCT contract can execute withdraws.");
         require(_from == buyer, "Only Buyer can execute witdraw function");
         require(address(this).balance >= convertToSeni(_value), "Insuficient funds.");
-        require(now >= unlockDate, "Withdraw denied, vesting period.");
+        require(now >= unlockVesting, "Withdraw denied, vesting period.");
 
         IBurnableMintableERC677Token(token).burn(_value);
         buyer.transfer(convertToSeni(_value));
