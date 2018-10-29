@@ -27,7 +27,6 @@ contract Exchange is Ownable {
     event CurrencyAdded(string name, address indexed addr);
     event CurrencyRemoved(string name, address indexed addr);
     event NewEscrow(address indexed buyer, address indexed escrow, uint256 value, string symbol);
-    event EscrowActived(address indexed buyer, address indexed escrow);
 
     modifier isCurrency(string _currency) {
         require(currency(_currency) != address(0), "The currency is not added to the exchange");
@@ -54,10 +53,10 @@ contract Exchange is Ownable {
     function exchange(uint256 _value, string _symbol)
         external
         isCurrency(_symbol)
+        returns(bool)
     {
 //        require(whitelist.isWhitelist(msg.sender), "Sender must be whitelisted");
         require(_value != 0, "Value is required");
-
         Escrow escrow = new Escrow(
             _value,
             vesting,
@@ -68,7 +67,6 @@ contract Exchange is Ownable {
         );
         userByEscrow[address(escrow)] = msg.sender;
         escrowByUser[msg.sender].escrow.push(escrow);
-
         emit NewEscrow(msg.sender, address(escrow), _value, _symbol);
     }
 
@@ -81,7 +79,6 @@ contract Exchange is Ownable {
             "Escrow must be created by exchange, and it has to have an associated user."
         );
         IBurnableMintableERC677Token(_token).mint(_recipient, _value);
-        emit EscrowActived(_recipient, msg.sender);
         return true;
     }
 

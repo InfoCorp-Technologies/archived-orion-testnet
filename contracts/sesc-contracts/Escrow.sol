@@ -22,10 +22,9 @@ contract Escrow is ERC677Receiver {
     enum State { Created, Initialized, Active, Finalized }
     State public state;
 
-    // value is in SENI
-    event Withdraw(uint256 value);
-    // value is in SENI
     event Initialized(uint256 value);
+    event Actived(address indexed buyer, address indexed escrow);
+    event Withdraw(uint256 value);
 
     modifier inState(State _state) {
         require(state == _state, "Invalid state.");
@@ -65,6 +64,7 @@ contract Escrow is ERC677Receiver {
         unlockVesting = now + vesting;
         state = State.Active;
         require(Exchange(exchange).escrowActived(buyer, value, token), "Token minting is required.");
+        emit Actived(buyer, address(this));
     }
 
     function onTokenTransfer(address _from, uint256 _value, bytes /*_data*/)
@@ -72,18 +72,19 @@ contract Escrow is ERC677Receiver {
         inState(State.Active)
         returns(bool)
     {
+        uint256 seniValue = convertToSeni(_value);
+        require(address(this).balance >= seniValue, "Insuficient funds.");
         require(msg.sender == token, "Only LCT contract can execute withdraws.");
         require(_from == buyer, "Only Buyer can execute witdraw function");
-        require(address(this).balance >= convertToSeni(_value), "Insuficient funds.");
         require(now >= unlockVesting, "Withdraw denied, vesting period.");
 
         IBurnableMintableERC677Token(token).burn(_value);
-        buyer.transfer(convertToSeni(_value));
+        buyer.transfer(seniValue);
         if (address(this).balance == 0) {
             state = State.Finalized;
         }
 
-        emit Withdraw(_value);
+        emit Withdraw(seniValue);
     }
 
     function convertToSeni(uint256 _value) public view returns(uint256) {

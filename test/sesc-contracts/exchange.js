@@ -132,9 +132,12 @@ contract('Exchange', async (accounts) => {
             // Withdraw
             const withdrawValue = 500000000000000000; // 0.5 LCT
             // User try to withdraw before vesting period.
+            const balanceBefore = await token.balanceOf(whiteUser);
             await token.transferAndCall(escrow.address, withdrawValue, '0x0', { from: whiteUser }).should.be.rejectedWith(ERROR_MSG);
+            balanceBefore.should.be.bignumber.equal(await token.balanceOf(whiteUser));
             await sleep(VESTING + 1);
             await token.transferAndCall(escrow.address, withdrawValue, '0x0', { from: whiteUser }).should.be.fulfilled;
+            (balanceBefore - withdrawValue).should.be.bignumber.equal(await token.balanceOf(whiteUser));
             (escrowState.Active).should.be.bignumber.equal(await escrow.state());
             await token.transferAndCall(escrow.address, withdrawValue, '0x0', { from: whiteUser }).should.be.fulfilled;
             (escrowState.Finalized).should.be.bignumber.equal(await escrow.state());
