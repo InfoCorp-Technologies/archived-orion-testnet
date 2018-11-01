@@ -3,8 +3,6 @@ pragma solidity ^0.4.23;
 import "zeppelin-solidity/contracts/ownership/Ownable.sol";
 import "./LCToken.sol";
 import "./Escrow.sol";
-// TODO: Check this whitelisting:
-//import "./Whitelist.sol";
 
 /**
   * @title Exchange Contract.
@@ -14,7 +12,6 @@ contract Exchange is Ownable {
     address public oracle;
     uint256 public vesting;
     uint256 public expiration;
-//    Whitelist public whitelist;
 
     struct User {
         Escrow[] escrow;
@@ -33,14 +30,6 @@ contract Exchange is Ownable {
         _;
     }
 
-//    constructor(address _owner, address _oracle, Whitelist _whitelist) public {
-//        require(_owner != address(0), "Owner address is required");
-//        require(_oracle != address(0), "Oracle address is required");
-//        owner = _owner;
-//        oracle = _oracle;
-//        whitelist = _whitelist;
-//    }
-
     constructor(address _owner, address _oracle, uint256 _vesting, uint256 _expiration) public {
         require(_owner != address(0), "Owner address is required");
         require(_oracle != address(0), "Oracle address is required");
@@ -50,12 +39,15 @@ contract Exchange is Ownable {
         expiration = _expiration;
     }
 
+    /**
+     * @dev This function is executed by the Buyer and a new Escrow is created as a result.
+     * @param _value Amount of LCT required by the Buyer.
+     * @param _symbol LCT Token symbol.
+     */
     function exchange(uint256 _value, string _symbol)
         external
         isCurrency(_symbol)
-        returns(bool)
     {
-//        require(whitelist.isWhitelist(msg.sender), "Sender must be whitelisted");
         require(_value != 0, "Value is required");
         Escrow escrow = new Escrow(
             _value,
@@ -70,6 +62,13 @@ contract Exchange is Ownable {
         emit NewEscrow(msg.sender, address(escrow), _value, _symbol);
     }
 
+    /**
+     * @dev This function its executed by the Escrow when the Buyer made the deposit of SENI.
+     * @param _recipient The address of the Buyer.
+     * @param _value Amount of LCT to be minted.
+     * @param _token LCT Token address.
+     * @return true if there are no reverts.
+     */
     function escrowActived(address _recipient, uint256 _value, address _token)
         external
         returns(bool)
@@ -108,6 +107,16 @@ contract Exchange is Ownable {
         require(currency(symbol) == address(0), "This currency is already set");
         setCurrency(symbol, _currency);
         emit CurrencyAdded(symbol, _currency);
+    }
+
+    /**
+     * @dev This function retrieve the number of escrows by user address,
+     * used for array iteration in dapps.
+     * @param _user Buyer address.
+     * @return Number of escrow creted by user.
+     */
+    function escrowCountByUser(address _user) public view returns(uint256) {
+        return escrowByUser[_user].escrow.length;
     }
 
     /**
@@ -152,13 +161,4 @@ contract Exchange is Ownable {
     function setExpiration(uint256 _expiration) external onlyOwner {
         expiration = _expiration;
     }
-
-//    /**
-//     * @dev The whitelist variable setter.
-//     * @param _whitelist The address of the whitelist.
-//     */
-//    function setWhitelist(Whitelist _whitelist) external onlyOwner {
-//        require(_whitelist != address(0), "Whitelist is required");
-//        whitelist = _whitelist;
-//    }
 }

@@ -25,6 +25,7 @@ contract Escrow is ERC677Receiver {
     event Initialized(uint256 value);
     event Actived(address indexed buyer, address indexed escrow);
     event Withdraw(uint256 value);
+    event Finalized(address indexed buyer, address indexed escrow);
 
     modifier inState(State _state) {
         require(state == _state, "Invalid state.");
@@ -82,6 +83,7 @@ contract Escrow is ERC677Receiver {
         buyer.transfer(seniValue);
         if (address(this).balance == 0) {
             state = State.Finalized;
+            emit Finalized(buyer, address(this));
         }
 
         emit Withdraw(seniValue);

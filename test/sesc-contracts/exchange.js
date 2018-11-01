@@ -69,6 +69,15 @@ contract('Exchange', async (accounts) => {
             await exchange.exchange(0, "LCT.MMK", { from: whiteUser }).should.be.rejectedWith(ERROR_MSG);
         });
 
+        it('Count of escrow created by user', async () =>{
+            '0'.should.be.bignumber.equal(await exchange.escrowCountByUser(whiteUser, { from: whiteUser }));
+            await exchange.exchange(ONE_SENI, "LCT.MMK", { from: whiteUser }).should.be.fulfilled;
+            '1'.should.be.bignumber.equal(await exchange.escrowCountByUser(whiteUser, { from: whiteUser }));
+            await exchange.exchange(ONE_SENI, "LCT.MMK", { from: whiteUser }).should.be.fulfilled;
+            await exchange.exchange(ONE_SENI, "LCT.MMK", { from: whiteUser }).should.be.fulfilled;
+            '3'.should.be.bignumber.equal(await exchange.escrowCountByUser(whiteUser, { from: whiteUser }));
+        });
+
         it('User exchange 1 LCT.MMK with SENI<->LCT.MMK rate 1:2', async () => {
             '0'.should.be.bignumber.equal(await token.balanceOf(whiteUser));
             // create escrow contract
