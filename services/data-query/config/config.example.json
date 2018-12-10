@@ -1,0 +1,19 @@
+
+{
+  "host": "https://orion-rpc.sentinel-chain.org",
+  "contractAddress": "0xe5a167afd0de6c332909a136ac79b5cf6b31a81c",
+  "deployBlock": 0,
+  "gasPrice": 10000000000,
+  "livestockId-test": "1UoDLyX3PWrCsWW1aB6ChpxFC8qY2z72W8Tdqj",
+  "databaseUrl": "http://localhost:3000",
+  "executer": {
+    "address": "0x44751576B07eeE07de3D8D5BFb9C8Dd77ADD1744",
+    "privKey": "0x3f8e9f885f64a149800fc6cc93726b1ede35f6945d7f1dcd3d5daacae3b5bca4"
+  },
+    "xpay":{
+        "port": 2021,
+        "host": "localhost",
+        "user": "multichainrpc",
+        "pass": "5b8wzgFGzFzDfbZuj2MnZimzkEvrqVQBqWJuZnCff4D"
+  }
+}
