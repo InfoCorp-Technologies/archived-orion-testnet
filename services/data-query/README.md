@@ -2,19 +2,18 @@
 Implementation of an oracle service which provides information stored in crosspay Database uploading encrypted in Sentinel chain.
 
 ## Usage
-- Run:
-```
-$ cd crosspay-sentinel-oracle
+- First make an copy of the config files:
+```bash
 $ cp config/config.example.json config/config.json
+$ cp config/rsaKeys.example.json config/rsaKeys.json
 ```
 - In the new config.json created, provide the data about Sentinel chain, contract address, crosspay database, executer, and Xpay Multichain.
-- Run node endpoint.js to start listening to incoming queries and check the past ones.
+- Run `$ node endpoint.js` to start listening to incoming queries and check the past ones.
 
 ## Decrypter
-- Run:
-```
-$ cd crosspay-sentinel-oracle
-$ cp encrypter/data.example.json encrypter/data.json
+- Run this command to make an copy of the config file:
+```bash
+$ cp decrypter/data.example.json decrypter/data.json
 ```
 - In the new data.json created, provide the data obtained from oracle response and private key paired with the public key provided in the query.
 - Run decrypter.js and the decrypted result will be logged in terminal.
