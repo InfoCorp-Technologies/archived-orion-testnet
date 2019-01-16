@@ -4,9 +4,9 @@ const data = require('./data')
 decrypt(data)
 
 async function decrypt (data) {
-    const aesKey = await decryptStringWithRsaPrivateKey(data.encryptedKey, data.privateKey)
-    const result = await decryptStringWithAesKey(data.encryptedData, aesKey)
-    console.log(result)
+    const aesKey = await decryptStringWithRsaPrivateKey(data.encryptedPass, data.privateKey)
+    const result = await decryptStringWithAesKey(data.encryptedResponse, aesKey)
+    console.log(JSON.parse(result))
 }
 
 async function decryptStringWithRsaPrivateKey(toDecrypt, privateKey) {

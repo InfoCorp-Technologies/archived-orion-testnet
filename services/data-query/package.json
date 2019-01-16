@@ -6,6 +6,7 @@
     "start": "node endpoint.js"
   },
   "dependencies": {
+    "amqplib": "^0.5.3",
     "colors": "^1.3.2",
     "level": "^4.0.0",
     "multichain-node": "^2.2.0-version1.0.4",

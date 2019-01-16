@@ -20,16 +20,17 @@ contract DataQuery is Ownable {
         oracle = _oracle;
     }
 
-    function query(string livestockId, string pubkey) external {
+    function query(string livestockId, string pubkey) external returns(uint id) {
         lastUsedId++;
         queryMap[lastUsedId].statusCode = 0;
         emit Query(lastUsedId, livestockId, pubkey);
+        return lastUsedId;
     }
 
     function callback(uint _queryId, string _result, uint256 _statusCode) public {
         require(queryMap[_queryId].statusCode == 0);
         require(msg.sender == oracle);
-        queryMap[_queryId].statusCode = _statusCode;         
+        queryMap[_queryId].statusCode = _statusCode;
         queryMap[_queryId].result = _result;
         emit Result(_queryId, _result, _statusCode);
     }

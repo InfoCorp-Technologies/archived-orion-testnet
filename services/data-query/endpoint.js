@@ -4,12 +4,13 @@ let Web3 = require('web3')
 let request = require('request-promise')
 let crypto = require('crypto')
 var level = require('level')
+var amqp = require('amqplib/callback_api');
 require('colors')
 
 /******************** ETHEREUM API INTERFACE ************************
 *******************************************************************/
 const { host, contractAddress } = require ('./config/config')
-const {abi} = require ('./oracle-test/build/contracts/DataQuery')
+const abi = require ('./config/abi.json')
 let web3 = new Web3(new Web3.providers.HttpProvider(host))
 let contract = new web3.eth.Contract(abi, contractAddress)
 
@@ -34,7 +35,9 @@ const {
     // address and private key of account with executer permissions 
     executer,
     //crosspay database url
-    databaseUrl
+    databaseUrl,
+    // connection settings for rabbitMQ
+    connectionSettings
 } = require ('./config/config')
 const savedIdDb = level('./savedIdDb')
 
@@ -82,7 +85,7 @@ in the Oracle Contract.*/
         await delay(5000)
         main(_contract, _executer, _gasPrice)
         return
-    }        
+    }
 }
 
 
@@ -91,14 +94,14 @@ in the Oracle Contract.*/
 ********************************************************************/
 
 /**
- * @function high level function, performs the query, encrypt and 
+ * @function high level function, performs the query, encrypt and
  * stores it
- * @param {int} _id Id of the query performed in the Oracle Contract 
+ * @param {int} _id Id of the query performed in the Oracle Contract
  * @param {object} _contract
  */
 async function RESPOND_AND_SAVE_QUERY(_lastUsedId, _contract) {
     try {
-        let savedId = 
+        let savedId =
             Number(await get_value_from_db(savedIdDb, "savedId", 0))
         for (let id = savedId + 1; id <= _lastUsedId; id++) {
             if (await check_if_waiting(_contract, id)){
@@ -121,10 +124,11 @@ async function RESPOND_AND_SAVE_QUERY(_lastUsedId, _contract) {
                     }
                     return
                 }
-                queryIdObj.hash = await get_hash_from_multichain(queryIdObj.livestockId.substring(0, 31), response.last_update_id)
-                queryIdObj.validated = 
+                const stream_name = livestockId_to_multichain_stream(queryIdObj.livestockId)
+                queryIdObj.hash = await get_hash_from_multichain(stream_name, response.last_update_id)
+                queryIdObj.validated =
                     await check_integrity(JSON.stringify(response), queryIdObj.hash)
-                queryIdObj.encryptedResponse = 
+                queryIdObj.encryptedResponse =
                     await encrypt_data(JSON.stringify(response) , queryIdObj.pubkey)
                 if (!queryIdObj.encryptedResponse) {
                     pendQueryMap[id] = {
@@ -148,19 +152,19 @@ async function RESPOND_AND_SAVE_QUERY(_lastUsedId, _contract) {
 }
 
 /**
- * @function given a mapping of pendQuery objects, proccess the 
+ * @function given a mapping of pendQuery objects, proccess the
  * callback response for each one and send it.
- * @param {*} _pendQueryMap 
- * @param {*} _executer 
- * @param {*} _contract 
- * @param {*} _gasPrice 
+ * @param {*} _pendQueryMap
+ * @param {*} _executer
+ * @param {*} _contract
+ * @param {*} _gasPrice
  */
 async function TRIGGER_ORACLE_RESPONSE(
 _executer, _contract, _gasPrice) {
     try {
         let txCount = await get_tx_count(_executer.address)
         for (const id in pendQueryMap) {
-// create signed raw tx from executer for callback() fcn in Oracle 
+// create signed raw tx from executer for callback() fcn in Oracle
             const signedRawTx = await create_signed_callback_tx(
                 _executer,
                 _contract,
@@ -178,9 +182,9 @@ _executer, _contract, _gasPrice) {
                     status: false,
                     info: signedRawTx,
                 }
-            } 
+            }
             else {
-// result object is an object containing information about tx. 
+// result object is an object containing information about tx.
                 result = await send_signed_tx(signedRawTx)
             }
             if (result.status) {
@@ -188,20 +192,20 @@ _executer, _contract, _gasPrice) {
 pendQueryMap */
                 check_update_lastId(id)
                 delete pendQueryMap[id]
-            } 
+            }
             else {
 // If tx fails, the info is saved in queryIdObj to debug it
                 const queryIdObj = pendQueryMap[id]
                 const updatedQueryIdObj =
-                    Object.assign(queryIdObj, result) 
-                pendQueryMap[id] = updatedQueryIdObj        
+                    Object.assign(queryIdObj, result)
+                pendQueryMap[id] = updatedQueryIdObj
             }
         }
-    } 
+    }
     catch (error) {
         alert_error(
             `TRIGGER_ORACLE_RESPONSE(_executer, _contract, _gasPrice)`,
-            error   
+            error
         )
     }
 }
@@ -217,7 +221,7 @@ async function handle_pending_query_map(){
         )
         for (id in pendQueryMap){
             if(pendQueryMap[id].info.errorCode = 1){
-                const balance = 
+                const balance =
                     await web3.eth.getBalance(executer.address)
                 if (balance > pendQueryMap[id].info.minWei) {
                     delete pendQueryMap[id]
@@ -226,7 +230,7 @@ async function handle_pending_query_map(){
                         `reproccesing query with id ${id}`
                     )
                     return
-                } 
+                }
                 else {
                     alert_error(
                         `Executer address run out of founds `+
@@ -240,51 +244,23 @@ async function handle_pending_query_map(){
                 return
             }
         }
-<<<<<<< Updated upstream
-    ]);
-}
-
-foo();
-
-function triggerMethod(contract, method, params, from, privkey, callback) {
-    console.log(`[${contract.options.address}] triggering method [${method}] with ${params.length} params from account [${from}]`);
-    let call = contract.methods[method](...params);
-    let tx = {
-        from: from,
-        to: contract.options.address,
-        data: call.encodeABI(),
-        gas: 4700000,
-        gasPrice: config.contract.gasPrice
-    };
-
-    (async function () {
-        await web3.eth.accounts.signTransaction(tx, privkey).then(async signed => {
-            let transaction = web3.eth.sendSignedTransaction(signed.rawTransaction);
-            await transaction.on('receipt', async receipt => {
-                if (receipt.gasUsed < tx.gas) {
-                    callback(true);
-                } else {
-                    callback(false);
-                }
-            });
-=======
-    } 
+    }
     catch (error) {
         alert_error(`handle_pending_query_map()`, error)
     }
 }
 
 /**
- * 
- * @param {*} _dbInstance 
- * @param {*} _key 
- * @param {*} _valueOnError 
+ *
+ * @param {*} _dbInstance
+ * @param {*} _key
+ * @param {*} _valueOnError
  */
 async function get_value_from_db(
     _dbInstance, _key, _valueOnError=null){
     try {
         const value = await _dbInstance.get(_key)
-        return value        
+        return value
     } catch (error) {
         if (error == "NotFoundError: Key not found in database [savedId]")
             await savedIdDb.put('savedId', 0)
@@ -293,10 +269,9 @@ async function get_value_from_db(
             `${_valueOnError? (", "+{_valueOnError}) : ""})`, error)
             if(_valueOnError)
                 return _valueOnError
-        }            
+        }
     }
 }
->>>>>>> Stashed changes
 
 /**
  * @function Retrieve the value stored in Oracle contract
@@ -313,9 +288,9 @@ async function call_current_id(_contract) {
 }
 
 /**
- * 
- * @param {*} _contract 
- * @param {*} _id 
+ *
+ * @param {*} _contract
+ * @param {*} _id
  */
 async function check_if_waiting (
 _contract, _id) {
@@ -330,7 +305,7 @@ _contract, _id) {
 
 /**
  * @function find_query_evt:
- * @param {int} _id 
+ * @param {int} _id
  */
 async function find_query_evt(_id, _contract) {
     try {
@@ -354,7 +329,7 @@ async function find_query_evt(_id, _contract) {
             `${obj.pubkey.substring(777,813)}`
         )
         return obj
-    } 
+    }
     catch (error) {
         alert_error("cacthed on find_query_evt()", error)
         return null
@@ -364,7 +339,7 @@ async function find_query_evt(_id, _contract) {
 /**
  * @function call_api
  * @param {string} _url: endpoint of the API call
- * @returns: Body of the API response. 
+ * @returns: Body of the API response.
  */
 async function call_api (_livestockId){
     try {
@@ -373,19 +348,31 @@ async function call_api (_livestockId){
         alert_success(`call_api(${_livestockId})`, `BODY:`+
         `${JSON.stringify(body).substring(0,35)}...}`)
         return body
-    } 
+    }
     catch (error) {
         alert_error("cacthed on call_api()", error)
         return null
     }
 }
 
+/**
+ * Harcoded function, must convert livestockId to multichain stream name
+ * (see /sentinel Chain/proposals/Solution poposal for Livestock ERC721 token creation
+ * section "Livestock ID linked with multichain livestock address")
+ * This fcn must implement a base10->base58 converter for big number
+ * @param {*} _livestockId
+ */
+function livestockId_to_multichain_stream(_livestockId){
+    return "1UoDLyX3PWrCsWW1aB6ChpxFC8qY2z7"
+}
+
+
 async function get_hash_from_multichain(_name , _key) {
     try {
         const item = await multichain.listStreamKeyItems([_name, _key, false, 1])
         alert_success(`get_hash_from_multichain(${_name} , ${_key})`, item[0].data)
         return item[0].data
-    } 
+    }
     catch (error) {
         alert_error(`get_hash_from_multichain(${_name} , ${_key})`, error)
         return null
@@ -401,10 +388,10 @@ async function check_integrity(_apiResponse, _MCdata) {
         }
         else{
             alert_error(
-                `check_integrity(${_apiResponse.substring(0, 30)}...}, ${_MCdata})`, 
+                `check_integrity(${_apiResponse.substring(0, 30)}...}, ${_MCdata})`,
                 `Verification not passed. Non equal hashes:
                 DB response hash: ${hash}
-                MC hash: ${_MCdata}` 
+                MC hash: ${_MCdata}`
             )
             return false
         }
@@ -417,9 +404,9 @@ async function check_integrity(_apiResponse, _MCdata) {
 
 async function encrypt_data (_data, _pubKey){
     try {
-        let pass = randomValueHex(32)
-        let encryptedData = AESencrypt(_data, pass)
-        let encryptedPass = RSAencrypt(pass, _pubKey)
+        let pass = random_value_hex(32)
+        let encryptedData = aes_encrypt(_data, pass)
+        let encryptedPass = rsa_encrypt(pass, _pubKey)
         let jsonDataEncrypted = {
             encryptedKey: encryptedPass,
             encryptedData: encryptedData,
@@ -436,7 +423,7 @@ async function encrypt_data (_data, _pubKey){
             `${jsonDataEncrypted.encryptedData.substring(0,10)}... }`
         )
         return jsonDataEncrypted
-    } 
+    }
     catch (error) {
         alert_error(
             `encrypt_data(${_data.substring(0,35)}... , `+
@@ -457,7 +444,7 @@ async function get_tx_count(_address){
     try{
         let txCount =  web3.eth.getTransactionCount(_address)
         return txCount
-    } 
+    }
     catch (error) {
         alert_error(`get_tx_count(${_executer.address})`, error)
         return null
@@ -465,29 +452,29 @@ async function get_tx_count(_address){
 }
 
 /**
- * @function create signed raw data for trigger the callback in 
+ * @function create signed raw data for trigger the callback in
  * Oracle Contract
- * @param {*obj} _executer {addr:"0x..", privKey:"0x..."} 
- * @param {*obj} _contract interface of Oracle contract 
+ * @param {*obj} _executer {addr:"0x..", privKey:"0x..."}
+ * @param {*obj} _contract interface of Oracle contract
  * @param {*int} _id id of pending query.
- * @param {*str} _encryptedResponse encrypted response of query 
- * @param {*int} _gasPrice gas price of the chain 
- * @param {*int} _nonce nonce of the tx 
+ * @param {*str} _encryptedResponse encrypted response of query
+ * @param {*int} _gasPrice gas price of the chain
+ * @param {*int} _nonce nonce of the tx
  */
-async function create_signed_callback_tx( 
+async function create_signed_callback_tx(
 _executer, _contract, _id, _queryIdObj, _gasPrice, _nonce){
     try {
         //method interface
         let method
         if(_queryIdObj.errorCode != undefined){
             method = contract.methods.callback(
-                _id, 
-                _queryIdObj.errorDescription, 
+                _id,
+                _queryIdObj.errorDescription,
                 _queryIdObj.errorCode
             )
         }
         else{
-            method = contract.methods.callback(_id, JSON.stringify(_queryIdObj), 0)
+            method = contract.methods.callback(_id, JSON.stringify(_queryIdObj), 1)
         }
     //estimate the gas used to send callback function
         const gas = await estimate_gas(method, _executer.address)
@@ -516,7 +503,7 @@ _executer, _contract, _id, _queryIdObj, _gasPrice, _nonce){
             ` _gasPrice: ${_gasPrice}, _nonce: ${_nonce})`,
             `rawTransaction: ${rawTransaction.substring(0,10)}...`
         )
-        return rawTransaction   
+        return rawTransaction
     } catch (error) {
         alert_error("catched on create_signed_callback_tx", error)
     }
@@ -533,7 +520,7 @@ async function send_signed_tx(_signedRawTx){
         alert_success(
             `web3.eth.sendSignedTransaction(_signedRawTx: `+
             `${_signedRawTx.substring(0,10)})`,
-            `Tx hash: ${transaction.transactionHash}`    
+            `Tx hash: ${transaction.transactionHash}`
         )
         return transaction
     } catch (error) {
@@ -549,17 +536,17 @@ async function send_signed_tx(_signedRawTx){
  */
 async function check_update_lastId(_id){
     try {
-        let savedId = 
+        let savedId =
             Number(await get_value_from_db(savedIdDb, "savedId", 0))
         if (_id == savedId+1) {
-            await savedIdDb.put('savedId', _id)            
+            await savedIdDb.put('savedId', _id)
             alert_success(`check_update_lastId(${_id}, ${savedId})`)
         }
         else if(_id < savedId){
             await savedIdDb.put('savedId', 0)
             alert_info(`database reinitialized, savedId = 0`)
         }
-    } 
+    }
     catch (error) {
         alert_error("catched on check_update_lastId", error)
     }
@@ -571,7 +558,7 @@ async function check_update_lastId(_id){
 
 /**
  * @function alert_success
- * @param {string} _fcn: Function that have been ended succesfully 
+ * @param {string} _fcn: Function that have been ended succesfully
  * @param {object} _return: (optional). The result of the query.
  */
 function alert_success(_fcn, _return = null){
@@ -591,7 +578,7 @@ function alert_info(_info) {
 
 /**
  * @ function alert_error
- * @param {string} _fcn: Function that have been ended succesfully 
+ * @param {string} _fcn: Function that have been ended succesfully
  * @param {object} _return: (optional). The result of the query.
  */
 function alert_error(_fcn, _error){
@@ -607,16 +594,15 @@ function alert_error(_fcn, _error){
  */
 const delay = ms => new Promise(res => setTimeout(res, ms));
 
-function randomValueHex(_len) {
+function random_value_hex(_len) {
     try {
-        const pass =  crypto.randomBytes(_len)
-        // convert to string
-        .toString('hex') 
-        // return required number of characters
-        .slice(0, _len).toUpperCase()
+        const pass = crypto.randomBytes(_len)
+            // convert to string
+            .toString('hex')
+            // return required number of characters
+            .slice(0, _len).toUpperCase()
         return pass
-    }
-    catch (error) {
+    } catch (error) {
         alert_error(`catched on randomValueHex(${_len})`, error)
     }
 }
@@ -624,10 +610,10 @@ function randomValueHex(_len) {
 /**
  * @function symetric AES encrypt _data with _pass and returns the
  * data string encrypted
- * @param {*} _data 
- * @param {*} _pass 
+ * @param {*} _data
+ * @param {*} _pass
  */
-function AESencrypt(_data, _pass) {
+function aes_encrypt(_data, _pass) {
     try {
         var cipher = crypto.createCipher("aes-256-ctr", _pass)
         var crypted = cipher.update(_data, 'utf8', 'hex')
@@ -641,16 +627,15 @@ function AESencrypt(_data, _pass) {
 /**
  * @function asymetric RSA encrypt _data with _pubkey, and returns
  * the data string encrypted
- * @param {*} _data 
- * @param {*} _pubkey 
+ * @param {*} _data
+ * @param {*} _pubkey
  */
-function RSAencrypt(_data, _pubkey) {
+function rsa_encrypt(_data, _pubkey) {
     try {
         var buffer = Buffer.from(_data);
         var encrypted = crypto.publicEncrypt(_pubkey, buffer);
         return encrypted.toString("base64");
-    } 
-    catch (error) {
+    } catch (error) {
         alert_error(`catched on RSAencrypt(_data, _pubkey)`, error)
     }
 };
@@ -668,13 +653,13 @@ async function estimate_gas(_method, _address=null){
         const balance = await web3.eth.getBalance(_address)
         if(balance < (gas * gasPrice)){
             alert_error(
-                "Transaction will fail", 
+                "Transaction will fail",
                 "Executer address run out of founds to send the transaction"
             )
             return {errorCode :1, minWei: (gas*gasPrice)}
         }
         return gas
-    } 
+    }
     catch (error) {
         alert_error("estimate_gas()", error)
         return "0xfffff"
