@@ -2,10 +2,10 @@ const crypto = require('crypto')
 const alert = require("./alert")
 
 var lib = module.exports = {
-    
+
     /**
-     * 
-     * @param {*} _len 
+     *
+     * @param {*} _len
      */
     random_value_hex: function (_len) {
         try {
@@ -17,12 +17,12 @@ var lib = module.exports = {
             alert.error(`catched on randomValueHex(${_len})`, error)
         }
     },
-    
+
     /**
      * @function symetric AES encrypt _data with _pass and returns the
      * data string encrypted
-     * @param {*} _data 
-     * @param {*} _pass 
+     * @param {*} _data
+     * @param {*} _pass
      */
     aes_encrypt: function (_data, _pass, _iv) {
         try {
@@ -34,12 +34,12 @@ var lib = module.exports = {
             alert.error(`catched on AESencrypt(_data, _pass)`, error)
         }
     },
-    
+
     /**
      * @function asymetric RSA encrypt _data with _pubkey, and returns
      * the data string encrypted
-     * @param {*} _data 
-     * @param {*} _pubkey 
+     * @param {*} _data
+     * @param {*} _pubkey
      */
     rsa_encrypt:function (_data, _pubkey) {
         try {
@@ -54,14 +54,14 @@ var lib = module.exports = {
     /**
      * @function Hybrid encryption, generates random pwd for simmetrically encrypt
      * _data, assimetrically encripts pwd with _pubKey
-     * @param {*} _data 
-     * @param {*} _pubKey 
+     * @param {*} _data
+     * @param {*} _pubKey
      * @returns {object} {encryptedPass, encryptedData}
      */
     hybrid_encryption: function (_data, _pubKey) {
         try {
             const pass = lib.random_value_hex(32)
-            const iv = lib.random_value_hex(16)            
+            const iv = lib.random_value_hex(16)
             const encryptedData = lib.aes_encrypt(_data, pass, iv)
             const encryptedPass = lib.rsa_encrypt(pass, _pubKey)
             const encryptedIv = lib.rsa_encrypt(iv, _pubKey)
@@ -69,7 +69,7 @@ var lib = module.exports = {
                 encryptedPass,
                 encryptedIv,
                 encryptedData,
-            };          
+            };
             alert.success(
                 `hybrid_encryption(${_data.substring(0,35)}...} , ` +
                 `${_pubKey.substring(1,27)}\\n` +
@@ -96,9 +96,9 @@ var lib = module.exports = {
 
     /**
      * @function decrypt data encrypted using hybrid encryption system
-     * @param {*} _encryptedData 
-     * @param {*} _encryptedPass 
-     * @param {*} _privateKey 
+     * @param {*} _encryptedData
+     * @param {*} _encryptedPass
+     * @param {*} _privateKey
      */
     hybrid_decrypt: function  (_encryptedData, _encryptedPass, _encryptedIv, _privateKey) {
         try {
@@ -116,11 +116,11 @@ var lib = module.exports = {
             `privatekey: ${_privateKey.substring(0,30)})`, error)
         }
     },
-    
+
     /**
      * @function Decrypt data encrypted using asymmetric encryption
-     * @param {*} _encryptedData 
-     * @param {*} _privateKey 
+     * @param {*} _encryptedData
+     * @param {*} _privateKey
      */
     asymmetric_decrypt: function (_encryptedData, _privateKey) {
         var buffer = Buffer.from(_encryptedData, "base64");
@@ -130,8 +130,8 @@ var lib = module.exports = {
 
     /**
      * @function Decrypt data encrypted using symmetric encryption
-     * @param {*} _data 
-     * @param {*} _password 
+     * @param {*} _data
+     * @param {*} _password
      */
     symmetric_decrypt: function (_data, _password, _iv) {
         var decipher = crypto.createDecipheriv("aes-256-ctr", _password, _iv)

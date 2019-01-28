@@ -8,7 +8,20 @@ module.exports = {
                 }
             },
             exchanges: ["request", "response"],
-            queues: ["request", "response"],
+            queues: {
+                "request": {
+                    "options": {
+                        "durable": true,
+                        "exclusive": false
+                    }
+                },
+                "response": {
+                    "options": {
+                        "durable": true,
+                        "exclusive": false
+                    }
+                }
+            },
             bindings: [
                 "request -> request",
                 "response -> response"

@@ -3,7 +3,7 @@ require('colors')
 module.exports = {
      /**
      * @function success
-     * @param {string} _fcn: Function that have been ended succesfully 
+     * @param {string} _fcn: Function that have been ended succesfully
      * @param {object} _return: (optional). The result of the query.
      */
     success: function(_fcn, _return = null) {
@@ -15,8 +15,8 @@ module.exports = {
   },
 
   /**
-   * 
-   * @param {*} _info 
+   *
+   * @param {*} _info
    */
   info: function(_info) {
       console.log(
@@ -27,7 +27,7 @@ module.exports = {
 
   /**
    * @ function error
-   * @param {string} _fcn: Function that have been ended succesfully 
+   * @param {string} _fcn: Function that have been ended succesfully
    * @param {object} _return: (optional). The result of the query.
    */
   error: function(_fcn, _error) {

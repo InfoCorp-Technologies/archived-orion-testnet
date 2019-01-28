@@ -21,8 +21,8 @@ manage_request(rascalConfig, "request", databaseUrl);
  *******************************************************************/
 /**
  * @function manage incoming request publishing encrypted response
- * @param {*} _subscription 
- * @param {*} _databaseUrl 
+ * @param {*} _subscription
+ * @param {*} _databaseUrl
  */
 async function manage_request(_rascalConfig, _subscription, _databaseUrl) {
     try {
@@ -46,7 +46,7 @@ async function manage_request(_rascalConfig, _subscription, _databaseUrl) {
 /**
  * @function call_api
  * @param {string} _url: endpoint of the API call
- * @returns: Body of the API response. 
+ * @returns: Body of the API response.
  */
 async function call_api(_livestockId, _databaseUrl) {
     try {

@@ -32,7 +32,7 @@ const {
     deployBlock,
     // gas price of the chain
     gasPrice,
-    // address and private key of account with executer permissions 
+    // address and private key of account with executer permissions
     executer,
     //crosspay database url
     databaseUrl,
