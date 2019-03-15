@@ -4,7 +4,7 @@ identity = "sentinel-validator"
 no_persistent_txqueue = true
 
 [account]
-unlock = ["$UNLOCK"]
+unlock = ["$NODE_PUBKEY"]
 password = ["$PASS_PATH"]
 
 [ui]
@@ -18,8 +18,8 @@ discovery = true
 reserved_peers = "$NODES_PATH"
 
 [mining]
-author = "$AUTHOR"
-engine_signer = "$ENGINE_SIGNER"
+author = "$NODE_PUBKEY"
+engine_signer = "$NODE_PUBKEY"
 reseal_max_period = 900000
 min_gas_price = 0 #min gas price in WEI per GAS unit (0 Ether)
 
