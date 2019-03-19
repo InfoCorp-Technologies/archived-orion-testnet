@@ -1,6 +1,6 @@
 pragma solidity ^0.4.23;
 
-import "../validator-contracts/ImmediateSet.sol";
+import "../validator-contracts/ValidatorSet.sol";
 
 contract Operations {
 
@@ -47,9 +47,10 @@ contract Operations {
         uint gas;
     }
 
-    Validator public validator;
+    ValidatorSet public validator;
     uint32 public latestFork;
     uint32 public proposedFork;
+    uint256 public requiredSignatures = 1;
 
     mapping (uint32 => Fork) public fork;
     mapping (address => Client) client;
@@ -67,10 +68,22 @@ contract Operations {
     event ReleaseAdded(address indexed client, uint32 indexed forkBlock, bytes32 release, uint8 track, uint24 semver, bool indexed critical);
     event ChecksumAdded(address indexed client, bytes32 indexed release, bytes32 indexed platform, bytes32 checksum);
     event OwnerChanged(address old, address now);
+    event RequiredSignaturesChanged(uint256 indexed requiredSignatures);
 
-    constructor(Validator _validator) public {
+    constructor(ValidatorSet _validator) public {
         require(_validator != address(0));
         validator = _validator;
+    }
+
+    function setRequiredSignatures(uint256 _requiredSignatures) external {
+        require(msg.sender == validator.owner());
+        require(_requiredSignatures != 0, "Required signatures it's required");
+        require(
+            validator.getValidators().length >= _requiredSignatures,
+            "The # of validators must be greater or equal than the required signatures"
+        );
+        requiredSignatures = _requiredSignatures;
+        emit RequiredSignaturesChanged(_requiredSignatures);
     }
 
     function clientList() public view returns(address[]) {
@@ -78,7 +91,7 @@ contract Operations {
     }
 
     function clientsRequired() public view returns(uint) {
-        return validator.requiredSignatures();
+        return requiredSignatures;
     }
 
     // Functions for client owners
