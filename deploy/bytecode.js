@@ -39,7 +39,6 @@ async function getbytecode(compiledContracts, contractName, args) {
 async function main() {
     var input = {
         'ValidatorSet.sol': fs.readFileSync('../contracts/validator-contracts/ValidatorSet.sol', 'utf8'),
-        'Operations.sol': fs.readFileSync('../contracts/operation-contracts/Operations.sol', 'utf8'),
         'Whitelist.sol': fs.readFileSync('../contracts/sesc-contracts/Whitelist.sol', 'utf8'),
         'Exchange.sol': fs.readFileSync('../contracts/sesc-contracts/Exchange.sol', 'utf8'),
         'Registry.sol': fs.readFileSync('../contracts/registry-contracts/Registry.sol', 'utf8'),
@@ -55,9 +54,6 @@ async function main() {
             '0xe132c75a856370c4cf9ea732e77a634ba75566ad'
         ],
         '0x574366e84f74f2e913ad9a6782ce6ac8022e16eb'
-    ]);
-    const operationsBytecode = await getbytecode(compiledContracts, 'Operations.sol:Operations', [
-        '0x0000000000000000000000000000000000000005'
     ]);
     const whitelistBytecode = await getbytecode(compiledContracts, 'Whitelist.sol:Whitelist', [
         '0x574366e84f74f2e913ad9a6782ce6ac8022e16eb'
@@ -81,18 +77,15 @@ async function main() {
             "constructor": validatorBytecode
         },
         "0x0000000000000000000000000000000000000006": {
-            "constructor": operationsBytecode
-        },
-        "0x0000000000000000000000000000000000000007": {
             "constructor": whitelistBytecode
         },
-        // "0x0000000000000000000000000000000000000008": {
+        // "0x0000000000000000000000000000000000000007": {
         //     "constructor": exchangeBytecode
         // },
-        // "0x0000000000000000000000000000000000000009": {
+        // "0x0000000000000000000000000000000000000008": {
         //     "constructor": registryBytecode
         // },
-        // "0x0000000000000000000000000000000000000010": {
+        // "0x0000000000000000000000000000000000000009": {
         //     "constructor": oracleBytecode
         // },
     },null,2));

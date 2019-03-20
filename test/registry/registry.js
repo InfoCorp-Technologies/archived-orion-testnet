@@ -158,7 +158,7 @@ contract('Registry livestock and removal', async (accounts) => {
         await registry.setInterfaceImplementer(ADDRESS_2, USER, MULTICHAIN_ADR_2, { from: ADDRESS_2 })
         await registry.verifyInterfaceImplementer(ADDRESS_1, ATTESTATOR, { from: ADMIN_ADDRESS })
         await registry.verifyInterfaceImplementer(ADDRESS_2, USER, { from: ADDRESS_1 })
-        await whitelist.addWhitelist([ADDRESS_1, ADDRESS_2])
+        await whitelist.addAddresses([ADDRESS_1, ADDRESS_2])
         CO_1 = await registry.interfaceHash(CO, 1)
         COW_1 = await registry.interfaceHash(COW, 1)
         COW_2 = await registry.interfaceHash(COW, 2)
