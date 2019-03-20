@@ -31,7 +31,7 @@ contract ValidatorSet is Ownable {
         pendingArr = _init;
         for (uint256 i = 0; i < pendingArr.length; i++) {
             status[pendingArr[i]].isValidator = true;
-            status[pendingArr[i]].index = i + 1;
+            status[pendingArr[i]].index = i;
         }
         validatorArr = pendingArr;
     }
@@ -75,9 +75,8 @@ contract ValidatorSet is Ownable {
         // delete _oldValidator from the validators array
         delete pendingArr[pendingArr.length - 1];
         pendingArr.length--;
-
         // Reset address status of the _oldValidator
-        delete status[_oldValidator];
+        status[_oldValidator].isValidator = false;
 
         _initiateChange();
     }

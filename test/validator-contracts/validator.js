@@ -45,6 +45,7 @@ contract('Exchange', async (accounts) => {
 
         assert.equal(events.length, 1);
         assert.deepEqual(events[0].args.currentSet, INITIAL_VALIDATORS);
+        assert.deepEqual(await validator.getValidators(), INITIAL_VALIDATORS);
 
         // abort if there's no change to finalize
         await validator.finalizeChange({ from: SYSTEM }).should.be.rejectedWith(ERROR_MSG);
@@ -88,6 +89,9 @@ contract('Exchange', async (accounts) => {
 
         // the validator set should be updated
         assert.deepEqual(await validator.getValidators(), newSet);
+        for (let i = 0; i < newSet.length; i++) {
+            assert.deepEqual(await validator.isValidator(newSet[i]), true);
+        }
     });
 
     it("should abort when adding a duplicate validator", async () => {
@@ -123,9 +127,9 @@ contract('Exchange', async (accounts) => {
         assert.deepEqual(await validator.getValidators(), INITIAL_VALIDATORS.concat(NEW_VALIDATOR));
 
         // `pendingStatus` should be updated
-        const [isValidator, index] = await validator.getStatus(NEW_VALIDATOR);
+        const [isValidator] = await validator.getStatus(NEW_VALIDATOR);
         assert(!isValidator);
-        assert.equal(index, 0);
+        assert.deepEqual(await validator.isValidator(NEW_VALIDATOR), false);
 
         // we successfully finalize the change
         await validator.finalizeChange({ from: SYSTEM });
