@@ -7,35 +7,71 @@ contract('Whitelist', async (accounts) => {
 
     const owner = accounts[0];
     const oneAddress = accounts[1];
+    const manyAddress = [accounts[2], accounts[3], accounts[4], accounts[5]];
 
     beforeEach(async () => {
         whitelist = await Whitelist.new(owner);
     });
 
-    it('add address and check is whitelisted', async () => {
-        const { logs } = await whitelist.addWhitelist([oneAddress], { from: owner });
-        logs[0].event.should.be.equal('Whitelisted');
-        logs[0].args.should.be.deep.equal({
-            addr: oneAddress
-        });
-        true.should.be.equal(await whitelist.isWhitelist(oneAddress));
+    it('only owner can add or remove addresses', async () => {
+        await whitelist.addAddresses([oneAddress], { from: oneAddress })
+            .should.be.rejectedWith(ERROR_MSG);
+        await whitelist.addAddresses([oneAddress], { from: owner });
+        await whitelist.removeAddresses([oneAddress], { from: oneAddress })
+            .should.be.rejectedWith(ERROR_MSG);
     });
 
-    it('remove address and check is not whitelisted', async () => {
-        const addTx = await whitelist.addWhitelist([oneAddress], { from: owner });
-        addTx['logs'][0].event.should.be.equal('Whitelisted');
-        addTx['logs'][0].args.should.be.deep.equal({
-            addr: oneAddress
-        });
+    it('add address and check if is whitelisted', async () => {
+        await whitelist.addAddresses([], { from: owner })
+            .should.be.rejectedWith(ERROR_MSG);
+        const { logs } = await whitelist.addAddresses(
+            [oneAddress], { from: owner }
+        );
+        logs[0].event.should.be.equal('LogWhitelisted');
+        logs[0].args.should.be.deep.equal({ addr: oneAddress });
+        true.should.be.equal(await whitelist.isWhitelisted(oneAddress));
         '1'.should.be.bignumber.equal(await whitelist.count());
-        const rmTx = await whitelist.removeWhitelist([oneAddress], { from: owner });
-        rmTx['logs'][0].event.should.be.equal('Removed');
-        rmTx['logs'][0].args.should.be.deep.equal({
-            addr: oneAddress
-        });
+    });
+
+    it('remove address and check if is not whitelisted', async () => {
+        await whitelist.addAddresses([oneAddress], { from: owner });
+        '1'.should.be.bignumber.equal(await whitelist.count());
+        const rmTx = await whitelist.removeAddresses(
+            [oneAddress], { from: owner }
+        );
+        rmTx['logs'][0].event.should.be.equal('LogRemoved');
+        rmTx['logs'][0].args.should.be.deep.equal({ addr: oneAddress });
         '0'.should.be.bignumber.equal(await whitelist.count());
-        false.should.be.equal(await whitelist.isWhitelist(oneAddress));
+        false.should.be.equal(await whitelist.isWhitelisted(oneAddress));
     })
+
+    it('add addresses and check if is whitelisted', async () => {
+        const { logs } = await whitelist.addAddresses(
+            manyAddress, { from: owner }
+        );
+        for (let i = 0; i < manyAddress.length; i++) {
+            logs[i].event.should.be.equal('LogWhitelisted');
+            logs[i].args.should.be.deep.equal({ addr: manyAddress[i] });
+            true.should.be.equal(await whitelist.isWhitelisted(manyAddress[i]));
+        }
+        manyAddress.length.should.be.bignumber.equal(await whitelist.count());
+    });
+
+    it('remove addresses and check if is whitelisted', async () => {
+        await whitelist.addAddresses(manyAddress, { from: owner });
+        const { logs } = await whitelist.removeAddresses(
+            manyAddress, { from: owner }
+        );
+        for (let i = 0; i < manyAddress.length; i++) {
+            logs[i].event.should.be.equal('LogRemoved');
+            logs[i].args.should.be.deep.equal({ addr: manyAddress[i] });
+            false.should.be.equal(
+                await whitelist.isWhitelisted(manyAddress[i])
+            );
+        }
+        '0'.should.be.bignumber.equal(await whitelist.count());
+
+    });
 });
 
 /* contract('LCToken', async (accounts) => {
@@ -49,7 +85,7 @@ contract('Whitelist', async (accounts) => {
 
     beforeEach(async () => {
         whitelist = await Whitelist.new(owner);
-        await whitelist.addWhitelist([whiteUserOne, whiteUserTwo]);
+        await whitelist.addAddresses([whiteUserOne, whiteUserTwo]);
         token = await LCToken.new(
             'Local Currency Token Myanmar',
             'LCT.MMK',

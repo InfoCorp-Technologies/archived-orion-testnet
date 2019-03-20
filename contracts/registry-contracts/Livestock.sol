@@ -12,8 +12,8 @@ contract Livestock is ERC721Token, Ownable {
     event Burn(address indexed burner, uint indexed id);
 
     modifier isWhitelisted(address from, address to) {
-        require(whitelist.isWhitelist(from));
-        require(whitelist.isWhitelist(to));
+        require(whitelist.isWhitelisted(from));
+        require(whitelist.isWhitelisted(to));
         _;
     }
 
