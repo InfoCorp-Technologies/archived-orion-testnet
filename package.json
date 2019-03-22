@@ -4,8 +4,7 @@
   "description": "![Sentinel Chain](https://cryptoindex.co/coinlogo/sentinel-chain.png \"Sentinel Chain\")",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "flatten-validator": "truffle-flattener ./contracts/validator-contracts/ImmediateSet.sol > ./contracts/ImmediateSet.sol"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
@@ -15,7 +14,8 @@
   "dependencies": {
     "truffle-assertions": "^0.3.1",
     "truffle-flattener": "^1.2.5",
-    "zeppelin-solidity": "^1.12.0"
+    "zeppelin-solidity": "^1.12.0",
+    "web3-utils": "^1.0.0-beta.34"
   },
   "devDependencies": {
     "babel-polyfill": "^6.26.0",
