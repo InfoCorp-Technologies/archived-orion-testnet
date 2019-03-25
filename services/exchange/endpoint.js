@@ -75,12 +75,12 @@ function triggerMethod(contract, method, params, from, privkey, callback) {
         to: contract.options.address,
         data: call.encodeABI(),
         gas: 4700000,
-        gasPrice: contract.gasPrice,
+        gasPrice: config.contract.gasPrice,
     };
     (async function () {
         await web3.eth.accounts.signTransaction(tx, privkey).then(async signed => {
             let transaction = web3.eth.sendSignedTransaction(signed.rawTransaction);
-            transaction.on('receipt', async receipt => {
+            await transaction.on('receipt', async receipt => {
                 if (receipt.gasUsed < tx.gas) {
                     callback(true);
                 } else {
@@ -112,6 +112,7 @@ async function handlePendingRequest(exchange) {
                                 console.log('HANDLED SUCCESFULLY');
                                 resolve('HANDLED SUCCESFULLY');
                             } else {
+                                console.log('¡¡HANDLED FAILED!!');
                                 resolve('FAILED');
                             }
                         });

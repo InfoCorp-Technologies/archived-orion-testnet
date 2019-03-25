@@ -1,0 +1,14 @@
+{
+  "result": {
+      "livestock": {
+        "type": "cow",
+        "owner_location": {
+          "street": "5164 terry ln",
+          "city": "altoona",
+          "state": "new york",
+          "zip": "21007"
+        }
+      }
+    },
+  "ErrorCode": 200
+}

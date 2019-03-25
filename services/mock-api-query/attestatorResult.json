@@ -1,0 +1,24 @@
+{
+  "result": {
+      "attestator": {
+        "gender": "male",
+        "name": {
+          "title": "mr",
+          "first": "robert",
+          "last": "lawrence"
+        },
+        "location": {
+          "street": "5164 terry ln",
+          "city": "altoona",
+          "state": "new york",
+          "zip": "21007"
+        },
+        "email": "robert.lawrence99@example.com",
+        "username": "smallkoala568",
+        "phone": "(672)-402-6844",
+        "cell": "(117)-913-6058",
+        "SSN": "492-39-6289"
+      }
+    },
+  "ErrorCode": 200
+}

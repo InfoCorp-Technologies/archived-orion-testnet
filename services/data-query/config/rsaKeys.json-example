@@ -1,4 +1,0 @@
-{
-  "publicKeyPem": "-----BEGIN PUBLIC KEY----- XXXXXXXXXXX -----END PUBLIC KEY-----\r\n",
-  "privateKeyPem": "-----BEGIN RSA PRIVATE KEY----- XXXXXXXXXXX -----END RSA PRIVATE KEY-----\r\n"
-}

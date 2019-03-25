@@ -18,19 +18,14 @@ module.exports = {
       gas: 0xfffffffffff,
       gasPrice: 0x01
     },
-    ropsten: {
-      host: "localhost",
-      network_id: 3,
-      port: 8545,
-      gas: 2900000
-    },
     ganache: {
       host: 'localhost',
-      port: 7545,
+      port: 8545,
       network_id: '*'
     }
   },
   mocha: {
-    useColors: true
+    useColors: true,
+    reporter: 'nyan'
   }
 };

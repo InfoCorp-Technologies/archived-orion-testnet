@@ -1,11 +1,10 @@
 {
-  "name": "sentinel-chain-network",
+  "name": "orion-testnet-private",
   "version": "1.0.0",
   "description": "![Sentinel Chain](https://cryptoindex.co/coinlogo/sentinel-chain.png \"Sentinel Chain\")",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "flatten-validator": "truffle-flattener ./contracts/validator-contracts/ImmediateSet.sol > ./contracts/ImmediateSet.sol"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
@@ -15,7 +14,8 @@
   "dependencies": {
     "truffle-assertions": "^0.3.1",
     "truffle-flattener": "^1.2.5",
-    "zeppelin-solidity": "^1.7.0"
+    "zeppelin-solidity": "^1.12.0",
+    "web3-utils": "^1.0.0-beta.34"
   },
   "devDependencies": {
     "babel-polyfill": "^6.26.0",
@@ -31,11 +31,11 @@
     "solc": "^0.4.23",
     "solidity-coverage": "^0.4.15",
     "solium": "^1.0.5",
-    "truffle": "^4.0.4"
+    "truffle": "^4.1.14"
   },
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/InfoCorp-Technologies/sentinel-chain-network/issues"
+    "url": "https://github.com/InfoCorp-Technologies/orion-testnet-private/issues"
   },
-  "homepage": "https://github.com/InfoCorp-Technologies/sentinel-chain-network#readme"
+  "homepage": "https://github.com/InfoCorp-Technologies/orion-testnet-private#readme"
 }
