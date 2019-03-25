@@ -4,11 +4,11 @@ set -e
 
 # Set default values for ENV's variables
 export NETWORK_PORT=${NETWORK_PORT:-'30303'}
-export PASS_PATH=${PASS_PATH:-'/sentinel/password.txt'}
+export PASS_PATH=${PASS_PATH:-''}
 export KEY_PATH=${KEY_PATH:-''}
-export NODES_PATH=${NODES_PATH:-'/sentinel/nodes/nodes.txt'}
+export NODES_PATH=${NODES_PATH:-''}
 export NODE_PUBKEY=${NODE_PUBKEY:-'0x...'}
-export NODE_TYPE=${NODE_TYPE:-'dev'}
+export NODE_TYPE=${NODE_TYPE:-'local'}
 
 # Process config files
 envsubst '${NODE_PUBKEY} ${PASS_PATH} ${NODES_PATH}' < /sentinel/config/config-dev.docker.toml > /sentinel/config-dev.toml
