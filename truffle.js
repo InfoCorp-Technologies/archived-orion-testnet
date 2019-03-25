@@ -1,8 +1,3 @@
-require('babel-register')({
-  ignore: /node_modules\/(?!zeppelin-solidity)/
-});
-require('babel-polyfill');
-
 module.exports = {
   networks: {
     development: {
@@ -12,11 +7,11 @@ module.exports = {
       gas: 0xfffffffff
     },
     coverage: {
-      host: "localhost",
-      network_id: "*",
-      port: 8545,
+      host: 'localhost',
+      network_id: '*', // eslint-disable-line camelcase
+      port: 8555,
       gas: 0xfffffffffff,
-      gasPrice: 0x01
+      gasPrice: 0x01,
     },
     ganache: {
       host: 'localhost',
@@ -24,8 +19,18 @@ module.exports = {
       network_id: '*'
     }
   },
+  solc: {
+    optimizer: {
+      enabled: true,
+      runs: 200
+    }
+  },
   mocha: {
     useColors: true,
-    reporter: 'nyan'
+    reporter: 'eth-gas-reporter',
+    reporterOptions : {
+      currency: 'USD',
+      gasPrice: 1
+    }
   }
 };

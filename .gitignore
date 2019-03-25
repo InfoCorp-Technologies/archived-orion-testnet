@@ -1,9 +1,4 @@
-password.txt
-parity.log
-base-path/
-base/
-nohup.out
-node_modules/
-build/
-flats/
+build
+node_modules
+flats
 docker-compose.yml

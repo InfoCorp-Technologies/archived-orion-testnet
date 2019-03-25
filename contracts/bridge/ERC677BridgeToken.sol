@@ -17,11 +17,9 @@ contract ERC677BridgeToken is
 
     event ContractFallbackCallFailed(address from, address to, uint value);
 
-    constructor(
-        string _name,
-        string _symbol,
-        uint8 _decimals)
-    public DetailedERC20(_name, _symbol, _decimals) {}
+    constructor(string _name, string _symbol, uint8 _decimals)
+        public
+        DetailedERC20(_name, _symbol, _decimals) {}
 
     function setBridgeContract(address _bridgeContract) onlyOwner public {
         require(_bridgeContract != address(0) && isContract(_bridgeContract));
