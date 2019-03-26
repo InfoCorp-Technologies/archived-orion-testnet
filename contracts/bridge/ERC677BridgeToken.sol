@@ -3,8 +3,8 @@ pragma solidity 0.4.24;
 import "zeppelin-solidity/contracts/token/ERC20/BurnableToken.sol";
 import "zeppelin-solidity/contracts/token/ERC20/MintableToken.sol";
 import "zeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol";
-import "./IBurnableMintableERC677Token.sol";
-import "./ERC677Receiver.sol";
+import "../shared/ERC677/IBurnableMintableERC677Token.sol";
+import "../shared/ERC677/ERC677Receiver.sol";
 
 
 contract ERC677BridgeToken is

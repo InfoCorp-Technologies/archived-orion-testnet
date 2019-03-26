@@ -2,7 +2,7 @@ pragma solidity ^0.4.23;
 
 import "zeppelin-solidity/contracts/token/ERC721/ERC721Token.sol";
 import "zeppelin-solidity/contracts/ownership/Ownable.sol";
-import "../exchange/Whitelist.sol";
+import "../shared/Whitelist.sol";
 
 contract Livestock is ERC721Token, Ownable {
 

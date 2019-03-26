@@ -1,6 +1,6 @@
 pragma solidity ^0.4.19;
 
-import "../ERC677Receiver.sol";
+import "../../shared/ERC677/ERC677Receiver.sol";
 
 
 contract ERC677ReceiverTest is ERC677Receiver {

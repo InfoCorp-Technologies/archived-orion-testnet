@@ -3,11 +3,11 @@
 rm -rf flats/*
 
 files=(
-    ./contracts/registry-contracts/*.sol
-    ./contracts/operation-contracts/*.sol
-    ./contracts/oracle-contracts/*.sol
-    ./contracts/sesc-contracts/*.sol
-    ./contracts/validator-contracts/*.sol
+    ./contracts/exchange/*.sol
+    ./contracts/oracle/*.sol
+    ./contracts/registry/*.sol
+    ./contracts/shared/*.sol
+    ./contracts/validator/*.sol
 )
 
 for filename in "${files[@]}"; do
