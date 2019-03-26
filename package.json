@@ -15,6 +15,7 @@
   },
   "author": "InfoCorp",
   "dependencies": {
+    "ethereumjs-testrpc-sc": "^6.1.6",
     "ganache-cli": "^6.1.0",
     "solidity-coverage": "^0.5.11",
     "truffle-assertions": "^0.3.1",

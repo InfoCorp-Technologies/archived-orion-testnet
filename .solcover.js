@@ -7,7 +7,9 @@ module.exports = {
         'ERC677ReceiverTest.sol',
         'ForeignBridgeV2.sol',
         'RevertFallback.sol',
-        'SENCTest.sol'
+        'SENCTest.sol',
+        'TestValidatorSet.sol',
+        'test.sol'
     ],
     copyNodeModules: true
 }
