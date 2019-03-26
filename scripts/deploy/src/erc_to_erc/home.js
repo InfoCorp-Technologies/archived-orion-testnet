@@ -27,7 +27,8 @@ const {
   BRIDGEABLE_TOKEN_SYMBOL,
   BRIDGEABLE_TOKEN_DECIMALS,
   FOREIGN_DAILY_LIMIT,
-  FOREIGN_MAX_AMOUNT_PER_TX
+  FOREIGN_MAX_AMOUNT_PER_TX,
+  HOME_WHITELIST_ADDRESS
 } = env
 
 const DEPLOYMENT_ACCOUNT_ADDRESS = privateKeyToAddress(DEPLOYMENT_ACCOUNT_PRIVATE_KEY)
@@ -178,6 +179,7 @@ async function deployHome() {
   const initializeHomeBridgeData = await homeBridgeImplementation.methods
     .initialize(
       storageValidatorsHome.options.address,
+      HOME_WHITELIST_ADDRESS,
       HOME_DAILY_LIMIT,
       HOME_MAX_AMOUNT_PER_TX,
       HOME_MIN_AMOUNT_PER_TX,
