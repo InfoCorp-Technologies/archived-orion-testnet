@@ -2,7 +2,8 @@ const { HttpListProviderError } = require('http-list-provider')
 const {
   AlreadyProcessedError,
   AlreadySignedError,
-  InvalidValidatorError
+  InvalidValidatorError,
+  RecipientNotWhitelisted
 } = require('../../utils/errors')
 const logger = require('../../services/logger').child({
   module: 'processAffirmationRequests:estimateGas'
@@ -58,6 +59,14 @@ async function estimateGas({
 
     if (!isValidator) {
       throw new InvalidValidatorError(`${address} is not a validator`)
+    }
+
+    // Check if recipient is whitelisted
+    logger.debug('Check if recipient is whitelisted')
+    const isWhitelisted = await homeBridge.methods.isWhitelisted(recipient).call()
+
+    if (!isWhitelisted) {
+      throw new RecipientNotWhitelisted(`${recipient} is not whitelisted`)
     }
 
     throw new Error('Unknown error while processing message')
