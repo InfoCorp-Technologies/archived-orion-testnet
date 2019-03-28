@@ -25,12 +25,15 @@ contract ERC677Bridge is BasicBridge, Whitelistable {
         require(msg.sender == address(erc677token()));
         require(withinLimit(_value));
         require(_isWhitelisted(_from));
+        require(_value > tollFee());
+        uint256 valueToTransfer = _value - tollFee();
         setTotalSpentPerDay(
             getCurrentDay(),
-            totalSpentPerDay(getCurrentDay()).add(_value)
+            totalSpentPerDay(getCurrentDay()).add(valueToTransfer)
         );
-        erc677token().burn(_value);
-        fireEventOnTokenTransfer(_from, _value);
+        erc677token().transfer(tollAddress(), tollFee());
+        erc677token().burn(valueToTransfer);
+        fireEventOnTokenTransfer(_from, valueToTransfer);
         return true;
     }
 

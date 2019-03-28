@@ -21,6 +21,8 @@ contract HomeBridgeErcToErc is ERC677Receiver, EternalStorage, BasicBridge, Basi
     function initialize (
         address _validatorContract,
         address _whitelistContract,
+        address _tollAddress,
+        uint256 _tollFee,
         uint256 _dailyLimit,
         uint256 _maxPerTx,
         uint256 _minPerTx,
@@ -37,12 +39,15 @@ contract HomeBridgeErcToErc is ERC677Receiver, EternalStorage, BasicBridge, Basi
         require(!isInitialized());
         require(_validatorContract != address(0) && isContract(_validatorContract));
         require(_whitelistContract != address(0) && isContract(_whitelistContract));
+        require(_tollAddress != address(0));
         require(_requiredBlockConfirmations > 0);
         require(_minPerTx > 0 && _maxPerTx > _minPerTx && _dailyLimit > _maxPerTx);
         require(_foreignMaxPerTx < _foreignDailyLimit);
         require(_owner != address(0));
         addressStorage[keccak256(abi.encodePacked("validatorContract"))] = _validatorContract;
         addressStorage[keccak256(abi.encodePacked("whitelistContract"))] = _whitelistContract;
+        addressStorage[keccak256(abi.encodePacked("tollAddress"))] = _tollAddress;
+        uintStorage[keccak256(abi.encodePacked("tollFee"))] = _tollFee;
         uintStorage[keccak256(abi.encodePacked("deployedAtBlock"))] = block.number;
         uintStorage[keccak256(abi.encodePacked("dailyLimit"))] = _dailyLimit;
         uintStorage[keccak256(abi.encodePacked("maxPerTx"))] = _maxPerTx;
@@ -66,11 +71,17 @@ contract HomeBridgeErcToErc is ERC677Receiver, EternalStorage, BasicBridge, Basi
         internal
         returns(bool)
     {
-        setTotalExecutedPerDay(
-            getCurrentDay(),
-            totalExecutedPerDay(getCurrentDay()).add(_value)
-        );
-        return erc677token().mint(_recipient, _value);
+        if (_value > tollFee()){
+            uint256 valueToTransfer = _value - tollFee();
+            setTotalExecutedPerDay(
+                getCurrentDay(),
+                totalExecutedPerDay(getCurrentDay()).add(valueToTransfer)
+            );
+            erc677token().mint(tollAddress(), tollFee());
+            return erc677token().mint(_recipient, valueToTransfer);
+        } else {
+            return erc677token().mint(tollAddress(), _value);
+        }
     }
 
     function fireEventOnTokenTransfer(address _from, uint256 _value) internal {
