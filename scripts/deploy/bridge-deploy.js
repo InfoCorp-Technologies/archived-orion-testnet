@@ -62,7 +62,7 @@ async function doDeployHome() {
 async function main() {
   if (!CHAIN){
     console.log('Error: you must provide the chain name argument, foreign or home.')
-  }else if(CHAIN === 'foreing') {
+  }else if(CHAIN === 'foreign') {
     await doDeployForeign()
   }else if(CHAIN === 'home') {
     await doDeployHome()

@@ -7,8 +7,7 @@ const { web3Home } = require('../../services/web3')
 const {
   AlreadyProcessedError,
   AlreadySignedError,
-  InvalidValidatorError,
-  RecipientNotWhitelisted
+  InvalidValidatorError
 } = require('../../utils/errors')
 const { EXIT_CODES, MAX_CONCURRENT_EVENTS } = require('../../utils/constants')
 const estimateGas = require('../processAffirmationRequests/estimateGas')
@@ -70,9 +69,6 @@ function processTransfersBuilder(config) {
             logger.info(
               `transfer ${transfer.transactionHash} was already processed by other validators`
             )
-            return
-          } else if (e instanceof RecipientNotWhitelisted) {
-            logger.error({ address: from }, 'Recipient is not whitelisted')
             return
           } else {
             logger.error(e, 'Unknown error while processing transaction')

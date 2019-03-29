@@ -5,9 +5,8 @@ import "../libraries/SafeMath.sol";
 import "zeppelin-solidity/contracts/token/ERC20/ERC20Basic.sol";
 import "./Validatable.sol";
 import "../libraries/Message.sol";
-import "../../shared/IWhitelist.sol";
 
-contract BasicHomeBridge is EternalStorage, Validatable, IWhitelist {
+contract BasicHomeBridge is EternalStorage, Validatable {
     using SafeMath for uint256;
 
     event UserRequestForSignature(address recipient, uint256 value);
@@ -17,7 +16,6 @@ contract BasicHomeBridge is EternalStorage, Validatable, IWhitelist {
     event CollectedSignatures(address authorityResponsibleForRelay, bytes32 messageHash, uint256 NumberOfCollectedSignatures);
 
     function executeAffirmation(address recipient, uint256 value, bytes32 transactionHash) external onlyValidator {
-        require(_isWhitelisted(recipient));
         if (affirmationWithinLimits(value)) {
             bytes32 hashMsg = keccak256(abi.encodePacked(recipient, value, transactionHash));
             bytes32 hashSender = keccak256(abi.encodePacked(msg.sender, hashMsg));
