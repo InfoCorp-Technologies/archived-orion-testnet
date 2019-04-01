@@ -3,7 +3,7 @@ const ForeignBridgeV2 = artifacts.require("ForeignBridgeV2.sol");
 const BridgeValidators = artifacts.require("BridgeValidators.sol");
 const EternalStorageProxy = artifacts.require("EternalStorageProxy.sol");
 
-const ERC677BridgeToken = artifacts.require("ERC677BridgeToken.sol");
+const SeniToken = artifacts.require("SeniToken.sol");
 const {ERROR_MSG, ZERO_ADDRESS, INVALID_ARGUMENTS} = require('../../setup.js');
 const {createMessage, sign, signatureToVRS} = require('../helpers/helpers');
 const halfEther = web3.toBigNumber(web3.toWei(0.5, "ether"));
@@ -25,7 +25,7 @@ contract('ForeignBridge_ERC20_to_ERC20', async (accounts) => {
 
   describe('#initialize', async () => {
     it('should initialize', async () => {
-      token = await ERC677BridgeToken.new("Some ERC20", "RSZT", 18);
+      token = await SeniToken.new("Some ERC20", "RSZT", 18);
       let foreignBridge =  await ForeignBridge.new();
 
       ZERO_ADDRESS.should.be.equal(await foreignBridge.erc20token());
@@ -67,7 +67,7 @@ contract('ForeignBridge_ERC20_to_ERC20', async (accounts) => {
     let foreignBridge
     beforeEach(async () => {
       foreignBridge = await ForeignBridge.new()
-      token = await ERC677BridgeToken.new("Some ERC20", "RSZT", 18);
+      token = await SeniToken.new("Some ERC20", "RSZT", 18);
       await foreignBridge.initialize(validatorContract.address, token.address, requireBlockConfirmations, gasPrice, maxPerTx, homeDailyLimit, homeMaxPerTx, owner);
       await token.mint(foreignBridge.address,value);
     })
@@ -184,7 +184,7 @@ contract('ForeignBridge_ERC20_to_ERC20', async (accounts) => {
     var value = web3.toBigNumber(web3.toWei(0.5, "ether"));
     beforeEach(async () => {
       multisigValidatorContract = await BridgeValidators.new()
-      token = await ERC677BridgeToken.new("Some ERC20", "RSZT", 18);
+      token = await SeniToken.new("Some ERC20", "RSZT", 18);
       twoAuthorities = [accounts[0], accounts[1]];
       ownerOfValidatorContract = accounts[3]
       const halfEther = web3.toBigNumber(web3.toWei(0.5, "ether"));
@@ -231,7 +231,7 @@ contract('ForeignBridge_ERC20_to_ERC20', async (accounts) => {
       const ownerOfValidators = accounts[0]
       const validatorContractWith3Signatures = await BridgeValidators.new()
       await validatorContractWith3Signatures.initialize(3, authoritiesFiveAccs, ownerOfValidators)
-      const erc20Token = await ERC677BridgeToken.new("Some ERC20", "RSZT", 18);
+      const erc20Token = await SeniToken.new("Some ERC20", "RSZT", 18);
       const value = web3.toBigNumber(web3.toWei(0.5, "ether"));
       const foreignBridgeWithThreeSigs = await ForeignBridge.new()
 
@@ -275,7 +275,7 @@ contract('ForeignBridge_ERC20_to_ERC20', async (accounts) => {
 
       validatorsProxy = await BridgeValidators.at(validatorsProxy.address);
       await validatorsProxy.initialize(REQUIRED_NUMBER_OF_VALIDATORS, VALIDATORS, PROXY_OWNER).should.be.fulfilled;
-      let token = await ERC677BridgeToken.new("Some ERC20", "RSZT", 18);
+      let token = await SeniToken.new("Some ERC20", "RSZT", 18);
 
       // ForeignBridge V1 Contract
 
@@ -315,14 +315,14 @@ contract('ForeignBridge_ERC20_to_ERC20', async (accounts) => {
   describe('#claimTokens', async () => {
     it('can send erc20', async () => {
       const owner = accounts[0];
-      token = await ERC677BridgeToken.new("Some ERC20", "RSZT", 18);
+      token = await SeniToken.new("Some ERC20", "RSZT", 18);
       const foreignBridgeImpl = await ForeignBridge.new();
       const storageProxy = await EternalStorageProxy.new().should.be.fulfilled;
       await storageProxy.upgradeTo('1', foreignBridgeImpl.address).should.be.fulfilled
       const foreignBridge = await ForeignBridge.at(storageProxy.address);
       await foreignBridge.initialize(validatorContract.address, token.address, requireBlockConfirmations, gasPrice, maxPerTx, homeDailyLimit, homeMaxPerTx, owner);
 
-      let tokenSecond = await ERC677BridgeToken.new("Roman Token", "RST", 18);
+      let tokenSecond = await SeniToken.new("Roman Token", "RST", 18);
 
       await tokenSecond.mint(accounts[0], halfEther).should.be.fulfilled;
       halfEther.should.be.bignumber.equal(await tokenSecond.balanceOf(accounts[0]))

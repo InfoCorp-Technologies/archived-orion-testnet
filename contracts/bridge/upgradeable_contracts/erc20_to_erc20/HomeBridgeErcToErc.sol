@@ -74,7 +74,7 @@ contract HomeBridgeErcToErc is ERC677Receiver, EternalStorage, BasicBridge, Basi
             uint256 valueToTransfer = _value - tollFee();
             setTotalExecutedPerDay(
                 getCurrentDay(),
-                totalExecutedPerDay(getCurrentDay()).add(valueToTransfer)
+                totalExecutedPerDay(getCurrentDay()).add(_value)
             );
             erc677token().mint(tollAddress(), tollFee());
             return erc677token().mint(_recipient, valueToTransfer);

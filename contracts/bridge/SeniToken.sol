@@ -7,7 +7,7 @@ import "../shared/ERC677/IBurnableMintableERC677Token.sol";
 import "../shared/ERC677/ERC677Receiver.sol";
 
 
-contract ERC677BridgeToken is
+contract SeniToken is
     IBurnableMintableERC677Token,
     DetailedERC20,
     BurnableToken,

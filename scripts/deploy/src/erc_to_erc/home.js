@@ -8,7 +8,7 @@ const { web3Home, deploymentPrivateKey, HOME_RPC_URL } = require('../web3')
 const EternalStorageProxy = require('../../../../build/contracts/EternalStorageProxy.json')
 const BridgeValidators = require('../../../../build/contracts/BridgeValidators.json')
 const HomeBridge = require('../../../../build/contracts/HomeBridgeErcToErc.json')
-const ERC677BridgeToken = require('../../../../build/contracts/ERC677BridgeToken.json')
+const SeniToken = require('../../../../build/contracts/SeniToken.json')
 
 const VALIDATORS = env.VALIDATORS.split(' ')
 
@@ -131,14 +131,14 @@ async function deployHome() {
 
   console.log('\n[Home] deploying Bridgeble token')
   const erc677token = await deployContract(
-    ERC677BridgeToken,
+    SeniToken,
     [BRIDGEABLE_TOKEN_NAME, BRIDGEABLE_TOKEN_SYMBOL, BRIDGEABLE_TOKEN_DECIMALS],
     { from: DEPLOYMENT_ACCOUNT_ADDRESS, network: 'home', nonce: homeNonce }
   )
   homeNonce++
   console.log('[Home] Bridgeble Token: ', erc677token.options.address)
 
-  console.log('\nset bridge contract on ERC677BridgeToken')
+  console.log('\nset bridge contract on SeniToken')
   const setBridgeContractData = await erc677token.methods
     .setBridgeContract(homeBridgeStorage.options.address)
     .encodeABI({ from: DEPLOYMENT_ACCOUNT_ADDRESS })
