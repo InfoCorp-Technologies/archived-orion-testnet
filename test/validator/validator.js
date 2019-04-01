@@ -31,7 +31,7 @@ contract('Exchange', async (accounts) => {
 
     it("should allow the system to finalize changes", async () => {
         const watcher = validator.ChangeFinalized();
-        // only the system address can finalize changes
+        // only the system or owner address can finalize changes
         await validator.finalizeChange({ from: OTHER_USER }).should.be.rejectedWith(ERROR_MSG);
 
         // we successfully finalize the change
@@ -51,7 +51,7 @@ contract('Exchange', async (accounts) => {
         await validator.finalizeChange({ from: SYSTEM }).should.be.rejectedWith(ERROR_MSG);
     });
 
-    it("should allow the owner to add new validators", async () => {
+    it("should allow the owner to add new validators and finalize changes", async () => {
         const watcher = validator.InitiateChange();
 
         // only the owner can add new validators
@@ -85,7 +85,7 @@ contract('Exchange', async (accounts) => {
         assert.equal(index, 3);
 
         // we successfully finalize the change
-        await validator.finalizeChange({ from: SYSTEM });
+        await validator.finalizeChange({ from: OWNER });
 
         // the validator set should be updated
         assert.deepEqual(await validator.getValidators(), newSet);
