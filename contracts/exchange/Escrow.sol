@@ -1,7 +1,7 @@
 pragma solidity ^0.4.23;
 
-import "./ERC677/IBurnableMintableERC677Token.sol";
-import "./ERC677/ERC677Receiver.sol";
+import "../shared/ERC677/IBurnableMintableERC677Token.sol";
+import "../shared/ERC677/ERC677Receiver.sol";
 import "./Exchange.sol";
 
 /**

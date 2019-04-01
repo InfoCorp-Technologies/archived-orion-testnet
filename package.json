@@ -1,10 +1,13 @@
 {
   "name": "orion-testnet-private",
-  "version": "1.0.0",
+  "version": "0.3.0",
   "description": "![Sentinel Chain](https://cryptoindex.co/coinlogo/sentinel-chain.png \"Sentinel Chain\")",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "sh scripts/test.sh",
+    "coverage": "sh scripts/coverage.sh",
+    "flatten": "sh scripts/flatten.sh",
+    "compile": "node_modules/.bin/truffle compile"
   },
   "repository": {
     "type": "git",
@@ -12,30 +15,24 @@
   },
   "author": "InfoCorp",
   "dependencies": {
+    "ethereumjs-testrpc-sc": "^6.1.6",
+    "ganache-cli": "^6.1.0",
+    "solidity-coverage": "^0.5.11",
     "truffle-assertions": "^0.3.1",
-    "truffle-flattener": "^1.2.5",
-    "zeppelin-solidity": "^1.12.0",
-    "web3-utils": "^1.0.0-beta.34"
+    "truffle-flattener": "^1.3.0",
+    "web3-utils": "^1.0.0-beta.34",
+    "zeppelin-solidity": "^1.12.0"
   },
   "devDependencies": {
-    "babel-polyfill": "^6.26.0",
-    "babel-preset-es2015": "^6.18.0",
-    "babel-preset-stage-2": "^6.18.0",
-    "babel-preset-stage-3": "^6.17.0",
-    "babel-register": "^6.23.0",
     "chai": "^4.1.2",
     "chai-as-promised": "^7.1.1",
     "chai-bignumber": "^2.0.2",
-    "lodash": "^4.17.4",
-    "rimraf": "^2.6.2",
-    "solc": "^0.4.23",
-    "solidity-coverage": "^0.4.15",
-    "solium": "^1.0.5",
+    "eth-gas-reporter": "^0.1.12",
     "truffle": "^4.1.14"
   },
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/InfoCorp-Technologies/orion-testnet-private/issues"
+    "url": "https://github.com/InfoCorp-Technologies/orion-testnet/issues"
   },
-  "homepage": "https://github.com/InfoCorp-Technologies/orion-testnet-private#readme"
+  "homepage": "https://github.com/InfoCorp-Technologies/orion-testnet#readme"
 }

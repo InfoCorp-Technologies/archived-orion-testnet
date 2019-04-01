@@ -2,7 +2,7 @@ pragma solidity ^0.4.23;
 
 import "./Administration.sol";
 import "./Livestock.sol";
-import "../exchange/Whitelist.sol";
+import "../shared/Whitelist.sol";
 
 contract Registry is Administration {
 

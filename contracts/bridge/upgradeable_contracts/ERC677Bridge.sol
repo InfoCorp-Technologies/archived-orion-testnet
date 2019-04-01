@@ -2,7 +2,7 @@ pragma solidity 0.4.24;
 
 
 import "./BasicBridge.sol";
-import "../IBurnableMintableERC677Token.sol";
+import "../../shared/ERC677/IBurnableMintableERC677Token.sol";
 
 contract ERC677Bridge is BasicBridge {
     function erc677token() public view returns(IBurnableMintableERC677Token) {
