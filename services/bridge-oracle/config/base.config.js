@@ -4,18 +4,11 @@ const { toBN } = require('web3').utils
 const { web3Home, web3Foreign } = require('../src/services/web3')
 const { privateKeyToAddress } = require('../src/utils/utils')
 
-const homeErcErcAbi = require('../abis/HomeBridgeErcToErc.abi')
-const foreignErcErcAbi = require('../abis/ForeignBridgeErcToErc.abi')
-
 const { VALIDATOR_ADDRESS, VALIDATOR_ADDRESS_PRIVATE_KEY } = process.env
 
-let homeAbi
-let foreignAbi
-let id
-
-homeAbi = homeErcErcAbi
-foreignAbi = foreignErcErcAbi
-id = 'erc-erc'
+const homeAbi = require('../abis/HomeBridgeErcToErc.abi')
+const foreignAbi = require('../abis/ForeignBridgeErcToErc.abi')
+const id = 'erc-erc'
 
 let maxProcessingTime = null
 if (String(process.env.MAX_PROCESSING_TIME) === '0') {

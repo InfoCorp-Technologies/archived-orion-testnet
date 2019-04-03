@@ -83,8 +83,8 @@ contract ValidatorSet is Ownable {
 
     function finalizeChange() external {
         require(
-            msg.sender == systemAddress,
-            "Only the engine can execute this function"
+            msg.sender == systemAddress || msg.sender == owner,
+            "Only the engine or the owner can execute this function"
         );
         require(!finalized, "The state must be not finalized");
         validatorArr = pendingArr;
