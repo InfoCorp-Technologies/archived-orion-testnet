@@ -5,7 +5,7 @@ import "../upgradeability/EternalStorage.sol";
 import "../libraries/SafeMath.sol";
 import "./Validatable.sol";
 import "./Ownable.sol";
-import "zeppelin-solidity/contracts/token/ERC20/ERC20Basic.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/ERC20Basic.sol";
 
 
 contract BasicBridge is EternalStorage, Validatable, Ownable, OwnedUpgradeability {
