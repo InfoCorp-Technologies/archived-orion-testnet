@@ -2,7 +2,7 @@ pragma solidity 0.4.24;
 
 import "../upgradeability/EternalStorage.sol";
 import "../libraries/SafeMath.sol";
-import "zeppelin-solidity/contracts/token/ERC20/ERC20Basic.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/ERC20Basic.sol";
 import "./Validatable.sol";
 import "../libraries/Message.sol";
 

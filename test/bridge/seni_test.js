@@ -1,4 +1,4 @@
-const SENI = artifacts.require("ERC677BridgeToken.sol");
+const SENI = artifacts.require("SeniToken.sol");
 const SENC = artifacts.require("SENCTest.sol");
 const ERC677ReceiverTest = artifacts.require("ERC677ReceiverTest.sol")
 const { ERROR_MSG, ZERO_ADDRESS } = require('../setup');
@@ -6,22 +6,29 @@ const Web3Utils = require('web3-utils');
 const HomeErcToErcBridge = artifacts.require("HomeBridgeErcToErc.sol");
 const ForeignBridgeErcToErc = artifacts.require("ForeignBridgeErcToErc.sol");
 const BridgeValidators = artifacts.require("BridgeValidators.sol");
-const minPerTx = web3.toBigNumber(web3.toWei(0.01, "ether"));
+const Whitelist = artifacts.require("Whitelist.sol");
+const tollFee = web3.toBigNumber(web3.toWei(10, "ether"));
+const minPerTx = web3.toBigNumber(web3.toWei(5, "ether"));
+const minValueToTransfer = web3.toBigNumber(web3.toWei(15, "ether"));
 const requireBlockConfirmations = 8;
 const gasPrice = Web3Utils.toWei('1', 'gwei');
-const oneEther = web3.toBigNumber(web3.toWei(1, "ether"));
-const halfEther = web3.toBigNumber(web3.toWei(0.5, "ether"));
-const executionDailyLimit = oneEther
-const executionMaxPerTx = halfEther
+const homeDailyLimit = web3.toBigNumber(web3.toWei(100000, "ether"));
+const homeMaxPerTx = web3.toBigNumber(web3.toWei(100, "ether"));
+const foreignDailyLimit = homeDailyLimit
+const foreignMaxPerTx = homeMaxPerTx
 
 contract('SENI Token', async (accounts) => {
   let seniToken
-  let owner = accounts[0]
+  let whitelistContract
+  const owner = accounts[0]
   const user = accounts[1];
+  const nonAuthUser = accounts[2];
+  const tollAddress = accounts[3];
 
   beforeEach(async () => {
     seniToken = await SENI.new("Sentinel Chain Internal Token", "SENI", 18);
     sencToken = await SENC.new("Sentinel Chain Ethereum Token", "SENC", 18);
+    whitelistContract = await Whitelist.new(owner);
   })
 
   it('default values', async () => {
@@ -103,14 +110,37 @@ contract('SENI Token', async (accounts) => {
     let homeErcToErcContract, foreignErcToErcBridge, validatorContract
 
     beforeEach(async () => {
+      await whitelistContract.addAddresses([user] ,{from: owner})
       validatorContract = await BridgeValidators.new()
       const authorities = [accounts[2]];
       await validatorContract.initialize(1, authorities, owner)
       homeErcToErcContract = await HomeErcToErcBridge.new()
-      await homeErcToErcContract.initialize(validatorContract.address, oneEther, halfEther, minPerTx, gasPrice, requireBlockConfirmations, seniToken.address, executionDailyLimit, executionMaxPerTx, owner)
+      await homeErcToErcContract.initialize(
+        validatorContract.address,
+        whitelistContract.address,
+        tollAddress,
+        tollFee,
+        homeDailyLimit,
+        homeMaxPerTx,
+        minPerTx,
+        gasPrice,
+        requireBlockConfirmations,
+        seniToken.address,
+        foreignDailyLimit,
+        foreignMaxPerTx,
+        owner
+      )
       foreignErcToErcBridge = await ForeignBridgeErcToErc.new()
-      await foreignErcToErcBridge.initialize(validatorContract.address, sencToken.address, requireBlockConfirmations, gasPrice, halfEther,
-        oneEther, halfEther, owner);
+      await foreignErcToErcBridge.initialize(
+        validatorContract.address,
+        sencToken.address,
+        requireBlockConfirmations,
+        gasPrice,
+        foreignMaxPerTx,
+        homeDailyLimit,
+        homeMaxPerTx,
+        owner
+      )
     })
 
     it('sends tokens to recipient', async () => {
@@ -129,41 +159,33 @@ contract('SENI Token', async (accounts) => {
 
     it('sends tokens to bridge contract', async () => {
       await seniToken.setBridgeContract(homeErcToErcContract.address).should.be.fulfilled;
-      await seniToken.mint(user, web3.toWei(1, "ether"), { from: owner }).should.be.fulfilled;
+      await seniToken.mint(user, minValueToTransfer, { from: owner }).should.be.fulfilled;
 
-      const result = await seniToken.transfer(homeErcToErcContract.address, minPerTx, { from: user }).should.be.fulfilled;
+      const result = await seniToken.transfer(homeErcToErcContract.address, minValueToTransfer, { from: user }).should.be.fulfilled;
       result.logs[0].event.should.be.equal("Transfer")
       result.logs[0].args.should.be.deep.equal({
         from: user,
         to: homeErcToErcContract.address,
-        value: minPerTx
-      })
-
-      const result2 = await seniToken.transfer(foreignErcToErcBridge.address, minPerTx, { from: user }).should.be.fulfilled;
-      result2.logs[0].event.should.be.equal("Transfer")
-      result2.logs[0].args.should.be.deep.equal({
-        from: user,
-        to: foreignErcToErcBridge.address,
-        value: minPerTx
+        value: minValueToTransfer
       })
     })
 
     it('sends tokens to contract that does not contains onTokenTransfer method', async () => {
       await seniToken.setBridgeContract(homeErcToErcContract.address).should.be.fulfilled;
-      await seniToken.mint(user, web3.toWei(1, "ether"), { from: owner }).should.be.fulfilled;
+      await seniToken.mint(user, minValueToTransfer, { from: owner }).should.be.fulfilled;
 
-      const result = await seniToken.transfer(validatorContract.address, minPerTx, { from: user }).should.be.fulfilled;
+      const result = await seniToken.transfer(validatorContract.address, minValueToTransfer, { from: user }).should.be.fulfilled;
       result.logs[0].event.should.be.equal("Transfer")
       result.logs[0].args.should.be.deep.equal({
         from: user,
         to: validatorContract.address,
-        value: minPerTx
+        value: minValueToTransfer
       })
       result.logs[1].event.should.be.equal("ContractFallbackCallFailed")
       result.logs[1].args.should.be.deep.equal({
         from: user,
         to: validatorContract.address,
-        value: minPerTx
+        value: minValueToTransfer
       })
     })
 
@@ -190,14 +212,15 @@ contract('SENI Token', async (accounts) => {
     let homeErcToErcContract, foreignErcToErcBridge, validatorContract
 
     beforeEach(async () => {
+      await whitelistContract.addAddresses([user] ,{from: owner})
       validatorContract = await BridgeValidators.new()
       const authorities = [accounts[2]];
       await validatorContract.initialize(1, authorities, owner)
       homeErcToErcContract = await HomeErcToErcBridge.new()
-      await homeErcToErcContract.initialize(validatorContract.address, oneEther, halfEther, minPerTx, gasPrice, requireBlockConfirmations, seniToken.address, executionDailyLimit, executionMaxPerTx, owner)
+      await homeErcToErcContract.initialize(validatorContract.address, whitelistContract.address, tollAddress, tollFee, homeDailyLimit, homeMaxPerTx, minPerTx, gasPrice, requireBlockConfirmations, seniToken.address, foreignDailyLimit, foreignMaxPerTx, owner)
       foreignErcToErcBridge = await ForeignBridgeErcToErc.new()
-      await foreignErcToErcBridge.initialize(validatorContract.address, sencToken.address, requireBlockConfirmations, gasPrice, halfEther,
-        oneEther, halfEther, owner);
+      await foreignErcToErcBridge.initialize(validatorContract.address, sencToken.address, requireBlockConfirmations, gasPrice, foreignMaxPerTx,
+        homeDailyLimit, homeMaxPerTx, owner);
     })
 
     it('calls contractFallback', async () => {
@@ -225,14 +248,14 @@ contract('SENI Token', async (accounts) => {
 
     it('sends tokens to bridge contract', async () => {
       await seniToken.setBridgeContract(homeErcToErcContract.address).should.be.fulfilled;
-      await seniToken.mint(user, web3.toWei(1, "ether"), { from: owner }).should.be.fulfilled;
+      await seniToken.mint(user, minValueToTransfer, { from: owner }).should.be.fulfilled;
 
-      const result = await seniToken.transferAndCall(homeErcToErcContract.address, minPerTx, '0x', { from: user }).should.be.fulfilled;
+      const result = await seniToken.transferAndCall(homeErcToErcContract.address, minValueToTransfer, '0x', { from: user }).should.be.fulfilled;
       result.logs[0].event.should.be.equal("Transfer")
       result.logs[0].args.should.be.deep.equal({
         from: user,
         to: homeErcToErcContract.address,
-        value: minPerTx
+        value: minValueToTransfer
       })
     })
 

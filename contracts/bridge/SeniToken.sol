@@ -1,13 +1,13 @@
 pragma solidity 0.4.24;
 
-import "zeppelin-solidity/contracts/token/ERC20/BurnableToken.sol";
-import "zeppelin-solidity/contracts/token/ERC20/MintableToken.sol";
-import "zeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/BurnableToken.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/MintableToken.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol";
 import "../shared/ERC677/IBurnableMintableERC677Token.sol";
 import "../shared/ERC677/ERC677Receiver.sol";
 
 
-contract ERC677BridgeToken is
+contract SeniToken is
     IBurnableMintableERC677Token,
     DetailedERC20,
     BurnableToken,

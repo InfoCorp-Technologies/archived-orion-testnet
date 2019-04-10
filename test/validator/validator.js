@@ -66,8 +66,8 @@ contract('Exchange', async (accounts) => {
 
         const parent = await web3.eth.getBlock(web3.eth.blockNumber - 1);
         assert.equal(events.length, 1);
-        assert.equal(events[0].args.parentHash, parent.hash);
-        assert.deepEqual(events[0].args.newSet, newSet);
+        assert.equal(events[0].args._parentHash, parent.hash);
+        assert.deepEqual(events[0].args._newSet, newSet);
 
         // this change is not finalized yet
         const finalized = await validator.finalized();
@@ -113,8 +113,8 @@ contract('Exchange', async (accounts) => {
 
         const parent = await web3.eth.getBlock(web3.eth.blockNumber - 1);
         assert.equal(events.length, 1);
-        assert.equal(events[0].args.parentHash, parent.hash);
-        assert.deepEqual(events[0].args.newSet, INITIAL_VALIDATORS);
+        assert.equal(events[0].args._parentHash, parent.hash);
+        assert.deepEqual(events[0].args._newSet, INITIAL_VALIDATORS);
 
         // this change is not finalized yet
         const finalized = await validator.finalized();

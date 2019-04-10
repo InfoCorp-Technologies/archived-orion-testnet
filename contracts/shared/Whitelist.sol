@@ -1,8 +1,9 @@
-pragma solidity ^0.4.23;
+pragma solidity ^0.4.24;
+import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
+import "./IWhitelist.sol";
 
-import "zeppelin-solidity/contracts/ownership/Ownable.sol";
 
-contract Whitelist is Ownable {
+contract Whitelist is IWhitelist, Ownable {
 
     uint256 public count;
     mapping(address => bool) list;

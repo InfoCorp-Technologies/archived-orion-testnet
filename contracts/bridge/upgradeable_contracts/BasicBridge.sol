@@ -5,7 +5,7 @@ import "../upgradeability/EternalStorage.sol";
 import "../libraries/SafeMath.sol";
 import "./Validatable.sol";
 import "./Ownable.sol";
-import "zeppelin-solidity/contracts/token/ERC20/ERC20Basic.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/ERC20Basic.sol";
 
 
 contract BasicBridge is EternalStorage, Validatable, Ownable, OwnedUpgradeability {
@@ -139,11 +139,27 @@ contract BasicBridge is EternalStorage, Validatable, Ownable, OwnedUpgradeabilit
         require(token.transfer(_to, balance));
     }
 
-
     function isContract(address _addr) internal view returns (bool)
     {
         uint length;
         assembly { length := extcodesize(_addr) }
         return length > 0;
+    }
+
+    function setTollAddress(address _tollAddress) external onlyOwner {
+        require(_tollAddress != address(0));
+        addressStorage[keccak256(abi.encodePacked("tollAddress"))] = _tollAddress;
+    }
+
+    function setTollFee(uint256 _tollFee) external onlyOwner {
+        uintStorage[keccak256(abi.encodePacked("tollFee"))] = _tollFee;
+    }
+
+    function tollAddress() public view returns(address) {
+        return addressStorage[keccak256(abi.encodePacked("tollAddress"))];
+    }
+
+    function tollFee() public view returns(uint256) {
+        return uintStorage[keccak256(abi.encodePacked("tollFee"))];
     }
 }

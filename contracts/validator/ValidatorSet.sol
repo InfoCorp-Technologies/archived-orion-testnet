@@ -1,8 +1,9 @@
-pragma solidity ^0.4.23;
+pragma solidity ^0.4.24;
 
-import "zeppelin-solidity/contracts/ownership/Ownable.sol";
+import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
+import "./IValidatorSet.sol";
 
-contract ValidatorSet is Ownable {
+contract ValidatorSet is Ownable, IValidatorSet {
 
     struct AddressStatus {
         bool isValidator;
@@ -16,7 +17,6 @@ contract ValidatorSet is Ownable {
     bool public finalized;
     mapping (address => AddressStatus) status;
 
-    event InitiateChange(bytes32 indexed parentHash, address[] newSet);
     event ChangeFinalized(address[] currentSet);
 
     modifier isFinalized {
@@ -77,7 +77,6 @@ contract ValidatorSet is Ownable {
         pendingArr.length--;
         // Reset address status of the _oldValidator
         status[_oldValidator].isValidator = false;
-
         _initiateChange();
     }
 
