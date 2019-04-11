@@ -28,7 +28,7 @@ module.exports = {
   mocha: {
     useColors: true,
     reporter: 'eth-gas-reporter',
-    reporterOptions : {
+    reporterOptions: {
       currency: 'USD',
       gasPrice: 1
     }
