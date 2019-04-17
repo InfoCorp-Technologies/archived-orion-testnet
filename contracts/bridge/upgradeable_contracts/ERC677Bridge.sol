@@ -3,7 +3,6 @@ pragma solidity 0.4.24;
 
 import "./BasicBridge.sol";
 import "../../shared/ERC677/IBurnableMintableERC677Token.sol";
-import "../../shared/IWhitelist.sol";
 import "./Whitelistable.sol";
 
 contract ERC677Bridge is BasicBridge, Whitelistable {
