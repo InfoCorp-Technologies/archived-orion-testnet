@@ -1,4 +1,5 @@
 pragma solidity 0.4.24;
+
 import "./ERC677.sol";
 
 

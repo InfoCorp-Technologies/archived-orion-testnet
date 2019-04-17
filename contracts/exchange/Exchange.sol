@@ -1,8 +1,9 @@
-pragma solidity ^0.4.24;
+pragma solidity 0.4.24;
 
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "./LCToken.sol";
 import "./Escrow.sol";
+
 
 /**
   * @title Exchange Contract.

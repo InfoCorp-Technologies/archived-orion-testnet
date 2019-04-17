@@ -1,8 +1,9 @@
-pragma solidity ^0.4.24;
+pragma solidity 0.4.24;
 
 import "../shared/ERC677/IBurnableMintableERC677Token.sol";
 import "../shared/ERC677/ERC677Receiver.sol";
 import "./Exchange.sol";
+
 
 /**
   * @title Escrow Contract.
