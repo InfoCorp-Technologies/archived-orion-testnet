@@ -27,10 +27,10 @@ module.exports = {
   },
   mocha: {
     useColors: true,
-    reporter: 'eth-gas-reporter',
-    reporterOptions : {
-      currency: 'USD',
-      gasPrice: 1
-    }
+    // reporter: 'eth-gas-reporter',
+    // reporterOptions: {
+    //   currency: 'USD',
+    //   gasPrice: 1
+    // }
   }
 };

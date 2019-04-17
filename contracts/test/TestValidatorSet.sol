@@ -1,13 +1,13 @@
-pragma solidity ^0.4.23;
+pragma solidity 0.4.24;
 
-import "../ValidatorSet.sol";
+import "../validator/ValidatorSet.sol";
 
 
 contract TestValidatorSet is ValidatorSet {
 
     constructor(address _systemAddress, address[] _init, address _owner)
-		ValidatorSet(_init, _owner)
         public
+        ValidatorSet(_init, _owner)
     {
         systemAddress = _systemAddress;
     }

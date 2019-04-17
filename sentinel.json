@@ -4,8 +4,6 @@
     "authorityRound": {
       "params": {
         "stepDuration": "5",
-        "maximumEmptySteps": "60",
-        "emptyStepsTransition": "0",
         "blockReward": "0",
         "validators": {
           "multi": {

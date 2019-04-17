@@ -132,7 +132,7 @@ async function deployHome() {
   console.log('\n[Home] deploying Bridgeble token')
   const erc677token = await deployContract(
     SeniToken,
-    [BRIDGEABLE_TOKEN_NAME, BRIDGEABLE_TOKEN_SYMBOL, BRIDGEABLE_TOKEN_DECIMALS],
+    [BRIDGEABLE_TOKEN_NAME, BRIDGEABLE_TOKEN_SYMBOL, BRIDGEABLE_TOKEN_DECIMALS, HOME_WHITELIST_ADDRESS],
     { from: DEPLOYMENT_ACCOUNT_ADDRESS, network: 'home', nonce: homeNonce }
   )
   homeNonce++

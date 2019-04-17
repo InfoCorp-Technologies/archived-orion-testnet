@@ -26,9 +26,9 @@ contract('SENI Token', async (accounts) => {
   const tollAddress = accounts[3];
 
   beforeEach(async () => {
-    seniToken = await SENI.new("Sentinel Chain Internal Token", "SENI", 18);
-    sencToken = await SENC.new("Sentinel Chain Ethereum Token", "SENC", 18);
     whitelistContract = await Whitelist.new(owner);
+    seniToken = await SENI.new("Sentinel Chain Internal Token", "SENI", 18, whitelistContract.address);
+    sencToken = await SENC.new("Sentinel Chain Ethereum Token", "SENC", 18);
   })
 
   it('default values', async () => {
@@ -47,10 +47,8 @@ contract('SENI Token', async (accounts) => {
     const mintingFinished = await seniToken.mintingFinished();
     assert.equal(mintingFinished, false);
 
-    const [major, minor, patch] = await seniToken.getTokenInterfacesVersion()
-    major.should.be.bignumber.gte(0)
-    minor.should.be.bignumber.gte(0)
-    patch.should.be.bignumber.gte(0)
+    const whitelistAddress = await seniToken.whitelistContract();
+    assert.equal(whitelistAddress, whitelistContract.address);
   })
 
   describe('#bridgeContract', async () => {
@@ -63,6 +61,14 @@ contract('SENI Token', async (accounts) => {
       (await seniToken.bridgeContract()).should.be.equal(homeErcToErcContract.address);
     })
 
+    it('can set whitelist contract', async () => {
+      (await seniToken.whitelistContract()).should.be.equal(whitelistContract.address);
+      const newWhitelistContract = await Whitelist.new(owner);
+      await seniToken.setWhitelistContract(newWhitelistContract.address).should.be.fulfilled;
+
+      (await seniToken.whitelistContract()).should.be.equal(newWhitelistContract.address);
+    })
+
     it('only owner can set bridge contract', async () => {
       const homeErcToErcContract = await HomeErcToErcBridge.new();
       (await seniToken.bridgeContract()).should.be.equal(ZERO_ADDRESS);
@@ -72,6 +78,16 @@ contract('SENI Token', async (accounts) => {
 
       await seniToken.setBridgeContract(homeErcToErcContract.address, { from: owner }).should.be.fulfilled;
       (await seniToken.bridgeContract()).should.be.equal(homeErcToErcContract.address);
+    })
+
+    it('only owner can set whitelist contract', async () => {
+      (await seniToken.whitelistContract()).should.be.equal(whitelistContract.address);
+      const newWhitelistContract = await Whitelist.new(owner);
+      await seniToken.setWhitelistContract(newWhitelistContract.address, { from: user }).should.be.rejectedWith(ERROR_MSG);
+      (await seniToken.whitelistContract()).should.be.equal(whitelistContract.address);
+
+      await seniToken.setWhitelistContract(newWhitelistContract.address, { from: owner }).should.be.fulfilled;
+      (await seniToken.whitelistContract()).should.be.equal(newWhitelistContract.address);
     })
 
     it('fail to set invalid bridge contract address', async () => {
@@ -87,11 +103,21 @@ contract('SENI Token', async (accounts) => {
   })
 
   describe('#mint', async () => {
-    it('can mint by owner', async () => {
+    it('can mint to whitelisted user by owner', async () => {
       (await seniToken.totalSupply()).should.be.bignumber.equal(0);
+      await whitelistContract.addAddresses([user], { from: owner });
       await seniToken.mint(user, 1, { from: owner }).should.be.fulfilled;
       (await seniToken.totalSupply()).should.be.bignumber.equal(1);
       (await seniToken.balanceOf(user)).should.be.bignumber.equal(1);
+    })
+
+    it('can not mint to non-whitelisted user by owner', async () => {
+      (await seniToken.totalSupply()).should.be.bignumber.equal(0);
+      await seniToken.mint(nonAuthUser, 1, { from: owner }).should.be.rejectedWith(ERROR_MSG);
+      await whitelistContract.addAddresses([nonAuthUser], { from: owner });
+      await seniToken.mint(nonAuthUser, 1, { from: owner }).should.be.fulfilled;
+      (await seniToken.totalSupply()).should.be.bignumber.equal(1);
+      (await seniToken.balanceOf(nonAuthUser)).should.be.bignumber.equal(1);
     })
 
     it('no one can call finishMinting', async () => {
@@ -110,7 +136,7 @@ contract('SENI Token', async (accounts) => {
     let homeErcToErcContract, foreignErcToErcBridge, validatorContract
 
     beforeEach(async () => {
-      await whitelistContract.addAddresses([user] ,{from: owner})
+      await whitelistContract.addAddresses([user, tollAddress] ,{from: owner})
       validatorContract = await BridgeValidators.new()
       const authorities = [accounts[2]];
       await validatorContract.initialize(1, authorities, owner)
@@ -143,9 +169,10 @@ contract('SENI Token', async (accounts) => {
       )
     })
 
-    it('sends tokens to recipient', async () => {
+    it('sends tokens to whitelisted recipient', async () => {
       await seniToken.mint(user, 1, { from: owner }).should.be.fulfilled;
       await seniToken.transfer(user, 1, { from: owner }).should.be.rejectedWith(ERROR_MSG);
+      await whitelistContract.addAddresses([owner], { from: owner });
       const { logs } = await seniToken.transfer(owner, 1, { from: user }).should.be.fulfilled;
       (await seniToken.balanceOf(owner)).should.be.bignumber.equal(1);
       (await seniToken.balanceOf(user)).should.be.bignumber.equal(0);
@@ -153,6 +180,38 @@ contract('SENI Token', async (accounts) => {
       logs[0].args.should.be.deep.equal({
         from: user,
         to: owner,
+        value: new web3.BigNumber(1)
+      })
+    })
+
+    it('sends tokens to non-whitelisted recipient', async () => {
+      await seniToken.mint(user, 1, { from: owner }).should.be.fulfilled;
+      await seniToken.transfer(nonAuthUser, 1, { from: user }).should.be.rejectedWith(ERROR_MSG);
+      await whitelistContract.addAddresses([nonAuthUser], { from: owner });
+      const { logs } = await seniToken.transfer(nonAuthUser, 1, { from: user }).should.be.fulfilled;
+      (await seniToken.balanceOf(nonAuthUser)).should.be.bignumber.equal(1);
+      (await seniToken.balanceOf(user)).should.be.bignumber.equal(0);
+      logs[0].event.should.be.equal("Transfer")
+      logs[0].args.should.be.deep.equal({
+        from: user,
+        to: nonAuthUser,
+        value: new web3.BigNumber(1)
+      })
+    })
+
+    it('use transferFrom to non-whitelisted recipient', async () => {
+      await seniToken.mint(user, 1, { from: owner }).should.be.fulfilled;
+      await seniToken.approve(nonAuthUser, 1, { from: user }).should.be.fulfilled;
+
+      await seniToken.transferFrom(user, nonAuthUser, 1, { from: nonAuthUser }).should.be.rejectedWith(ERROR_MSG);
+      await whitelistContract.addAddresses([nonAuthUser], { from: owner });
+      const { logs } = await seniToken.transferFrom(user, nonAuthUser, 1, { from: nonAuthUser }).should.be.fulfilled;
+      (await seniToken.balanceOf(nonAuthUser)).should.be.bignumber.equal(1);
+      (await seniToken.balanceOf(user)).should.be.bignumber.equal(0);
+      logs[0].event.should.be.equal("Transfer")
+      logs[0].args.should.be.deep.equal({
+        from: user,
+        to: nonAuthUser,
         value: new web3.BigNumber(1)
       })
     })
@@ -201,6 +260,7 @@ contract('SENI Token', async (accounts) => {
   describe("#burn", async () => {
     it('can burn', async () => {
       await seniToken.burn(100, { from: owner }).should.be.rejectedWith(ERROR_MSG);
+      await whitelistContract.addAddresses([user], { from: owner });
       await seniToken.mint(user, 1, { from: owner }).should.be.fulfilled;
       await seniToken.burn(1, { from: user }).should.be.fulfilled;
       (await seniToken.totalSupply()).should.be.bignumber.equal(0);
@@ -212,7 +272,7 @@ contract('SENI Token', async (accounts) => {
     let homeErcToErcContract, foreignErcToErcBridge, validatorContract
 
     beforeEach(async () => {
-      await whitelistContract.addAddresses([user] ,{from: owner})
+      await whitelistContract.addAddresses([user, tollAddress] ,{from: owner})
       validatorContract = await BridgeValidators.new()
       const authorities = [accounts[2]];
       await validatorContract.initialize(1, authorities, owner)
@@ -279,8 +339,9 @@ contract('SENI Token', async (accounts) => {
     it('can take send ERC20 tokens', async () => {
       const owner = accounts[0];
       const halfEther = web3.toBigNumber(web3.toWei(0.5, "ether"));
-      let tokenSecond = await SENI.new("Roman Token", "RST", 18);
+      let tokenSecond = await SENC.new("Roman Token", "RST", 18);
 
+      await whitelistContract.addAddresses([accounts[0]], { from: owner });
       await tokenSecond.mint(accounts[0], halfEther).should.be.fulfilled;
       halfEther.should.be.bignumber.equal(await tokenSecond.balanceOf(accounts[0]))
       await tokenSecond.transfer(seniToken.address, halfEther);
@@ -290,7 +351,6 @@ contract('SENI Token', async (accounts) => {
       await seniToken.claimTokens(tokenSecond.address, accounts[3], { from: owner });
       '0'.should.be.bignumber.equal(await tokenSecond.balanceOf(seniToken.address))
       halfEther.should.be.bignumber.equal(await tokenSecond.balanceOf(accounts[3]))
-
     })
   })
 
@@ -302,7 +362,9 @@ contract('SENI Token', async (accounts) => {
       (await receiver.data()).should.be.equal('0x');
       (await receiver.someVar()).should.be.bignumber.equal('0');
 
+      await whitelistContract.addAddresses([user], { from: owner });
       await seniToken.mint(user, 1, { from: owner }).should.be.fulfilled;
+
       const { logs } = await seniToken.transfer(receiver.address, 1, { from: user }).should.be.fulfilled;
 
       (await seniToken.balanceOf(receiver.address)).should.be.bignumber.equal(1);
@@ -314,7 +376,8 @@ contract('SENI Token', async (accounts) => {
     })
 
     it('if transfer called on contract, still works even if onTokenTransfer doesnot exist', async () => {
-      const someContract = await SENI.new("Some", "Token", 18);
+      const someContract = await SENI.new("Some", "Token", 18, whitelistContract.address);
+      await whitelistContract.addAddresses([user, accounts[0]], { from: owner });
       await seniToken.mint(user, 2, { from: owner }).should.be.fulfilled;
       const tokenTransfer = await seniToken.transfer(someContract.address, 1, { from: user }).should.be.fulfilled;
       const tokenTransfer2 = await seniToken.transfer(accounts[0], 1, { from: user }).should.be.fulfilled;

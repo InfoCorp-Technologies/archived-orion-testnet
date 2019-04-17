@@ -1,9 +1,11 @@
-pragma solidity ^0.4.24;
+pragma solidity 0.4.24;
+
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
+import "./Operatable.sol";
 import "./IWhitelist.sol";
 
 
-contract Whitelist is IWhitelist, Ownable {
+contract Whitelist is IWhitelist, Operatable {
 
     uint256 public count;
     mapping(address => bool) list;
@@ -16,7 +18,7 @@ contract Whitelist is IWhitelist, Ownable {
         owner = _owner;
     }
 
-    function addAddresses(address[] _addresses) external onlyOwner {
+    function addAddresses(address[] _addresses) external onlyOperator {
         require(_addresses.length > 0, "Address list is required");
         for (uint256 i = 0; i < _addresses.length; i++) {
             if (!_isWhitelisted(_addresses[i])) {
@@ -27,7 +29,7 @@ contract Whitelist is IWhitelist, Ownable {
         }
     }
 
-    function removeAddresses(address[] _addresses) external onlyOwner {
+    function removeAddresses(address[] _addresses) external onlyOperator {
         require(_addresses.length > 0, "Address list is required");
         for (uint256 i = 0; i < _addresses.length; i++) {
             if (_isWhitelisted(_addresses[i])) {
