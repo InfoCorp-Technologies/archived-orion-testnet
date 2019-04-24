@@ -34,7 +34,7 @@ async function estimateGas({
 
     // check if the message was already processed
     logger.debug('Check if the message was already processed')
-    const { txHash } = parseMessage(message)
+    const { txHash, amount, recipient } = parseMessage(message)
     const alreadyProcessed = await foreignBridge.methods.relayedMessages(txHash).call()
     if (alreadyProcessed) {
       throw new AlreadyProcessedError()
@@ -52,7 +52,6 @@ async function estimateGas({
       const address = web3.eth.accounts.recover(message, web3.utils.toHex(v[i]), r[i], s[i])
       logger.debug({ address }, 'Check that signature is from a validator')
       const isValidator = await validatorContract.methods.isValidator(address).call()
-
       if (!isValidator) {
         throw new InvalidValidatorError(`Message signed by ${address} that is not a validator`)
       }
