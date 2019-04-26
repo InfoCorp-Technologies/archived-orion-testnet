@@ -25,7 +25,7 @@ contract TollBox is Operatable, ERC677Receiver {
     }
 
     constructor(uint8 _rate, ERC677 _token, address _homeContract) public {
-        require(_rate > 0);
+        require(_rate > 0 && _rate <= 100);
         require(_token != address(0));
         require(_homeContract != address(0));
         dailyLimitRate = _rate;
@@ -33,7 +33,6 @@ contract TollBox is Operatable, ERC677Receiver {
         homeContract = _homeContract;
     }
 
-    // Convert SENI to SENC without pay toll
     function onTokenTransfer(address _from, uint256 _value, bytes /*_data*/)
         external
         onlyCreditor
@@ -70,22 +69,30 @@ contract TollBox is Operatable, ERC677Receiver {
     }
 
     function setDailyLimitRate(uint8 _rate) external onlyOperator {
+        require(_rate > 0 && _rate <= 100);
         dailyLimitRate = _rate;
         emit LogDailyLimitRateChanged(_rate);
+    }
+
+    function isCreditor(address _addr) external view returns(bool) {
+        return _isCreditor(_addr);
+    }
+
+    function getDailyLimitAmount() public view returns(uint256) {
+        uint256 currentBalance = token.balanceOf(address(this));
+        return dailyLimitRate * currentBalance / 100;
     }
 
     function _currentDay() internal view returns(uint256) {
         return now / 1 days;
     }
 
-    function _isCreditor(address _creditor) internal view returns(bool) {
-        return creditors[_creditor];
+    function _isCreditor(address _addr) internal view returns(bool) {
+        return creditors[_addr];
     }
 
     function _canWithdraw(uint256 _amount) internal view returns(bool) {
-        uint256 currentBalance = token.balanceOf(address(this));
-        uint256 enabledAmount = dailyLimitRate * currentBalance / 100;
-        return !dailyWhitdraw[_currentDay()] && _amount <= enabledAmount;
+        return !dailyWhitdraw[_currentDay()] && _amount <= getDailyLimitAmount();
     }
 
     function _toBytes(address _a) internal pure returns (bytes memory b) {

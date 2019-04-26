@@ -7,6 +7,7 @@ const HomeErcToErcBridge = artifacts.require("HomeBridgeErcToErc.sol");
 const ForeignBridgeErcToErc = artifacts.require("ForeignBridgeErcToErc.sol");
 const BridgeValidators = artifacts.require("BridgeValidators.sol");
 const Whitelist = artifacts.require("Whitelist.sol");
+const TollBox = artifacts.require("TollBox.sol");
 const tollFee = web3.toBigNumber(web3.toWei(10, "ether"));
 const minPerTx = web3.toBigNumber(web3.toWei(5, "ether"));
 const minValueToTransfer = web3.toBigNumber(web3.toWei(15, "ether"));
@@ -18,12 +19,10 @@ const foreignDailyLimit = homeDailyLimit
 const foreignMaxPerTx = homeMaxPerTx
 
 contract('SENI Token', async (accounts) => {
-  let seniToken
-  let whitelistContract
+  let seniToken, whitelistContract, tollContract;
   const owner = accounts[0]
   const user = accounts[1];
   const nonAuthUser = accounts[2];
-  const tollAddress = accounts[3];
 
   beforeEach(async () => {
     whitelistContract = await Whitelist.new(owner);
@@ -136,15 +135,16 @@ contract('SENI Token', async (accounts) => {
     let homeErcToErcContract, foreignErcToErcBridge, validatorContract
 
     beforeEach(async () => {
-      await whitelistContract.addAddresses([user, tollAddress] ,{from: owner})
       validatorContract = await BridgeValidators.new()
       const authorities = [accounts[2]];
       await validatorContract.initialize(1, authorities, owner)
       homeErcToErcContract = await HomeErcToErcBridge.new()
+      tollContract = await TollBox.new(20, seniToken.address, homeErcToErcContract.address)
+      await whitelistContract.addAddresses([user, tollContract.address] ,{from: owner})
       await homeErcToErcContract.initialize(
         validatorContract.address,
         whitelistContract.address,
-        tollAddress,
+        tollContract.address,
         tollFee,
         homeDailyLimit,
         homeMaxPerTx,
@@ -272,12 +272,13 @@ contract('SENI Token', async (accounts) => {
     let homeErcToErcContract, foreignErcToErcBridge, validatorContract
 
     beforeEach(async () => {
-      await whitelistContract.addAddresses([user, tollAddress] ,{from: owner})
       validatorContract = await BridgeValidators.new()
       const authorities = [accounts[2]];
       await validatorContract.initialize(1, authorities, owner)
       homeErcToErcContract = await HomeErcToErcBridge.new()
-      await homeErcToErcContract.initialize(validatorContract.address, whitelistContract.address, tollAddress, tollFee, homeDailyLimit, homeMaxPerTx, minPerTx, gasPrice, requireBlockConfirmations, seniToken.address, foreignDailyLimit, foreignMaxPerTx, owner)
+      tollContract = await TollBox.new(20, seniToken.address, homeErcToErcContract.address)
+      await whitelistContract.addAddresses([user, tollContract.address] ,{from: owner})
+      await homeErcToErcContract.initialize(validatorContract.address, whitelistContract.address, tollContract.address, tollFee, homeDailyLimit, homeMaxPerTx, minPerTx, gasPrice, requireBlockConfirmations, seniToken.address, foreignDailyLimit, foreignMaxPerTx, owner)
       foreignErcToErcBridge = await ForeignBridgeErcToErc.new()
       await foreignErcToErcBridge.initialize(validatorContract.address, sencToken.address, requireBlockConfirmations, gasPrice, foreignMaxPerTx,
         homeDailyLimit, homeMaxPerTx, owner);
