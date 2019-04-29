@@ -7,6 +7,7 @@ import "./Whitelistable.sol";
 
 contract ERC677Bridge is BasicBridge, Whitelistable {
 
+
     function onTokenTransfer(address _from, uint256 _value, bytes _data)
         external
         returns(bool)
@@ -15,7 +16,7 @@ contract ERC677Bridge is BasicBridge, Whitelistable {
         address recipient;
         uint256 valueToTransfer;
         if (_from == tollAddress()) {
-            // TODO: check data value
+            require(_data.length != 0);
             valueToTransfer = _value;
             recipient = _bytesToAddress(_data);
         } else {
@@ -52,14 +53,24 @@ contract ERC677Bridge is BasicBridge, Whitelistable {
         // has to be defined
     }
 
-    function _bytesToAddress(bytes data)
+    // function _bytesToAddress(bytes data)
+    //     internal
+    //     pure
+    //     returns(address parsed)
+    // {
+    //     assembly {
+    //         parsed := mload(add(data, 32))
+    //     }
+    // }
+    function _bytesToAddress(bytes b)
         internal
         pure
-        returns(address parsed)
+        returns(address)
     {
-        assembly {
-            parsed := mload(add(data, 32))
+        uint256 number;
+        for (uint i=0; i < b.length; i++) {
+            number = number + uint(b[i])*(2**(8*(b.length-(i+1))));
         }
+        return address(number);
     }
-
 }

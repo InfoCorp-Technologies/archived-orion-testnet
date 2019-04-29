@@ -19,11 +19,6 @@ contract TollBox is Operatable, ERC677Receiver {
     event LogDailyLimitRateChanged(uint8 rate);
     event LogUnlockedSenc(address indexed creditor, uint256 amount);
 
-    modifier onlyCreditor() {
-        require(_isCreditor(msg.sender));
-        _;
-    }
-
     constructor(uint8 _rate, ERC677 _token, address _homeContract) public {
         require(_rate > 0 && _rate <= 100);
         require(_token != address(0));
@@ -35,10 +30,10 @@ contract TollBox is Operatable, ERC677Receiver {
 
     function onTokenTransfer(address _from, uint256 _value, bytes /*_data*/)
         external
-        onlyCreditor
         returns(bool)
     {
         require(msg.sender == address(token));
+        require(_isCreditor(_from));
         require(
             token.transferAndCall(homeContract, _value, _toBytes(_from))
         );
@@ -60,8 +55,9 @@ contract TollBox is Operatable, ERC677Receiver {
         emit LogRemovedCreditor(_creditor);
     }
 
-    function withdraw(uint256 _amount) external onlyCreditor {
+    function withdraw(uint256 _amount) external {
         require(_amount > 0);
+        require(_isCreditor(msg.sender));
         require(_canWithdraw(_amount));
         dailyWhitdraw[_currentDay()] = true;
         token.transfer(msg.sender, _amount);

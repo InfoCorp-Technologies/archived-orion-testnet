@@ -7,13 +7,14 @@ const TollBox = artifacts.require("TollBox.sol");
 const { ERROR_MSG, ZERO_ADDRESS } = require('../setup.js');
 const tollFee = web3.toBigNumber(web3.toWei(10, "ether"));
 const minPerTx = web3.toBigNumber(web3.toWei(11, "ether"));
-const minValueToTransfer = web3.toBigNumber(web3.toWei(11, "ether"));
 const requireBlockConfirmations = 8;
 const gasPrice = Web3Utils.toWei('1', 'gwei');
 const homeDailyLimit = web3.toBigNumber(web3.toWei(10000, "ether"));
 const homeMaxPerTx = web3.toBigNumber(web3.toWei(100, "ether"));
 const foreignDailyLimit = homeDailyLimit
 const foreignMaxPerTx = homeMaxPerTx
+const oneEther = web3.toBigNumber(web3.toWei(1, "ether"));
+const halfEther = web3.toBigNumber(web3.toWei(0.5, "ether"));
 
 contract('TollBox', async (accounts) => {
   let homeContract, token, whitelistContract, tollContract;
@@ -78,8 +79,6 @@ contract('TollBox', async (accounts) => {
 
   describe('#withdraw', async () => {
     let dayLimitAmount;
-    const oneEther = web3.toBigNumber(web3.toWei(1, "ether"));
-    const halfEther = web3.toBigNumber(web3.toWei(0.5, "ether"));
 
     beforeEach(async () => {
       await tollContract.addCreditor(creditor, { from: operator });
@@ -123,84 +122,113 @@ contract('TollBox', async (accounts) => {
   })
 
   describe('#fallBack', async () => {
-    // TODO:
+    beforeEach(async () => {
+      validatorContract = await BridgeValidators.new()
+      await validatorContract.initialize(1, [accounts[8]], owner)
+      await tollContract.addOperator(operator, { from: owner })
+      await homeContract.initialize(
+        validatorContract.address,
+        whitelistContract.address,
+        tollContract.address,
+        tollFee,
+        homeDailyLimit,
+        homeMaxPerTx,
+        minPerTx,
+        gasPrice,
+        requireBlockConfirmations,
+        token.address,
+        foreignDailyLimit,
+        foreignMaxPerTx,
+        owner
+      ).should.be.fulfilled;
+      await tollContract.addCreditor(creditor, { from: operator })
+      await whitelistContract.addAddresses([creditor], { from: owner }).should.be.fulfilled;
+    })
 
-    // beforeEach(async () => {
-      // validatorContract = await BridgeValidators.new()
-      // await validatorContract.initialize(1, [accounts[4]], accounts[5])
-      // whitelistContract = await Whitelist.new(owner);
-      // homeContract = await HomeBridge.new()
-      // token = await SeniToken.new("Some ERC20", "RSZT", 18, whitelistContract.address, { from: owner });
-      // tollContract = await TollBox.new(rate, token.address, homeContract.address, { from: owner })
-      // await tollContract.addOperator(operator, { from: owner })
-      // await homeContract.initialize(
-      //   validatorContract.address,
-      //   whitelistContract.address,
-      //   tollContract.address,
-      //   tollFee,
-      //   homeDailyLimit,
-      //   homeMaxPerTx,
-      //   minPerTx,
-      //   gasPrice,
-      //   requireBlockConfirmations,
-      //   token.address,
-      //   foreignDailyLimit,
-      //   foreignMaxPerTx,
-      //   owner
-      // ).should.be.fulfilled;
-    // })
-    // it('when tollAddress made deposit, not discount the toll and not verify the minPerTx', async () => {
-    //   '0'.should.be.bignumber.equal(await token.balanceOf(homeContract.address));
-    //   '0'.should.be.bignumber.equal(await token.balanceOf(tollAddress));
-    //   '15000000000000000000'.should.be.bignumber.equal(await token.balanceOf(user));
+    it('send tokens to home contract when creditos execute fallBack function', async () => {
+      await token.mint(creditor, oneEther, { from: owner }).should.be.fulfilled;
+      '0'.should.be.bignumber.equal(await token.balanceOf(homeContract.address));
+      '0'.should.be.bignumber.equal(await token.balanceOf(tollContract.address));
+      oneEther.should.be.bignumber.equal(await token.balanceOf(creditor));
 
-    //   await token.transferAndCall(homeContract.address, amount, '0x', { from: user }).should.be.fulfilled;
+      const result = await token.transferAndCall(tollContract.address, halfEther, '0x', { from: creditor }).should.be.fulfilled;
 
-    //   '0'.should.be.bignumber.equal(await token.balanceOf(homeContract.address));
-    //   '10000000000000000000'.should.be.bignumber.equal(await token.balanceOf(tollAddress));
-    //   '0'.should.be.bignumber.equal(await token.balanceOf(user));
+      result.logs[1].event.should.be.equal("Transfer")
+      result.logs[1].args.should.be.deep.equal({
+        from: creditor,
+        to: tollContract.address,
+        value: halfEther,
+        data: '0x'
+      })
+      result.logs[3].event.should.be.equal("Transfer")
+      result.logs[3].args.should.be.deep.equal({
+        from: tollContract.address,
+        to: homeContract.address,
+        value: halfEther,
+        data: creditor
+      })
+      result.logs[4].event.should.be.equal("Burn")
+      result.logs[4].args.should.be.deep.equal({
+        burner: homeContract.address,
+        value: halfEther
+      })
+      const homeLastEvent = await getLastEvents(homeContract, 'UserRequestForSignature');
+      homeLastEvent[0].args.should.be.deep.equal({
+        recipient: creditor,
+        value: halfEther
+      })
 
-    //   const tollAmount = web3.toBigNumber(web3.toWei(10, "ether"));
-    //   const result = await token.transferAndCall(homeContract.address, tollAmount, '0x', { from: tollAddress }).should.be.fulfilled;
-    //   result.logs[0].event.should.be.equal("Transfer")
-    //   result.logs[0].args.should.be.deep.equal({
-    //     from: tollAddress,
-    //     to: homeContract.address,
-    //     value: tollAmount
-    //   })
-    //   result.logs[2].event.should.be.equal("Burn")
-    //   result.logs[2].args.should.be.deep.equal({
-    //     burner: homeContract.address,
-    //     value: tollAmount
-    //   })
+      '0'.should.be.bignumber.equal(await token.balanceOf(homeContract.address));
+      '0'.should.be.bignumber.equal(await token.balanceOf(tollContract.address));
+      halfEther.should.be.bignumber.equal(await token.balanceOf(creditor));
+    })
 
-    //   const homeLastEvent = await getLastEvents(homeContract, 'UserRequestForSignature');
-    //   homeLastEvent[0].args.should.be.deep.equal({
-    //     recipient: '0x0000000000000000000000000000000000000000',
-    //     value: tollAmount
-    //   })
+    it('only creditors can call transferAndCall', async () => {
+      await whitelistContract.addAddresses([nonCreditor], { from: owner }).should.be.fulfilled;
+      await token.mint(nonCreditor, oneEther, { from: owner }).should.be.fulfilled;
+      '0'.should.be.bignumber.equal(await token.balanceOf(homeContract.address));
+      '0'.should.be.bignumber.equal(await token.balanceOf(tollContract.address));
+      oneEther.should.be.bignumber.equal(await token.balanceOf(nonCreditor));
 
-    //   '0'.should.be.bignumber.equal(await token.balanceOf(homeContract.address));
-    //   '0'.should.be.bignumber.equal(await token.balanceOf(tollAddress));
-    //   '0'.should.be.bignumber.equal(await token.balanceOf(user));
-    // })
+      await token.transferAndCall(tollContract.address, halfEther, '0x', { from: nonCreditor }).should.be.rejectedWith(ERROR_MSG);
 
+      '0'.should.be.bignumber.equal(await token.balanceOf(homeContract.address));
+      '0'.should.be.bignumber.equal(await token.balanceOf(tollContract.address));
+      oneEther.should.be.bignumber.equal(await token.balanceOf(nonCreditor));
+    })
 
-    // function getLastEvents(contract, eventName) {
-    //   return new Promise((resolve, reject) => {
-    //     const evFilter = contract.allEvents(eventName, {
-    //       fromBlock: 'latest',
-    //       toBlock: 'latest',
-    //     });
-    //     evFilter.get((err, res) => {
-    //       if (err) return reject(err);
-    //       resolve(res);
-    //     });
-    //   });
-    // }
+    it('only SENI token can call onTokenTransfer', async () => {
+      otherWhitelistContract = await Whitelist.new(owner);
+      const otherToken = await SeniToken.new("Other ERC20", "ASD", 18, otherWhitelistContract.address, { from: owner });
+      await otherWhitelistContract.addAddresses([creditor], { from: owner }).should.be.fulfilled;
+
+      await otherToken.mint(creditor, oneEther, { from: owner }).should.be.fulfilled;
+      '0'.should.be.bignumber.equal(await otherToken.balanceOf(homeContract.address));
+      '0'.should.be.bignumber.equal(await otherToken.balanceOf(tollContract.address));
+      oneEther.should.be.bignumber.equal(await otherToken.balanceOf(creditor));
+      true.should.be.equal(await tollContract.isCreditor(creditor));
+
+      await otherToken.transferAndCall(tollContract.address, halfEther, '0x', { from: creditor }).should.be.rejectedWith(ERROR_MSG);
+
+      '0'.should.be.bignumber.equal(await otherToken.balanceOf(homeContract.address));
+      '0'.should.be.bignumber.equal(await otherToken.balanceOf(tollContract.address));
+      oneEther.should.be.bignumber.equal(await otherToken.balanceOf(creditor));
+    })
   })
 })
 
+function getLastEvents(contract, eventName) {
+  return new Promise((resolve, reject) => {
+    const evFilter = contract.allEvents(eventName, {
+      fromBlock: 'latest',
+      toBlock: 'latest',
+    });
+    evFilter.get((err, res) => {
+      if (err) return reject(err);
+      resolve(res);
+    });
+  });
+}
 
 
 
