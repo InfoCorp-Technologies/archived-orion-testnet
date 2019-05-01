@@ -2,109 +2,54 @@
 
 # The Orion testnet
 
-## Components
+## Nodes
 
-* **Consortium nodes**
-  * This nodes maintain blockchain integrity and help strengthen the network keeping an exact same copy of the entire transaction history.
+* **Authority Nodes**
+  * This are the nodes able to create and seal new blocks, they acts as a "miners" in Sentinel Chain. Will also keep a copy of the entire Sentinel chain.
 
-* **Validator nodes**
-  * This is a special type of node which is able to create or issue blocks. In any PoA type of blockchain a miner is rather called “validator”
-
-* **Bridge Authorities**
-  * This nodes are the ones who will provided the required signatures to be able to perform cross-chain transaction between Orion and other EVM based blockchains.
-
-* **RPC nodes**
-  * The purpose of RPC nodes is to provide a way to interact programmatically with the blockchain without having to install the client and download the entire transaction history
+* **Non-Authority nodes**
+  * This are regular nodes that have a copy of the entire Sentinel Chain since genesis block, but won't be able to mine or create new blocks, only used for read information of the Blockchain and push transaction into authorities mempool. These are divided into the following categories:
+    * **Internal**: are used by the internal services like the Bridge oracle to read information from the Blockchain.
+    * **Main**: this kind of node are configured to create an indexed Blockchain database to be used by services like Block Explorer.
+    * **RPC**: this nodes are configured to communicate to the Sentinel Chain Blockchain to read information and push transactions, commonly used by Dapps.
 
 ## Services
 
-* **Explorer** https://orion-explorer.sentinel-chain.org
-  * As with all types of blockchains, a block explorer is required for users to track
-transaction status, check block issuance, inspect or deploy Smart Contracts, and get the
-general state of the blockchain.
-* **Statistics** https://orion-stats.sentinel-chain.org
-  * Orion statistics page site, which will provide users with real-time and easy to read core information like:
-    * Latest transactions
-    * Current GASPrice
-    * Block creation speed
-    * Latest ‘block number’ and
-    * Validators list
-* **Cross-Chain Bridge** https://orion-bridge.sentinel-chain.org/
-  * This service is comprised of different applications to manage:
-    * Transaction queue
-    * Real time event listeners. Signature collection
-    * Transaction execution
-* **Oracle services**
-  * Sentinel Oracle Services
-    * Oracles are used to gain access to​ vital market information
-such as prices and exchange rates. They also interact with Sentinel Chain’s
-data-query service to perform cross-chain information retrieval.
-  * Cross-Chain Oracle Services
-    * Are used to gain access to data stored on the
-CrossPay private blockchain.
-* **RPC Service**
-  * The public RPC service that connects with MetaMask, MeW or other application
-and interact programmatically with Orion testnet
-    * RPC: https://orion-rpc.sentinel-chain.org
-    * Websocket: https://orion-rpc.sentinel-chain.org/ws
+* **Sentinel Chain Bridge**
+Sentinel Chain was designed to bring to the users a certain number of services related to cattle and incentive the social inclusion of the farmers. However, in order to do this, SENC will be required as fuel for accessing the Sentinel Chain ecosystem. The Sentinel Chain Bridge simply serves as a method of convert SENC ERC20 tokens from Ethereum Mainnet to SENI ERC20 tokens in Sentinel Chain and vice versa, in a quick and cost-efficient manner. Sentinel Chain makes use of a SENC-pegged cryptocurrency called SENI (Sentinel Chain Internal Token) as transaction payments within Sentinel Chain itself.
+  
+* **Sentinel Chain Block Explorer**
+Allows users to retrieves all information of the Sentinel Chain Blockchain like blocks, transactions, accounts, contracts and bridge information (required signatures, balances of contracts, deposits and withdraws).
 
+* **Sentinel Chain Netstats**
+Statistics page site for tracking Sentinel chain network status, which will provide users with real-time and easy to read core information like latest transactions, current gas price, block creation speed,  latest ‘block number’ and nodes list.
 
-## Cross-Chain Architecture
-
-![Cross-Chain Architecture](https://github.com/InfoCorp-Technologies/orion-testnet-private/blob/master/cross-chain-arch.png "Cross-Chain Architecture")
+* **Sentinel Chain RPC Provider**
+This service provide the connection that Dapps needs to talks with Sentinel Chain. This provider take requests and return response using JSON-RPC encoding protocol.
 
 ## Contracts
 
-* **Validator**
-  * This contract starts with an initial set of fixed validators. Existing Validators can add or remove block issuing permission.
+### Sentinel Chain
 
-* **Operation**
-  * It is used to plan and execute chain forks. Validator nodes receives the information and they can vote whether to accept and approve the fork plan or not.
+* **ValidatorSet**
+Sentinel Chain is EVM based blockchain with PoA algorithm consensus (a.k.a Aura), blocks are mined and sealed through a set of validators called "Authorities". In this contract are the addresses of the Authorities that can seal new blocks.
 
 * **Whitelist**
-  * This contract provides a whitelisting mechanism to include or not addressess that can peform certain type of transactions.
+In this contract are stored the addresses of the users that can be trade or receive SENI tokens through the Bridge.
 
-* **Exchange Service**
-  * With this contract the users can exchange SENI to LCT or vice versa. As a requirement the exchange can only be executed by whitelisted addresses previously registered in the Whitelist contract.
+* **SENI Token (Sentinel Chain Internal Token)**
+It's an ERC677 token that is used as a fuel to pay for services of the Sentinel Chain ecosystem.
 
-* **Registry**
-  * In Multichain-based CrossPay Blockchain, wallet addresses can represent different entities: farmer, attestor, livestock, etc, and each entities contain different data structure to be stored. These information can be query by users in the Sentinel Chain Blockchain using the Data Query Contract, through the CrossPay addresses of those entities and then stored the results in the Registry Contract.
+* **Home Bridge**
+This contract is in charge to mint or burn SENI tokens when the users starts cross-chain transactions from Sentinel Chain.
 
-* **Data Query**
-  * With this contract users can start querying to the CrossPay server to get the information of an Multichain address in CrossPay's Multichain streams.
+* **Bridge Validators**
+In this contract are stored the addresses of the Bridge Binaries that are able to sign the cross-chain transactions. 
 
-* **LCT Token**
-  * It's an ERC20-compaitble token that can only be transfered between addresses stored in the Whitelist contract. There will be multiple LCT Token contracts for each of the countries in the CrossPay network. The symbol of each token will be composed for the "LCT" prefix and the country currency symbol, for example, the Myanmar token symbol would be "LCT.MMK".
+### Ethereum Mainnet
 
-* **Livestock Token**
-  * This token reprecents the real world assets livestock as a token. As LCT token there will be multiple Livestock Token contracts for each type of livestock, for example, there will be an Livestock Token for cows with the symbol "COW". Each token from a type it will related to one Multichain address and this data is registered in the Registry Contract.
+* **Foreign Bridge**
+This contract is in charge to lock and unlock SENC tokens when the users starts cross-chain transactions from Ethereum Mainnet.
 
-* **Orion Bridge**
-  * This contract is in charge to lock and unlock SENI tokens in Sentinel Chain when a relay event is triggered.
-
-* **Orion Validator**
-  * This contract store the address(es) that needs to sign transactions for the bridge service in order to accept cross-chain swaps.
-
-* **Kovan Bridge**
-  * Same function as Orion Bridge contract, but this contract is in charge to lock and unlock a copy of the SENC Tokens, deployed on Kovan testnet.
-
-* **Kovan Validator**
-  * This contract store the address(es) that needs to sign transactions for the bridge service in order to accept cross-chain swaps.
-
-### Address
-
-| Name | Address |
-|------|---------|
-|Validator|[0x0000000000000000000000000000000000000005](https://orion-explorer.sentinel-chain.org/account/0x0000000000000000000000000000000000000005)|
-|Operation|[0x0000000000000000000000000000000000000006](https://orion-explorer.sentinel-chain.org/account/0x0000000000000000000000000000000000000006)|
-|Whitelist|[0x0000000000000000000000000000000000000007](https://orion-explorer.sentinel-chain.org/account/0x0000000000000000000000000000000000000007)|
-|Exchange service|[0x0000000000000000000000000000000000000008](https://orion-explorer.sentinel-chain.org/account/0x0000000000000000000000000000000000000008)|
-|Registry|[0x0000000000000000000000000000000000000009](https://orion-explorer.sentinel-chain.org/account/0x0000000000000000000000000000000000000009)|
-|Data query oracle|[0x0000000000000000000000000000000000000010](https://orion-explorer.sentinel-chain.org/account/0x0000000000000000000000000000000000000010)|
-|LCT Token (LCT.MMK)|[0xB67c73Ac6CB183d208209007c70376f3dc66008a](https://orion-explorer.sentinel-chain.org/account/0xB67c73Ac6CB183d208209007c70376f3dc66008a)|
-|Livestock Token (COW)|[0x793A77Adc002712228E8cE5a745e5e6FD8Fb9d7f](https://orion-explorer.sentinel-chain.org/account/0x793A77Adc002712228E8cE5a745e5e6FD8Fb9d7f)|
-|Orion Bridge|[0x2ae1C6F57A81caeD383658535d6312B836dE9295](https://orion-explorer.sentinel-chain.org/account/0x2ae1C6F57A81caeD383658535d6312B836dE9295)|
-|Orion Validator|[0x897a111Aa54dfCb4836699e7fb97c16cB48111fc](https://orion-explorer.sentinel-chain.org/account/0x897a111Aa54dfCb4836699e7fb97c16cB48111fc)|
-|Kovan Bridge|[0xF0e9eA91c31b8127823F0ba452Cae70c87bFf116](https://kovan.etherscan.io/address/0xF0e9eA91c31b8127823F0ba452Cae70c87bFf116)|
-|Kovan Validator|[0x6170CE930A78883B2516Ba9a46A66bCF485580fe](https://kovan.etherscan.io/address/0x6170CE930A78883B2516Ba9a46A66bCF485580fe)|
-|Kovan SENC ERC20 Token|[0xFd06ABc52da2f7877d210F7FFb341cE7fAF31927](https://kovan.etherscan.io/address/0xfd06abc52da2f7877d210f7ffb341ce7faf31927)|
+* **Bridge Validators**
+In this contract are stored the addresses of the Bridge Binaries that are able to sign the cross-chain transactions.
