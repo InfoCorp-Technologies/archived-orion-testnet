@@ -1,4 +1,4 @@
-![Sentinel Chain](https://cryptoindex.co/coinlogo/sentinel-chain.png "Sentinel Chain")
+﻿![Sentinel Chain](https://github.com/InfoCorp-Technologies/orion-testnet/blob/master/doc/img/sentinel-chain-arch.png "Sentinel Chain")
 
 # The Orion testnet
 
