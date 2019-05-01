@@ -3,9 +3,10 @@ const HomeBridge = artifacts.require("HomeBridgeErcToErc.sol");
 const EternalStorageProxy = artifacts.require("EternalStorageProxy.sol");
 const BridgeValidators = artifacts.require("BridgeValidators.sol");
 const SeniToken = artifacts.require("SeniToken.sol");
+const Whitelist = artifacts.require("Whitelist.sol");
+const TollBox = artifacts.require("TollBox.sol");
 const { ERROR_MSG, ZERO_ADDRESS } = require('../../setup.js');
 const { createMessage, sign } = require('../helpers/helpers');
-const Whitelist = artifacts.require("Whitelist.sol");
 const tollFee = web3.toBigNumber(web3.toWei(10, "ether"));
 const minPerTx = web3.toBigNumber(web3.toWei(11, "ether"));
 const minValueToTransfer = web3.toBigNumber(web3.toWei(11, "ether"));
@@ -17,23 +18,23 @@ const foreignDailyLimit = homeDailyLimit
 const foreignMaxPerTx = homeMaxPerTx
 
 contract('HomeBridge_ERC20_to_ERC20', async (accounts) => {
-  let homeContract, validatorContract, authorities, owner, token, whitelistContract, tollAddress;
+  let homeContract, validatorContract, authorities, owner, token, whitelistContract, tollContract;
 
   before(async () => {
     validatorContract = await BridgeValidators.new()
     authorities = [accounts[1]];
     owner = accounts[0]
     user = accounts[9]
-    tollAddress = accounts[1];
     await validatorContract.initialize(1, authorities, owner)
     whitelistContract = await Whitelist.new(owner);
-    await whitelistContract.addAddresses([user, tollAddress], { from: owner })
+    await whitelistContract.addAddresses([user], { from: owner })
   })
 
   describe('#initialize', async () => {
     beforeEach(async () => {
       homeContract = await HomeBridge.new()
       token = await SeniToken.new("Some ERC20", "RSZT", 18, whitelistContract.address);
+      tollContract = await TollBox.new(20, token.address, homeContract.address)
     })
 
     it('sets variables', async () => {
@@ -45,7 +46,7 @@ contract('HomeBridge_ERC20_to_ERC20', async (accounts) => {
       await homeContract.initialize(
         validatorContract.address,
         whitelistContract.address,
-        tollAddress,
+        tollContract.address,
         tollFee,
         homeDailyLimit,
         homeMaxPerTx,
@@ -77,7 +78,7 @@ contract('HomeBridge_ERC20_to_ERC20', async (accounts) => {
       await homeContract.initialize(
         validatorContract.address,
         whitelistContract.address,
-        tollAddress,
+        tollContract.address,
         tollFee,
         '1',
         '2',
@@ -92,7 +93,7 @@ contract('HomeBridge_ERC20_to_ERC20', async (accounts) => {
       await homeContract.initialize(
         validatorContract.address,
         whitelistContract.address,
-        tollAddress,
+        tollContract.address,
         tollFee,
         '3',
         '2',
@@ -112,7 +113,7 @@ contract('HomeBridge_ERC20_to_ERC20', async (accounts) => {
       const data = homeContract.initialize.request(
         validatorContract.address,
         whitelistContract.address,
-        tollAddress,
+        tollContract.address,
         tollFee,
         '3',
         '2',
@@ -138,7 +139,7 @@ contract('HomeBridge_ERC20_to_ERC20', async (accounts) => {
       await homeContract.initialize(
         validatorContract.address,
         whitelistContract.address,
-        tollAddress,
+        tollContract.address,
         tollFee,
         '3',
         '2',
@@ -153,7 +154,7 @@ contract('HomeBridge_ERC20_to_ERC20', async (accounts) => {
       await homeContract.initialize(
         owner,
         whitelistContract.address,
-        tollAddress,
+        tollContract.address,
         tollFee,
         '3',
         '2',
@@ -168,7 +169,7 @@ contract('HomeBridge_ERC20_to_ERC20', async (accounts) => {
       await homeContract.initialize(
         ZERO_ADDRESS,
         whitelistContract.address,
-        tollAddress,
+        tollContract.address,
         tollFee,
         '3',
         '2',
@@ -183,7 +184,7 @@ contract('HomeBridge_ERC20_to_ERC20', async (accounts) => {
       await homeContract.initialize(
         validatorContract.address,
         whitelistContract.address,
-        tollAddress,
+        tollContract.address,
         tollFee,
         '3',
         '2',
@@ -198,7 +199,7 @@ contract('HomeBridge_ERC20_to_ERC20', async (accounts) => {
       await homeContract.initialize(
         validatorContract.address,
         whitelistContract.address,
-        tollAddress,
+        tollContract.address,
         tollFee,
         '3',
         '2',
@@ -213,7 +214,7 @@ contract('HomeBridge_ERC20_to_ERC20', async (accounts) => {
       await homeContract.initialize(
         validatorContract.address,
         whitelistContract.address,
-        tollAddress,
+        tollContract.address,
         tollFee,
         '3',
         '2',
@@ -228,7 +229,7 @@ contract('HomeBridge_ERC20_to_ERC20', async (accounts) => {
       await homeContract.initialize(
         validatorContract.address,
         whitelistContract.address,
-        tollAddress,
+        tollContract.address,
         tollFee,
         '3',
         '2',
@@ -248,10 +249,11 @@ contract('HomeBridge_ERC20_to_ERC20', async (accounts) => {
     beforeEach(async () => {
       homeContract = await HomeBridge.new()
       token = await SeniToken.new("Some ERC20", "RSZT", 18, whitelistContract.address);
+      tollContract = await TollBox.new(20, token.address, homeContract.address)
       await homeContract.initialize(
         validatorContract.address,
         whitelistContract.address,
-        tollAddress,
+        tollContract.address,
         tollFee,
         '3',
         '2',
@@ -277,10 +279,11 @@ contract('HomeBridge_ERC20_to_ERC20', async (accounts) => {
     beforeEach(async () => {
       homeContract = await HomeBridge.new()
       token = await SeniToken.new("Some ERC20", "RSZT", 18, whitelistContract.address);
+      tollContract = await TollBox.new(20, token.address, homeContract.address)
       await homeContract.initialize(
         validatorContract.address,
         whitelistContract.address,
-        tollAddress,
+        tollContract.address,
         tollFee,
         '3',
         '2',
@@ -311,12 +314,12 @@ contract('HomeBridge_ERC20_to_ERC20', async (accounts) => {
     beforeEach(async () => {
       homeBridge = await HomeBridge.new();
       whitelistContract = await Whitelist.new(owner);
-      await whitelistContract.addAddresses([tollAddress], { from: owner })
       token = await SeniToken.new("Some ERC20", "RSZT", 18, whitelistContract.address);
+      tollContract = await TollBox.new(20, token.address, homeBridge.address)
       await homeBridge.initialize(
         validatorContract.address,
         whitelistContract.address,
-        tollAddress,
+        tollContract.address,
         tollFee,
         homeDailyLimit,
         homeMaxPerTx,
@@ -369,10 +372,11 @@ contract('HomeBridge_ERC20_to_ERC20', async (accounts) => {
       let ownerOfValidators = accounts[0]
       await validatorContractWith2Signatures.initialize(2, authoritiesTwoAccs, ownerOfValidators)
       let homeBridgeWithTwoSigs = await HomeBridge.new();
+      let tollContractTwoSigs = await TollBox.new(20, token2sig.address, homeBridgeWithTwoSigs.address)
       await homeBridgeWithTwoSigs.initialize(
         validatorContractWith2Signatures.address,
         whitelistContract.address,
-        tollAddress,
+        tollContractTwoSigs.address,
         tollFee,
         homeDailyLimit,
         homeMaxPerTx,
@@ -448,11 +452,11 @@ contract('HomeBridge_ERC20_to_ERC20', async (accounts) => {
       let ownerOfValidators = accounts[0]
       await validatorContractWith2Signatures.initialize(2, authoritiesTwoAccs, ownerOfValidators)
       let homeBridgeWithTwoSigs = await HomeBridge.new();
-
+      let tollContractTwoSigs = await TollBox.new(20, token2sig.address, homeBridgeWithTwoSigs.address)
       await homeBridgeWithTwoSigs.initialize(
         validatorContractWith2Signatures.address,
         whitelistContract.address,
-        tollAddress,
+        tollContractTwoSigs.address,
         tollFee,
         homeDailyLimit,
         homeMaxPerTx,
@@ -492,10 +496,11 @@ contract('HomeBridge_ERC20_to_ERC20', async (accounts) => {
       const token = await SeniToken.new("Some ERC20", "RSZT", 18, whitelistContract.address);
 
       const homeBridgeWithThreeSigs = await HomeBridge.new();
+      let tollContractTwoSigs = await TollBox.new(20, token.address, homeBridgeWithThreeSigs.address)
       await homeBridgeWithThreeSigs.initialize(
         validatorContractWith3Signatures.address,
         whitelistContract.address,
-        tollAddress,
+        tollContractTwoSigs.address,
         tollFee,
         homeDailyLimit,
         homeMaxPerTx,
@@ -564,12 +569,12 @@ contract('HomeBridge_ERC20_to_ERC20', async (accounts) => {
     it('should not allow execute affirmation over daily foreign limit', async () => {
       homeBridge = await HomeBridge.new();
       whitelistContract = await Whitelist.new(owner);
-      await whitelistContract.addAddresses([tollAddress], { from: owner })
       token = await SeniToken.new("Some ERC20", "RSZT", 18, whitelistContract.address);
+      tollContract = await TollBox.new(20, token.address, homeBridge.address)
       await homeBridge.initialize(
         validatorContract.address,
         whitelistContract.address,
-        tollAddress,
+        tollContract.address,
         tollFee,
         web3.toBigNumber(web3.toWei(40, "ether")),
         web3.toBigNumber(web3.toWei(20, "ether")),
@@ -658,7 +663,7 @@ contract('HomeBridge_ERC20_to_ERC20', async (accounts) => {
   })
 
   describe('#submitSignature', async () => {
-    let validatorContractWith2Signatures, authoritiesTwoAccs, ownerOfValidators, homeBridgeWithTwoSigs
+    let validatorContractWith2Signatures, authoritiesTwoAccs, ownerOfValidators, homeBridgeWithTwoSigs, tollContractWithTwoSigs
 
     beforeEach(async () => {
       let token2sig = await SeniToken.new("Some ERC20", "RSZT", 18, whitelistContract.address);
@@ -667,10 +672,11 @@ contract('HomeBridge_ERC20_to_ERC20', async (accounts) => {
       ownerOfValidators = accounts[0]
       await validatorContractWith2Signatures.initialize(2, authoritiesTwoAccs, ownerOfValidators)
       homeBridgeWithTwoSigs = await HomeBridge.new();
+      tollContractWithTwoSigs = await TollBox.new(20, token2sig.address, homeBridgeWithTwoSigs.address)
       await homeBridgeWithTwoSigs.initialize(
         validatorContractWith2Signatures.address,
         whitelistContract.address,
-        tollAddress,
+        tollContractWithTwoSigs.address,
         tollFee,
         homeDailyLimit,
         homeMaxPerTx,
@@ -734,11 +740,11 @@ contract('HomeBridge_ERC20_to_ERC20', async (accounts) => {
       const token = await SeniToken.new("Some ERC20", "RSZT", 18, whitelistContract.address);
 
       const homeBridgeWithThreeSigs = await HomeBridge.new();
-
+      const tollContractWithThreeSigs = await TollBox.new(20, token.address, homeBridgeWithThreeSigs.address)
       await homeBridgeWithThreeSigs.initialize(
         validatorContractWith3Signatures.address,
         whitelistContract.address,
-        tollAddress,
+        tollContractWithThreeSigs.address,
         tollFee,
         homeDailyLimit,
         homeMaxPerTx,
@@ -808,113 +814,82 @@ contract('HomeBridge_ERC20_to_ERC20', async (accounts) => {
   })
 
   describe('#toll', async () => {
-    let validatorContractWith2Signatures, authoritiesTwoAccs, ownerOfValidators, homeBridgeWithTwoSigs, token2sig, amount
+    let ownerOfValidators, amount
 
     beforeEach(async () => {
       amount = web3.toBigNumber(web3.toWei(15, "ether"));
-      token2sig = await SeniToken.new("Some ERC20", "RSZT", 18, whitelistContract.address);
-      validatorContractWith2Signatures = await BridgeValidators.new()
-      authoritiesTwoAccs = [accounts[1], accounts[2], accounts[3]];
-      ownerOfValidators = accounts[0]
-      await validatorContractWith2Signatures.initialize(2, authoritiesTwoAccs, ownerOfValidators)
-      homeBridgeWithTwoSigs = await HomeBridge.new();
-      await homeBridgeWithTwoSigs.initialize(
-        validatorContractWith2Signatures.address,
+      token = await SeniToken.new("Some ERC20", "RSZT", 18, whitelistContract.address);
+      validatorContract = await BridgeValidators.new()
+      await validatorContract.initialize(1, authorities, owner)
+      homeContract = await HomeBridge.new();
+      tollContract = await TollBox.new(20, token.address, homeContract.address)
+      await homeContract.initialize(
+        validatorContract.address,
         whitelistContract.address,
-        tollAddress,
+        tollContract.address,
         tollFee,
         homeDailyLimit,
         homeMaxPerTx,
         minPerTx,
         0,
         requireBlockConfirmations,
-        token2sig.address,
+        token.address,
         foreignDailyLimit,
         foreignMaxPerTx,
         owner
       )
-      await whitelistContract.addAddresses([user, tollAddress], { from: owner })
-      await token2sig.setBridgeContract(homeBridgeWithTwoSigs.address).should.be.fulfilled;
-      await token2sig.mint(user, amount).should.be.fulfilled;
-      await token2sig.transferOwnership(homeBridgeWithTwoSigs.address);
+      await whitelistContract.addAddresses([user], { from: owner })
+      await token.setBridgeContract(homeContract.address).should.be.fulfilled;
+      await token.mint(user, amount).should.be.fulfilled;
+      await token.transferOwnership(homeContract.address);
     })
 
     it('when user made deposit, discount the toll', async () => {
-      '0'.should.be.bignumber.equal(await token2sig.balanceOf(homeBridgeWithTwoSigs.address));
-      '0'.should.be.bignumber.equal(await token2sig.balanceOf(tollAddress));
-      '15000000000000000000'.should.be.bignumber.equal(await token2sig.balanceOf(user));
+      '0'.should.be.bignumber.equal(await token.balanceOf(homeContract.address));
+      '0'.should.be.bignumber.equal(await token.balanceOf(tollContract.address));
+      '15000000000000000000'.should.be.bignumber.equal(await token.balanceOf(user));
 
-      const result = await token2sig.transferAndCall(homeBridgeWithTwoSigs.address, amount, '0x', { from: user }).should.be.fulfilled;
+      const result = await token.transferAndCall(homeContract.address, amount, '0x', { from: user }).should.be.fulfilled;
       result.logs[0].event.should.be.equal("Transfer")
       result.logs[0].args.should.be.deep.equal({
         from: user,
-        to: homeBridgeWithTwoSigs.address,
+        to: homeContract.address,
         value: amount
       })
-      result.logs[3].event.should.be.equal("Burn")
-      result.logs[3].args.should.be.deep.equal({
-        burner: homeBridgeWithTwoSigs.address,
+      result.logs[4].event.should.be.equal("Burn")
+      result.logs[4].args.should.be.deep.equal({
+        burner: homeContract.address,
         value: web3.toBigNumber('5000000000000000000')
       })
 
-      '0'.should.be.bignumber.equal(await token2sig.balanceOf(homeBridgeWithTwoSigs.address));
-      '10000000000000000000'.should.be.bignumber.equal(await token2sig.balanceOf(tollAddress));
-      '0'.should.be.bignumber.equal(await token2sig.balanceOf(user));
+      '0'.should.be.bignumber.equal(await token.balanceOf(homeContract.address));
+      '10000000000000000000'.should.be.bignumber.equal(await token.balanceOf(tollContract.address));
+      '0'.should.be.bignumber.equal(await token.balanceOf(user));
     })
 
-    it('non-whitelisted user can not made deposit', async () => {
-      '0'.should.be.bignumber.equal(await token2sig.balanceOf(homeBridgeWithTwoSigs.address));
-      '0'.should.be.bignumber.equal(await token2sig.balanceOf(tollAddress));
-      '15000000000000000000'.should.be.bignumber.equal(await token2sig.balanceOf(user));
+    it('non-whitelisted user can not made Deposit flow', async () => {
+      '0'.should.be.bignumber.equal(await token.balanceOf(homeContract.address));
+      '0'.should.be.bignumber.equal(await token.balanceOf(tollContract.address));
+      '15000000000000000000'.should.be.bignumber.equal(await token.balanceOf(user));
 
       await whitelistContract.removeAddresses([user], { from: owner })
-      await token2sig.transferAndCall(homeBridgeWithTwoSigs.address, amount, '0x', { from: user }).should.be.rejectedWith(ERROR_MSG);
+      await token.transferAndCall(homeContract.address, amount, '0x', { from: user }).should.be.rejectedWith(ERROR_MSG);
 
-      '0'.should.be.bignumber.equal(await token2sig.balanceOf(homeBridgeWithTwoSigs.address));
-      '0'.should.be.bignumber.equal(await token2sig.balanceOf(tollAddress));
-      '15000000000000000000'.should.be.bignumber.equal(await token2sig.balanceOf(user));
+      '0'.should.be.bignumber.equal(await token.balanceOf(homeContract.address));
+      '0'.should.be.bignumber.equal(await token.balanceOf(tollContract.address));
+      '15000000000000000000'.should.be.bignumber.equal(await token.balanceOf(user));
     })
 
-    it('can not made deposit amounts below the minPerTx', async () => {
-      '0'.should.be.bignumber.equal(await token2sig.balanceOf(homeBridgeWithTwoSigs.address));
-      '0'.should.be.bignumber.equal(await token2sig.balanceOf(tollAddress));
-      '15000000000000000000'.should.be.bignumber.equal(await token2sig.balanceOf(user));
+    it('can not made Deposit flow from amounts below the minPerTx', async () => {
+      '0'.should.be.bignumber.equal(await token.balanceOf(homeContract.address));
+      '0'.should.be.bignumber.equal(await token.balanceOf(tollContract.address));
+      '15000000000000000000'.should.be.bignumber.equal(await token.balanceOf(user));
 
-      await token2sig.transferAndCall(homeBridgeWithTwoSigs.address, web3.toBigNumber('10000000000000000000'), '0x', { from: user }).should.be.rejectedWith(ERROR_MSG);
+      await token.transferAndCall(homeContract.address, web3.toBigNumber('10000000000000000000'), '0x', { from: user }).should.be.rejectedWith(ERROR_MSG);
 
-      '0'.should.be.bignumber.equal(await token2sig.balanceOf(homeBridgeWithTwoSigs.address));
-      '0'.should.be.bignumber.equal(await token2sig.balanceOf(tollAddress));
-      '15000000000000000000'.should.be.bignumber.equal(await token2sig.balanceOf(user));
-    })
-
-    it('when tollAddress made deposit, not discount the toll and not verify the minPerTx', async () => {
-      '0'.should.be.bignumber.equal(await token2sig.balanceOf(homeBridgeWithTwoSigs.address));
-      '0'.should.be.bignumber.equal(await token2sig.balanceOf(tollAddress));
-      '15000000000000000000'.should.be.bignumber.equal(await token2sig.balanceOf(user));
-
-      await token2sig.transferAndCall(homeBridgeWithTwoSigs.address, amount, '0x', { from: user }).should.be.fulfilled;
-
-      '0'.should.be.bignumber.equal(await token2sig.balanceOf(homeBridgeWithTwoSigs.address));
-      '10000000000000000000'.should.be.bignumber.equal(await token2sig.balanceOf(tollAddress));
-      '0'.should.be.bignumber.equal(await token2sig.balanceOf(user));
-
-      const tollAmount = web3.toBigNumber(web3.toWei(10, "ether"));
-      const result = await token2sig.transferAndCall(homeBridgeWithTwoSigs.address, tollAmount, '0x', { from: tollAddress }).should.be.fulfilled;
-      result.logs[0].event.should.be.equal("Transfer")
-      result.logs[0].args.should.be.deep.equal({
-        from: tollAddress,
-        to: homeBridgeWithTwoSigs.address,
-        value: tollAmount
-      })
-      result.logs[2].event.should.be.equal("Burn")
-      result.logs[2].args.should.be.deep.equal({
-        burner: homeBridgeWithTwoSigs.address,
-        value: tollAmount
-      })
-
-      '0'.should.be.bignumber.equal(await token2sig.balanceOf(homeBridgeWithTwoSigs.address));
-      '0'.should.be.bignumber.equal(await token2sig.balanceOf(tollAddress));
-      '0'.should.be.bignumber.equal(await token2sig.balanceOf(user));
+      '0'.should.be.bignumber.equal(await token.balanceOf(homeContract.address));
+      '0'.should.be.bignumber.equal(await token.balanceOf(tollContract.address));
+      '15000000000000000000'.should.be.bignumber.equal(await token.balanceOf(user));
     })
   })
 
@@ -941,7 +916,7 @@ contract('HomeBridge_ERC20_to_ERC20', async (accounts) => {
       await homeBridge.initialize(
         validatorContract.address,
         whitelistContract.address,
-        tollAddress,
+        accounts[0],
         tollFee,
         homeDailyLimit,
         homeMaxPerTx,

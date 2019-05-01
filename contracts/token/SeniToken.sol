@@ -120,7 +120,14 @@ contract SeniToken is
         private
         returns(bool)
     {
-        return _to.call(abi.encodeWithSignature("onTokenTransfer(address,uint256,bytes)",  msg.sender, _value, _data));
+        return _to.call(
+            abi.encodeWithSignature(
+                "onTokenTransfer(address,uint256,bytes)",
+                msg.sender,
+                _value,
+                _data
+            )
+        );
     }
 
     function _isContract(address _addr)
