@@ -343,6 +343,7 @@ contract('HomeBridge_ERC20_to_ERC20', async (accounts) => {
       whitelistContract = await Whitelist.new(owner);
       token = await SeniToken.new("Some ERC20", "RSZT", 18, whitelistContract.address);
       tollContract = await TollBox.new(20, token.address, homeBridge.address)
+      await whitelistContract.addAddresses([homeBridge.address, tollContract.address], { from: owner })
       await homeBridge.initialize(
         validatorContract.address,
         whitelistContract.address,
@@ -417,7 +418,7 @@ contract('HomeBridge_ERC20_to_ERC20', async (accounts) => {
       )
       await token2sig.transferOwnership(homeBridgeWithTwoSigs.address);
       const recipient = accounts[5];
-      await whitelistContract.addAddresses([recipient], { from: owner })
+      await whitelistContract.addAddresses([recipient, homeBridgeWithTwoSigs.address, tollContractTwoSigs.address], { from: owner })
       const value = minValueToTransfer;
       const transactionHash = "0x806335163828a8eda675cff9c84fa6e6c7cf06bb44cc6ec832e42fe789d01415";
       const balanceBefore = await token2sig.balanceOf(recipient)
@@ -497,7 +498,7 @@ contract('HomeBridge_ERC20_to_ERC20', async (accounts) => {
       )
       await token2sig.transferOwnership(homeBridgeWithTwoSigs.address);
       const recipient = accounts[5];
-      await whitelistContract.addAddresses([recipient], { from: owner })
+      await whitelistContract.addAddresses([recipient, homeBridgeWithTwoSigs.address, tollContractTwoSigs.address], { from: owner })
       const value = minValueToTransfer;
       const transactionHash = "0x806335163828a8eda675cff9c84fa6e6c7cf06bb44cc6ec832e42fe789d01415";
       const balanceBefore = await token.balanceOf(recipient)
@@ -524,6 +525,7 @@ contract('HomeBridge_ERC20_to_ERC20', async (accounts) => {
 
       const homeBridgeWithThreeSigs = await HomeBridge.new();
       let tollContractTwoSigs = await TollBox.new(20, token.address, homeBridgeWithThreeSigs.address)
+      await whitelistContract.addAddresses([recipient, homeBridgeWithThreeSigs.address, tollContractTwoSigs.address], { from: owner })
       await homeBridgeWithThreeSigs.initialize(
         validatorContractWith3Signatures.address,
         whitelistContract.address,
@@ -616,7 +618,7 @@ contract('HomeBridge_ERC20_to_ERC20', async (accounts) => {
       await token.transferOwnership(homeBridge.address);
 
       const recipient = accounts[5];
-      await whitelistContract.addAddresses([recipient], { from: owner })
+      await whitelistContract.addAddresses([recipient, homeBridge.address, tollContract.address], { from: owner })
       const value = web3.toBigNumber(web3.toWei(20, "ether"));
       const receivedValue = value.sub(tollFee);
 
@@ -865,7 +867,7 @@ contract('HomeBridge_ERC20_to_ERC20', async (accounts) => {
         foreignMaxPerTx,
         owner
       )
-      await whitelistContract.addAddresses([user], { from: owner })
+      await whitelistContract.addAddresses([user, homeContract.address, tollContract.address], { from: owner })
       await token.setBridgeContract(homeContract.address).should.be.fulfilled;
       await token.mint(user, amount).should.be.fulfilled;
       await token.transferOwnership(homeContract.address);

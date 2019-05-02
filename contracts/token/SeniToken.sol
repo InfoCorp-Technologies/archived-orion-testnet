@@ -26,7 +26,7 @@ contract SeniToken is
     }
 
     modifier isWhitelisted(address _addr) {
-        require(whitelist.isWhitelisted(_addr) || _isContract(_addr));
+        require(whitelist.isWhitelisted(_addr));
         _;
     }
 

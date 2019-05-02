@@ -140,7 +140,7 @@ contract('SENI Token', async (accounts) => {
       await validatorContract.initialize(1, authorities, owner)
       homeErcToErcContract = await HomeErcToErcBridge.new()
       tollContract = await TollBox.new(20, seniToken.address, homeErcToErcContract.address)
-      await whitelistContract.addAddresses([user, tollContract.address] ,{from: owner})
+      await whitelistContract.addAddresses([user, tollContract.address, homeErcToErcContract.address], { from: owner })
       await homeErcToErcContract.initialize(
         validatorContract.address,
         whitelistContract.address,
@@ -232,7 +232,7 @@ contract('SENI Token', async (accounts) => {
     it('sends tokens to contract that does not contains onTokenTransfer method', async () => {
       await seniToken.setBridgeContract(homeErcToErcContract.address).should.be.fulfilled;
       await seniToken.mint(user, minValueToTransfer, { from: owner }).should.be.fulfilled;
-
+      await whitelistContract.addAddresses([validatorContract.address], { from: owner })
       const result = await seniToken.transfer(validatorContract.address, minValueToTransfer, { from: user }).should.be.fulfilled;
       result.logs[0].event.should.be.equal("Transfer")
       result.logs[0].args.should.be.deep.equal({
@@ -277,7 +277,7 @@ contract('SENI Token', async (accounts) => {
       await validatorContract.initialize(1, authorities, owner)
       homeErcToErcContract = await HomeErcToErcBridge.new()
       tollContract = await TollBox.new(20, seniToken.address, homeErcToErcContract.address)
-      await whitelistContract.addAddresses([user, tollContract.address] ,{from: owner})
+      await whitelistContract.addAddresses([user, tollContract.address, homeErcToErcContract.address], { from: owner })
       await homeErcToErcContract.initialize(validatorContract.address, whitelistContract.address, tollContract.address, tollFee, homeDailyLimit, homeMaxPerTx, minPerTx, gasPrice, requireBlockConfirmations, seniToken.address, foreignDailyLimit, foreignMaxPerTx, owner)
       foreignErcToErcBridge = await ForeignBridgeErcToErc.new()
       await foreignErcToErcBridge.initialize(validatorContract.address, sencToken.address, requireBlockConfirmations, gasPrice, foreignMaxPerTx,
@@ -286,6 +286,7 @@ contract('SENI Token', async (accounts) => {
 
     it('calls contractFallback', async () => {
       const receiver = await ERC677ReceiverTest.new();
+      await whitelistContract.addAddresses([receiver.address], { from: owner });
       (await receiver.from()).should.be.equal('0x0000000000000000000000000000000000000000');
       (await receiver.value()).should.be.bignumber.equal('0');
       (await receiver.data()).should.be.equal('0x');
@@ -358,6 +359,7 @@ contract('SENI Token', async (accounts) => {
   describe('#transfer', async () => {
     it('if transfer called on contract, onTokenTransfer is also invoked', async () => {
       const receiver = await ERC677ReceiverTest.new();
+      await whitelistContract.addAddresses([receiver.address], { from: owner });
       (await receiver.from()).should.be.equal('0x0000000000000000000000000000000000000000');
       (await receiver.value()).should.be.bignumber.equal('0');
       (await receiver.data()).should.be.equal('0x');
@@ -378,7 +380,7 @@ contract('SENI Token', async (accounts) => {
 
     it('if transfer called on contract, still works even if onTokenTransfer doesnot exist', async () => {
       const someContract = await SENI.new("Some", "Token", 18, whitelistContract.address);
-      await whitelistContract.addAddresses([user, accounts[0]], { from: owner });
+      await whitelistContract.addAddresses([user, accounts[0], someContract.address,], { from: owner });
       await seniToken.mint(user, 2, { from: owner }).should.be.fulfilled;
       const tokenTransfer = await seniToken.transfer(someContract.address, 1, { from: user }).should.be.fulfilled;
       const tokenTransfer2 = await seniToken.transfer(accounts[0], 1, { from: user }).should.be.fulfilled;

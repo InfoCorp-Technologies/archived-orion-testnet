@@ -82,7 +82,7 @@ contract('TollBox', async (accounts) => {
 
     beforeEach(async () => {
       await tollContract.addCreditor(creditor, { from: operator });
-      await whitelistContract.addAddresses([creditor], { from: owner });
+      await whitelistContract.addAddresses([creditor, tollContract.address, ], { from: owner });
     })
 
     it('can transfer tokens to tollBox', async () => {
@@ -142,7 +142,7 @@ contract('TollBox', async (accounts) => {
         owner
       ).should.be.fulfilled;
       await tollContract.addCreditor(creditor, { from: operator })
-      await whitelistContract.addAddresses([creditor], { from: owner }).should.be.fulfilled;
+      await whitelistContract.addAddresses([creditor, tollContract.address, homeContract.address], { from: owner }).should.be.fulfilled;
     })
 
     it('send tokens to home contract when creditos execute fallBack function', async () => {
