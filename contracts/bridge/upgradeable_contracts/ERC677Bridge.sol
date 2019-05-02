@@ -7,7 +7,6 @@ import "./Whitelistable.sol";
 
 contract ERC677Bridge is BasicBridge, Whitelistable {
 
-
     function onTokenTransfer(address _from, uint256 _value, bytes _data)
         external
         returns(bool)
@@ -42,26 +41,31 @@ contract ERC677Bridge is BasicBridge, Whitelistable {
         );
     }
 
+    function setTollAddress(address _tollAddress) public onlyOwner {
+        require(_tollAddress != address(0) && isContract(_tollAddress));
+        addressStorage[keccak256(abi.encodePacked("tollAddress"))] = _tollAddress;
+    }
+
+    function setTollFee(uint256 _tollFee) public onlyOwner {
+        uintStorage[keccak256(abi.encodePacked("tollFee"))] = _tollFee;
+    }
+
+    function tollAddress() public view returns(address) {
+        return addressStorage[keccak256(abi.encodePacked("tollAddress"))];
+    }
+
+    function tollFee() public view returns(uint256) {
+        return uintStorage[keccak256(abi.encodePacked("tollFee"))];
+    }
+
     function setErc677token(address _token) internal {
         require(_token != address(0) && isContract(_token));
         addressStorage[keccak256(abi.encodePacked("erc677token"))] = _token;
     }
 
     function fireEventOnTokenTransfer(address /*_from */, uint256 /* _value */)
-        internal
-    {
-        // has to be defined
-    }
+        internal;
 
-    // function _bytesToAddress(bytes data)
-    //     internal
-    //     pure
-    //     returns(address parsed)
-    // {
-    //     assembly {
-    //         parsed := mload(add(data, 32))
-    //     }
-    // }
     function _bytesToAddress(bytes b)
         internal
         pure

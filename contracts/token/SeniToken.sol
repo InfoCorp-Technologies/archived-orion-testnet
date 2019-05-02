@@ -15,7 +15,7 @@ contract SeniToken is
     MintableToken {
 
     address public bridgeContract;
-    address public whitelistContract;
+    IWhitelist public whitelist;
 
     event ContractFallbackCallFailed(address from, address to, uint value);
 
@@ -26,7 +26,7 @@ contract SeniToken is
     }
 
     modifier isWhitelisted(address _addr) {
-        require(_whitelist().isWhitelisted(_addr) || _isContract(_addr));
+        require(whitelist.isWhitelisted(_addr) || _isContract(_addr));
         _;
     }
 
@@ -34,17 +34,16 @@ contract SeniToken is
         string _name,
         string _symbol,
         uint8 _decimals,
-        address _whitelistContract
-    )
-        public
-        DetailedERC20(_name, _symbol, _decimals)
-    {
+        IWhitelist _whitelistContract
+    ) public DetailedERC20(_name, _symbol, _decimals) {
         require(_whitelistContract != address(0));
-        whitelistContract = _whitelistContract;
+        whitelist = _whitelistContract;
     }
 
     function transferAndCall(address _to, uint _value, bytes _data)
-        external validRecipient(_to) returns (bool)
+        external
+        validRecipient(_to)
+        returns (bool)
     {
         require(_superTransfer(_to, _value));
         emit Transfer(msg.sender, _to, _value, _data);
@@ -55,16 +54,19 @@ contract SeniToken is
         return true;
     }
 
-    function setBridgeContract(address _bridgeContract) onlyOwner public {
+    function setBridgeContract(address _bridgeContract) public onlyOwner {
         require(_bridgeContract != address(0) && _isContract(_bridgeContract));
         bridgeContract = _bridgeContract;
     }
 
-    function setWhitelistContract(address _whitelistContract) onlyOwner public {
+    function setWhitelistContract(IWhitelist _whitelistContract)
+        public
+        onlyOwner
+    {
         require(
             _whitelistContract != address(0) && _isContract(_whitelistContract)
         );
-        whitelistContract = _whitelistContract;
+        whitelist = _whitelistContract;
     }
 
     function transfer(address _to, uint256 _value) public returns (bool)
@@ -117,7 +119,7 @@ contract SeniToken is
     }
 
     function _contractFallback(address _to, uint _value, bytes _data)
-        private
+        internal
         returns(bool)
     {
         return _to.call(
@@ -131,7 +133,7 @@ contract SeniToken is
     }
 
     function _isContract(address _addr)
-        private
+        internal
         view
         returns (bool)
     {
@@ -146,9 +148,5 @@ contract SeniToken is
         returns(bool)
     {
         return super.transfer(_to, _value);
-    }
-
-    function _whitelist() internal view returns(IWhitelist) {
-        return IWhitelist(whitelistContract);
     }
 }

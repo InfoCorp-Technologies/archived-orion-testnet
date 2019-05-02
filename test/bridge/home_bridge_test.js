@@ -5,8 +5,8 @@ const BridgeValidators = artifacts.require("BridgeValidators.sol");
 const SeniToken = artifacts.require("SeniToken.sol");
 const Whitelist = artifacts.require("Whitelist.sol");
 const TollBox = artifacts.require("TollBox.sol");
-const { ERROR_MSG, ZERO_ADDRESS } = require('../../setup.js');
-const { createMessage, sign } = require('../helpers/helpers');
+const { ERROR_MSG, ZERO_ADDRESS } = require('../setup.js');
+const { createMessage, sign } = require('./helpers/helpers');
 const tollFee = web3.toBigNumber(web3.toWei(10, "ether"));
 const minPerTx = web3.toBigNumber(web3.toWei(11, "ether"));
 const minValueToTransfer = web3.toBigNumber(web3.toWei(11, "ether"));
@@ -64,9 +64,6 @@ contract('HomeBridge_ERC20_to_ERC20', async (accounts) => {
       homeDailyLimit.should.be.bignumber.equal(await homeContract.dailyLimit())
       homeMaxPerTx.should.be.bignumber.equal(await homeContract.maxPerTx())
       minPerTx.should.be.bignumber.equal(await homeContract.minPerTx())
-      const bridgeMode = '0xba4690f5' // 4 bytes of keccak256('erc-to-erc-core')
-      const mode = await homeContract.getBridgeMode();
-      mode.should.be.equal(bridgeMode)
       const [major, minor, patch] = await homeContract.getBridgeInterfacesVersion()
       major.should.be.bignumber.gte(0)
       minor.should.be.bignumber.gte(0)
@@ -115,9 +112,9 @@ contract('HomeBridge_ERC20_to_ERC20', async (accounts) => {
         whitelistContract.address,
         tollContract.address,
         tollFee,
-        '3',
-        '2',
-        '1',
+        "3",
+        "2",
+        "1",
         gasPrice,
         requireBlockConfirmations,
         token.address,
@@ -170,6 +167,36 @@ contract('HomeBridge_ERC20_to_ERC20', async (accounts) => {
         ZERO_ADDRESS,
         whitelistContract.address,
         tollContract.address,
+        tollFee,
+        '3',
+        '2',
+        '1',
+        gasPrice,
+        requireBlockConfirmations,
+        token.address,
+        foreignDailyLimit,
+        foreignMaxPerTx,
+        owner
+      ).should.be.rejectedWith(ERROR_MSG);
+      await homeContract.initialize(
+        validatorContract.address,
+        whitelistContract.address,
+        owner,
+        tollFee,
+        '3',
+        '2',
+        '1',
+        gasPrice,
+        requireBlockConfirmations,
+        token.address,
+        foreignDailyLimit,
+        foreignMaxPerTx,
+        owner
+      ).should.be.rejectedWith(ERROR_MSG);
+      await homeContract.initialize(
+        validatorContract.address,
+        whitelistContract.address,
+        ZERO_ADDRESS,
         tollFee,
         '3',
         '2',
@@ -916,7 +943,7 @@ contract('HomeBridge_ERC20_to_ERC20', async (accounts) => {
       await homeBridge.initialize(
         validatorContract.address,
         whitelistContract.address,
-        accounts[0],
+        tollContract.address,
         tollFee,
         homeDailyLimit,
         homeMaxPerTx,

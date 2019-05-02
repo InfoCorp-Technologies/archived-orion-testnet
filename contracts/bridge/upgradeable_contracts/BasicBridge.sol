@@ -145,21 +145,4 @@ contract BasicBridge is EternalStorage, Validatable, Ownable, OwnedUpgradeabilit
         assembly { length := extcodesize(_addr) }
         return length > 0;
     }
-
-    function setTollAddress(address _tollAddress) external onlyOwner {
-        require(_tollAddress != address(0));
-        addressStorage[keccak256(abi.encodePacked("tollAddress"))] = _tollAddress;
-    }
-
-    function setTollFee(uint256 _tollFee) external onlyOwner {
-        uintStorage[keccak256(abi.encodePacked("tollFee"))] = _tollFee;
-    }
-
-    function tollAddress() public view returns(address) {
-        return addressStorage[keccak256(abi.encodePacked("tollAddress"))];
-    }
-
-    function tollFee() public view returns(uint256) {
-        return uintStorage[keccak256(abi.encodePacked("tollFee"))];
-    }
 }

@@ -1,4 +1,5 @@
 pragma solidity 0.4.24;
+
 import "../../libraries/SafeMath.sol";
 import "../../libraries/Message.sol";
 import "../BasicBridge.sol";
@@ -9,13 +10,20 @@ import "../BasicHomeBridge.sol";
 import "../ERC677Bridge.sol";
 import "../OverdrawManagement.sol";
 
-contract HomeBridgeErcToErc is ERC677Receiver, EternalStorage, BasicBridge, BasicHomeBridge, ERC677Bridge, OverdrawManagement {
 
-    event AmountLimitExceeded(address recipient, uint256 value, bytes32 transactionHash);
+contract HomeBridgeErcToErc is
+    ERC677Receiver,
+    EternalStorage,
+    BasicBridge,
+    BasicHomeBridge,
+    ERC677Bridge,
+    OverdrawManagement {
 
-    function () payable public {
-        revert();
-    }
+    event AmountLimitExceeded(
+        address recipient,
+        uint256 value,
+        bytes32 transactionHash
+    );
 
     function initialize (
         address _validatorContract,
@@ -38,7 +46,7 @@ contract HomeBridgeErcToErc is ERC677Receiver, EternalStorage, BasicBridge, Basi
         require(!isInitialized());
         require(_validatorContract != address(0) && isContract(_validatorContract));
         require(_whitelistContract != address(0) && isContract(_whitelistContract));
-        require(_tollAddress != address(0));
+        require(_tollAddress != address(0) && isContract(_tollAddress));
         require(_requiredBlockConfirmations > 0);
         require(_minPerTx > 0 && _maxPerTx > _minPerTx && _dailyLimit > _maxPerTx);
         require(_foreignMaxPerTx < _foreignDailyLimit);
@@ -62,15 +70,11 @@ contract HomeBridgeErcToErc is ERC677Receiver, EternalStorage, BasicBridge, Basi
         return isInitialized();
     }
 
-    function getBridgeMode() public pure returns(bytes4 _data) {
-        return bytes4(keccak256(abi.encodePacked("erc-to-erc-core")));
-    }
-
     function onExecuteAffirmation(address _recipient, uint256 _value)
         internal
         returns(bool)
     {
-        if (_value > tollFee() && _isWhitelisted(_recipient) && _recipient != tollAddress()) {
+        if (_value > tollFee() && _isWhitelisted(_recipient)) {
             uint256 valueToTransfer = _value - tollFee();
             setTotalExecutedPerDay(
                 getCurrentDay(),

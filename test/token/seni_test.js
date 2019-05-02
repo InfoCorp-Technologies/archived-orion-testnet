@@ -46,7 +46,7 @@ contract('SENI Token', async (accounts) => {
     const mintingFinished = await seniToken.mintingFinished();
     assert.equal(mintingFinished, false);
 
-    const whitelistAddress = await seniToken.whitelistContract();
+    const whitelistAddress = await seniToken.whitelist();
     assert.equal(whitelistAddress, whitelistContract.address);
   })
 
@@ -61,11 +61,11 @@ contract('SENI Token', async (accounts) => {
     })
 
     it('can set whitelist contract', async () => {
-      (await seniToken.whitelistContract()).should.be.equal(whitelistContract.address);
+      (await seniToken.whitelist()).should.be.equal(whitelistContract.address);
       const newWhitelistContract = await Whitelist.new(owner);
       await seniToken.setWhitelistContract(newWhitelistContract.address).should.be.fulfilled;
 
-      (await seniToken.whitelistContract()).should.be.equal(newWhitelistContract.address);
+      (await seniToken.whitelist()).should.be.equal(newWhitelistContract.address);
     })
 
     it('only owner can set bridge contract', async () => {
@@ -80,13 +80,13 @@ contract('SENI Token', async (accounts) => {
     })
 
     it('only owner can set whitelist contract', async () => {
-      (await seniToken.whitelistContract()).should.be.equal(whitelistContract.address);
+      (await seniToken.whitelist()).should.be.equal(whitelistContract.address);
       const newWhitelistContract = await Whitelist.new(owner);
       await seniToken.setWhitelistContract(newWhitelistContract.address, { from: user }).should.be.rejectedWith(ERROR_MSG);
-      (await seniToken.whitelistContract()).should.be.equal(whitelistContract.address);
+      (await seniToken.whitelist()).should.be.equal(whitelistContract.address);
 
       await seniToken.setWhitelistContract(newWhitelistContract.address, { from: owner }).should.be.fulfilled;
-      (await seniToken.whitelistContract()).should.be.equal(newWhitelistContract.address);
+      (await seniToken.whitelist()).should.be.equal(newWhitelistContract.address);
     })
 
     it('fail to set invalid bridge contract address', async () => {
