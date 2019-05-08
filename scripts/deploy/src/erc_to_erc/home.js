@@ -9,6 +9,7 @@ const EternalStorageProxy = require('../../../../build/contracts/EternalStorageP
 const BridgeValidators = require('../../../../build/contracts/BridgeValidators.json')
 const HomeBridge = require('../../../../build/contracts/HomeBridgeErcToErc.json')
 const SeniToken = require('../../../../build/contracts/SeniToken.json')
+const TollBox = require('../../../../build/contracts/TollBox.json')
 
 const VALIDATORS = env.VALIDATORS.split(' ')
 
@@ -29,7 +30,8 @@ const {
   FOREIGN_DAILY_LIMIT,
   FOREIGN_MAX_AMOUNT_PER_TX,
   HOME_WHITELIST_ADDRESS,
-  HOME_TOLL_ADDRESS,
+  HOME_TOLL_BOX_OWNER,
+  HOME_TOLL_BOX_RATE,
   HOME_TOLL_FEE
 } = env
 
@@ -166,6 +168,29 @@ async function deployHome() {
   assert.strictEqual(Web3Utils.hexToNumber(txOwnership.status), 1, 'Transaction Failed')
   homeNonce++
 
+  console.log('\n[Home] deploying TollBox contract')
+  const tollBoxContract = await deployContract(
+    TollBox,
+    [HOME_TOLL_BOX_RATE, erc677token.options.address, homeBridgeStorage.options.address],
+    { from: DEPLOYMENT_ACCOUNT_ADDRESS, network: 'home', nonce: homeNonce }
+  )
+  homeNonce++
+  console.log('[Home] TollBox contract: ', tollBoxContract.options.address)
+
+  console.log('transferring ownership of TollBox contract to TollBoxOwner')
+  const txTollOwnershipData = await tollBoxContract.methods
+    .transferOwnership(HOME_TOLL_BOX_OWNER)
+    .encodeABI({ from: DEPLOYMENT_ACCOUNT_ADDRESS })
+  const txTollOwnership = await sendRawTxHome({
+    data: txTollOwnershipData,
+    nonce: homeNonce,
+    to: tollBoxContract.options.address,
+    privateKey: deploymentPrivateKey,
+    url: HOME_RPC_URL
+  })
+  assert.strictEqual(Web3Utils.hexToNumber(txTollOwnership.status), 1, 'Transaction Failed')
+  homeNonce++
+
   console.log('\ninitializing Home Bridge with following parameters:\n')
   console.log(`Home Validators: ${storageValidatorsHome.options.address},
   HOME_DAILY_LIMIT : ${HOME_DAILY_LIMIT} which is ${Web3Utils.fromWei(HOME_DAILY_LIMIT)} in eth,
@@ -182,7 +207,7 @@ async function deployHome() {
     .initialize(
       storageValidatorsHome.options.address,
       HOME_WHITELIST_ADDRESS,
-      HOME_TOLL_ADDRESS,
+      tollBoxContract.options.address,
       HOME_TOLL_FEE,
       HOME_DAILY_LIMIT,
       HOME_MAX_AMOUNT_PER_TX,
@@ -225,6 +250,7 @@ async function deployHome() {
       address: homeBridgeStorage.options.address,
       deployedBlockNumber: Web3Utils.hexToNumber(homeBridgeStorage.deployedBlockNumber)
     },
+    tollBox: { address: tollBoxContract.options.address },
     erc677: { address: erc677token.options.address }
   }
 }

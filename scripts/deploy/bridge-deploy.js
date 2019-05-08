@@ -37,18 +37,20 @@ async function doDeployForeign() {
 async function doDeployHome() {
   const deployHome = require('./src/erc_to_erc/home')
 
-  const { homeBridge, erc677 } = await deployHome()
+  const { homeBridge, erc677, tollBox } = await deployHome()
   console.log('\nDeployment has been completed.\n\n')
   console.log(
     `[   Home  ] HomeBridge: ${homeBridge.address} at block ${homeBridge.deployedBlockNumber}`
   )
   console.log(`[   Home  ] ERC677 Bridgeable Token: ${erc677.address}`)
+  console.log(`[   Home  ] TollBox Contract: ${tollBox.address}`)
   fs.writeFileSync(
     homeDeployResultsPath,
     JSON.stringify(
       {
         homeBridge: {
           ...homeBridge,
+          tollBox,
           erc677
         }
       },

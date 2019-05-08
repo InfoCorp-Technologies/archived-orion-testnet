@@ -8,6 +8,8 @@ files=(
     ./contracts/registry/*.sol
     ./contracts/shared/*.sol
     ./contracts/validator/*.sol
+    ./contracts/token/*.sol
+    ./contracts/bridge/upgradeability/EternalStorageProxy.sol
     ./contracts/bridge/upgradeable_contracts/erc20_to_erc20/ForeignBridgeErcToErc.sol
     ./contracts/bridge/upgradeable_contracts/erc20_to_erc20/HomeBridgeErcToErc.sol
     ./contracts/bridge/upgradeable_contracts/BridgeValidators.sol
