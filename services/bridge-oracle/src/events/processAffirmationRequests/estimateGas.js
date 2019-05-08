@@ -2,7 +2,8 @@ const { HttpListProviderError } = require('http-list-provider')
 const {
   AlreadyProcessedError,
   AlreadySignedError,
-  InvalidValidatorError
+  InvalidValidatorError,
+  TxAboveLimitsError
 } = require('../../utils/errors')
 const logger = require('../../services/logger').child({
   module: 'processAffirmationRequests:estimateGas'
@@ -50,6 +51,14 @@ async function estimateGas({
 
     if (alreadySigned) {
       throw new AlreadySignedError(e.message)
+    }
+
+    // Check if tx is above limits and it's fixed
+    logger.debug('Check if tx is above limits and it is fixed')
+    const txAboveLimits = await homeBridge.methods.txAboveLimits(txHash).call()
+    const isFixed = await homeBridge.methods.fixedAssets(txHash).call()
+    if (txAboveLimits) {
+      throw new TxAboveLimitsError(`${txHash} is above limit and is ` + ((!isFixed) ? 'NOT ' : '') + 'fixed')
     }
 
     // Check if address is validator

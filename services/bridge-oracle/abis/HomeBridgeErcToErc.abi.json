@@ -3,6 +3,48 @@
     "constant": true,
     "inputs": [
       {
+        "name": "_txHash",
+        "type": "bytes32"
+      }
+    ],
+    "name": "fixedAssets",
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "_txHash",
+        "type": "bytes32"
+      }
+    ],
+    "name": "txAboveLimits",
+    "outputs": [
+      {
+        "name": "recipient",
+        "type": "address"
+      },
+      {
+        "name": "value",
+        "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
         "name": "_addr",
         "type": "address"
       }

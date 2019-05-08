@@ -8,7 +8,8 @@ const estimateGas = require('./estimateGas')
 const {
   AlreadyProcessedError,
   AlreadySignedError,
-  InvalidValidatorError
+  InvalidValidatorError,
+  TxAboveLimitsError
 } = require('../../utils/errors')
 const { HttpListProviderError } = require('http-list-provider')
 
@@ -67,6 +68,9 @@ function processAffirmationRequestsBuilder(config) {
             process.exit(EXIT_CODES.INCOMPATIBILITY)
           } else if (e instanceof AlreadySignedError) {
             logger.info(`Already signed affirmationRequest ${affirmationRequest.transactionHash}`)
+            return
+          } else if (e instanceof TxAboveLimitsError) {
+            logger.info('AffirmationRequest ' + e.message)
             return
           } else if (e instanceof AlreadyProcessedError) {
             logger.info(

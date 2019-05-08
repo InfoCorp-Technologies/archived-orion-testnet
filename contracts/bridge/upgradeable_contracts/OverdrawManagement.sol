@@ -35,7 +35,7 @@ contract OverdrawManagement is EternalStorage, OwnedUpgradeability {
         uintStorage[keccak256(abi.encodePacked("outOfLimitAmount"))] = _value;
     }
 
-    function txAboveLimits(bytes32 _txHash) internal view returns(address recipient, uint256 value) {
+    function txAboveLimits(bytes32 _txHash) public view returns(address recipient, uint256 value) {
         recipient = addressStorage[keccak256(abi.encodePacked("txOutOfLimitRecipient", _txHash))];
         value = uintStorage[keccak256(abi.encodePacked("txOutOfLimitValue", _txHash))];
     }
