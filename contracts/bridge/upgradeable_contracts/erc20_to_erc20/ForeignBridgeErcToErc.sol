@@ -55,7 +55,6 @@ contract ForeignBridgeErcToErc is BasicBridge, BasicForeignBridge {
     }
 
     function onExecuteMessage(address _recipient, uint256 _amount) internal returns(bool) {
-        setTotalExecutedPerDay(getCurrentDay(), totalExecutedPerDay(getCurrentDay()).add(_amount));
         return erc20token().transfer(_recipient, _amount);
     }
 
@@ -66,9 +65,5 @@ contract ForeignBridgeErcToErc is BasicBridge, BasicForeignBridge {
 
     function messageWithinLimits(uint256 _amount) internal view returns(bool) {
         return withinExecutionLimit(_amount);
-    }
-
-    function onFailedMessage(address, uint256, bytes32) internal {
-        revert();
     }
 }

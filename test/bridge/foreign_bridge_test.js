@@ -137,45 +137,6 @@ contract('ForeignBridge_ERC20_to_ERC20', async (accounts) => {
       true.should.be.equal(await foreignBridge.relayedMessages(transactionHash))
       await foreignBridge.executeSignatures([vrs.v], [vrs.r], [vrs.s], message2).should.be.rejectedWith(ERROR_MSG)
     })
-
-    it('should not allow withdraw over home max tx limit', async () => {
-      const recipientAccount = accounts[3];
-      const invalidValue = web3.toBigNumber(web3.toWei(0.75, "ether"));
-      await token.mint(foreignBridge.address, web3.toBigNumber(web3.toWei(5, "ether")));
-
-      const transactionHash = "0x35d3818e50234655f6aebb2a1cfbf30f59568d8a4ec72066fac5a25dbe7b8121";
-      const message = createMessage(recipientAccount, invalidValue, transactionHash, foreignBridge.address);
-      const signature = await sign(authorities[0], message)
-      const vrs = signatureToVRS(signature);
-
-      await foreignBridge.executeSignatures([vrs.v], [vrs.r], [vrs.s], message).should.be.rejectedWith(ERROR_MSG)
-    })
-
-    it('should not allow withdraw over daily home limit', async () => {
-      const recipientAccount = accounts[3];
-      await token.mint(foreignBridge.address, web3.toBigNumber(web3.toWei(5, "ether")));
-
-      const transactionHash = "0x35d3818e50234655f6aebb2a1cfbf30f59568d8a4ec72066fac5a25dbe7b8121";
-      const message = createMessage(recipientAccount, halfEther, transactionHash, foreignBridge.address);
-      const signature = await sign(authorities[0], message)
-      const vrs = signatureToVRS(signature);
-
-      await foreignBridge.executeSignatures([vrs.v], [vrs.r], [vrs.s], message).should.be.fulfilled
-
-      const transactionHash2 = "0x69debd8fd1923c9cb3cd8ef6461e2740b2d037943b941729d5a47671a2bb8712";
-      const message2 = createMessage(recipientAccount, halfEther, transactionHash2, foreignBridge.address);
-      const signature2 = await sign(authorities[0], message2)
-      const vrs2 = signatureToVRS(signature2);
-
-      await foreignBridge.executeSignatures([vrs2.v], [vrs2.r], [vrs2.s], message2).should.be.fulfilled
-
-      const transactionHash3 = "0x022695428093bb292db8e48bd1417c5e1b84c0bf673bd0fff23ed0fb6495b872";
-      const message3 = createMessage(recipientAccount, halfEther, transactionHash3, foreignBridge.address);
-      const signature3 = await sign(authorities[0], message3)
-      const vrs3 = signatureToVRS(signature3);
-
-      await foreignBridge.executeSignatures([vrs3.v], [vrs3.r], [vrs3.s], message3).should.be.rejectedWith(ERROR_MSG)
-    })
   })
 
   describe('#withdraw with 2 minimum signatures', async () => {
