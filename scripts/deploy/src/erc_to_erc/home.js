@@ -177,20 +177,6 @@ async function deployHome() {
   homeNonce++
   console.log('[Home] TollBox contract: ', tollBoxContract.options.address)
 
-  console.log('transferring ownership of TollBox contract to TollBoxOwner')
-  const txTollOwnershipData = await tollBoxContract.methods
-    .transferOwnership(HOME_TOLL_BOX_OWNER)
-    .encodeABI({ from: DEPLOYMENT_ACCOUNT_ADDRESS })
-  const txTollOwnership = await sendRawTxHome({
-    data: txTollOwnershipData,
-    nonce: homeNonce,
-    to: tollBoxContract.options.address,
-    privateKey: deploymentPrivateKey,
-    url: HOME_RPC_URL
-  })
-  assert.strictEqual(Web3Utils.hexToNumber(txTollOwnership.status), 1, 'Transaction Failed')
-  homeNonce++
-
   console.log('\ninitializing Home Bridge with following parameters:\n')
   console.log(`Home Validators: ${storageValidatorsHome.options.address},
   HOME_DAILY_LIMIT : ${HOME_DAILY_LIMIT} which is ${Web3Utils.fromWei(HOME_DAILY_LIMIT)} in eth,

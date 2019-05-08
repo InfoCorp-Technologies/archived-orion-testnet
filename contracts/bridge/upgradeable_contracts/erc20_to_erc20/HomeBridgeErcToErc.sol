@@ -70,6 +70,10 @@ contract HomeBridgeErcToErc is
         return isInitialized();
     }
 
+    function getBridgeMode() public pure returns(bytes4 _data) {
+        return bytes4(keccak256(abi.encodePacked("erc-to-erc-core")));
+    }
+
     function onExecuteAffirmation(address _recipient, uint256 _value)
         internal
         returns(bool)
@@ -80,7 +84,7 @@ contract HomeBridgeErcToErc is
                 getCurrentDay(),
                 totalExecutedPerDay(getCurrentDay()).add(_value)
             );
-            erc677token().mint(tollAddress(), tollFee());
+            require(erc677token().mint(tollAddress(), tollFee()));
             return erc677token().mint(_recipient, valueToTransfer);
         } else {
             return erc677token().mint(tollAddress(), _value);
