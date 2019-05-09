@@ -2,7 +2,7 @@ const fs = require('fs')
 const path = require('path')
 const env = require('./src/loadEnv')
 
-const { ERC20_TOKEN_ADDRESS } = env
+const { SENC_TOKEN_ADDRESS } = env
 
 const CHAIN = process.argv[2];
 
@@ -18,7 +18,7 @@ async function doDeployForeign() {
     foreignBridge.deployedBlockNumber
     }`
   )
-  console.log(`[ Foreign ] ERC20 Token: ${ERC20_TOKEN_ADDRESS}`)
+  console.log(`[ Foreign ] ERC20 Token: ${SENC_TOKEN_ADDRESS}`)
   fs.writeFileSync(
     foreignDeployResultsPath,
     JSON.stringify(

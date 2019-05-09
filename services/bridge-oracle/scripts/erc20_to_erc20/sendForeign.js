@@ -26,8 +26,8 @@ const web3Foreign = new Web3(foreignProvider)
 
 async function main() {
   const bridge = new web3Foreign.eth.Contract(BRIDGE_ABI, FOREIGN_BRIDGE_ADDRESS)
-  const ERC20_TOKEN_ADDRESS = await bridge.methods.erc20token().call()
-  const poa20 = new web3Foreign.eth.Contract(ERC20_ABI, ERC20_TOKEN_ADDRESS)
+  const SENC_TOKEN_ADDRESS = await bridge.methods.erc20token().call()
+  const poa20 = new web3Foreign.eth.Contract(ERC20_ABI, SENC_TOKEN_ADDRESS)
 
   try {
     const foreignChaindId = await sendRawTx({
@@ -57,7 +57,7 @@ async function main() {
         gasPrice: FOREIGN_TEST_TX_GAS_PRICE,
         amount: '0',
         gasLimit,
-        to: ERC20_TOKEN_ADDRESS,
+        to: SENC_TOKEN_ADDRESS,
         web3: web3Foreign,
         chainId: foreignChaindId
       })

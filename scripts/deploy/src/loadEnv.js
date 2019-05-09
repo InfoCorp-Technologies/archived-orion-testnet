@@ -43,10 +43,7 @@ let validations = {
   FOREIGN_GAS_PRICE: bigNumValidator(),
   REQUIRED_NUMBER_OF_VALIDATORS: envalid.num(),
   VALIDATORS: addressesValidator(),
-  ERC20_TOKEN_ADDRESS: addressValidator(),
-  BRIDGEABLE_TOKEN_NAME: envalid.str(),
-  BRIDGEABLE_TOKEN_SYMBOL: envalid.str(),
-  BRIDGEABLE_TOKEN_DECIMALS: envalid.num()
+  SENC_TOKEN_ADDRESS: addressValidator(),
 }
 
 const env = envalid.cleanEnv(process.env, validations)

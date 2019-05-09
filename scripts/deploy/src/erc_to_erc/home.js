@@ -24,9 +24,6 @@ const {
   HOME_MIN_AMOUNT_PER_TX,
   HOME_REQUIRED_BLOCK_CONFIRMATIONS,
   HOME_GAS_PRICE,
-  BRIDGEABLE_TOKEN_NAME,
-  BRIDGEABLE_TOKEN_SYMBOL,
-  BRIDGEABLE_TOKEN_DECIMALS,
   FOREIGN_DAILY_LIMIT,
   FOREIGN_MAX_AMOUNT_PER_TX,
   HOME_WHITELIST_ADDRESS,
@@ -134,7 +131,7 @@ async function deployHome() {
   console.log('\n[Home] deploying Bridgeble token')
   const erc677token = await deployContract(
     SeniToken,
-    [BRIDGEABLE_TOKEN_NAME, BRIDGEABLE_TOKEN_SYMBOL, BRIDGEABLE_TOKEN_DECIMALS, HOME_WHITELIST_ADDRESS],
+    [HOME_WHITELIST_ADDRESS],
     { from: DEPLOYMENT_ACCOUNT_ADDRESS, network: 'home', nonce: homeNonce }
   )
   homeNonce++
@@ -175,7 +172,21 @@ async function deployHome() {
     { from: DEPLOYMENT_ACCOUNT_ADDRESS, network: 'home', nonce: homeNonce }
   )
   homeNonce++
+
+  console.log('\ntransferring tollbox ownership to toll owner')
+  const tollDataTransfer = await tollBoxContract.methods
+  .transferOwnership(HOME_TOLL_BOX_OWNER)
+  .encodeABI()
+  const txTollDataTransfer = await sendRawTxHome({
+    data: tollDataTransfer,
+    nonce: homeNonce,
+    to: tollBoxContract.options.address,
+    privateKey: deploymentPrivateKey,
+    url: HOME_RPC_URL
+  })
+  assert.strictEqual(Web3Utils.hexToNumber(txTollDataTransfer.status), 1, 'Transaction Failed')
   console.log('[Home] TollBox contract: ', tollBoxContract.options.address)
+  homeNonce++
 
   console.log('\ninitializing Home Bridge with following parameters:\n')
   console.log(`Home Validators: ${storageValidatorsHome.options.address},
