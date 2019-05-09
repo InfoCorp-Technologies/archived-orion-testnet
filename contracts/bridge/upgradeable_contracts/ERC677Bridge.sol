@@ -41,6 +41,13 @@ contract ERC677Bridge is BasicBridge, Whitelistable {
         );
     }
 
+    function setWhitelistContract(address _whitelistAddress) public onlyOwner {
+        require(
+          _whitelistAddress != address(0) && isContract(_whitelistAddress)
+        );
+        addressStorage[keccak256(abi.encodePacked("whitelistContract"))] = _whitelistAddress;
+    }
+
     function setTollAddress(address _tollAddress) public onlyOwner {
         require(_tollAddress != address(0) && isContract(_tollAddress));
         addressStorage[keccak256(abi.encodePacked("tollAddress"))] = _tollAddress;
