@@ -27,7 +27,7 @@ contract('TollBox', async (accounts) => {
   beforeEach(async () => {
     whitelistContract = await Whitelist.new(owner);
     homeContract = await HomeBridge.new()
-    token = await SeniToken.new("Some ERC20", "RSZT", 18, whitelistContract.address, { from: owner });
+    token = await SeniToken.new(whitelistContract.address, { from: owner });
     tollContract = await TollBox.new(rate, token.address, homeContract.address, { from: owner })
     await tollContract.addOperator(operator, { from: owner })
   })
@@ -199,7 +199,7 @@ contract('TollBox', async (accounts) => {
 
     it('only SENI token can call onTokenTransfer', async () => {
       otherWhitelistContract = await Whitelist.new(owner);
-      const otherToken = await SeniToken.new("Other ERC20", "ASD", 18, otherWhitelistContract.address, { from: owner });
+      const otherToken = await SeniToken.new(otherWhitelistContract.address, { from: owner });
       await otherWhitelistContract.addAddresses([creditor], { from: owner }).should.be.fulfilled;
 
       await otherToken.mint(creditor, oneEther, { from: owner }).should.be.fulfilled;

@@ -26,7 +26,7 @@ contract('SENI Token', async (accounts) => {
 
   beforeEach(async () => {
     whitelistContract = await Whitelist.new(owner);
-    seniToken = await SENI.new("Sentinel Chain Internal Token", "SENI", 18, whitelistContract.address);
+    seniToken = await SENI.new(whitelistContract.address);
     sencToken = await SENC.new("Sentinel Chain Ethereum Token", "SENC", 18);
   })
 
@@ -379,7 +379,7 @@ contract('SENI Token', async (accounts) => {
     })
 
     it('if transfer called on contract, still works even if onTokenTransfer doesnot exist', async () => {
-      const someContract = await SENI.new("Some", "Token", 18, whitelistContract.address);
+      const someContract = await SENI.new(whitelistContract.address);
       await whitelistContract.addAddresses([user, accounts[0], someContract.address,], { from: owner });
       await seniToken.mint(user, 2, { from: owner }).should.be.fulfilled;
       const tokenTransfer = await seniToken.transfer(someContract.address, 1, { from: user }).should.be.fulfilled;

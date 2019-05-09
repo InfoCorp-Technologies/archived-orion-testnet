@@ -13,6 +13,7 @@ files=(
     ./contracts/bridge/upgradeable_contracts/erc20_to_erc20/ForeignBridgeErcToErc.sol
     ./contracts/bridge/upgradeable_contracts/erc20_to_erc20/HomeBridgeErcToErc.sol
     ./contracts/bridge/upgradeable_contracts/BridgeValidators.sol
+    ./contracts/bridge/TollBox.sol
 )
 
 for filename in "${files[@]}"; do

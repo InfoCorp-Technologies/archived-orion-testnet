@@ -33,7 +33,7 @@ contract('HomeBridge_ERC20_to_ERC20', async (accounts) => {
   describe('#initialize', async () => {
     beforeEach(async () => {
       homeContract = await HomeBridge.new()
-      token = await SeniToken.new("Some ERC20", "RSZT", 18, whitelistContract.address);
+      token = await SeniToken.new(whitelistContract.address);
       tollContract = await TollBox.new(20, token.address, homeContract.address)
     })
 
@@ -275,7 +275,7 @@ contract('HomeBridge_ERC20_to_ERC20', async (accounts) => {
   describe('#fallback', async () => {
     beforeEach(async () => {
       homeContract = await HomeBridge.new()
-      token = await SeniToken.new("Some ERC20", "RSZT", 18, whitelistContract.address);
+      token = await SeniToken.new(whitelistContract.address);
       tollContract = await TollBox.new(20, token.address, homeContract.address)
       await homeContract.initialize(
         validatorContract.address,
@@ -305,7 +305,7 @@ contract('HomeBridge_ERC20_to_ERC20', async (accounts) => {
     let homeContract;
     beforeEach(async () => {
       homeContract = await HomeBridge.new()
-      token = await SeniToken.new("Some ERC20", "RSZT", 18, whitelistContract.address);
+      token = await SeniToken.new(whitelistContract.address);
       tollContract = await TollBox.new(20, token.address, homeContract.address)
       await homeContract.initialize(
         validatorContract.address,
@@ -341,7 +341,7 @@ contract('HomeBridge_ERC20_to_ERC20', async (accounts) => {
     beforeEach(async () => {
       homeBridge = await HomeBridge.new();
       whitelistContract = await Whitelist.new(owner);
-      token = await SeniToken.new("Some ERC20", "RSZT", 18, whitelistContract.address);
+      token = await SeniToken.new(whitelistContract.address);
       tollContract = await TollBox.new(20, token.address, homeBridge.address)
       await whitelistContract.addAddresses([homeBridge.address, tollContract.address], { from: owner })
       await homeBridge.initialize(
@@ -394,7 +394,7 @@ contract('HomeBridge_ERC20_to_ERC20', async (accounts) => {
     })
 
     it('test with 2 signatures required', async () => {
-      let token2sig = await SeniToken.new("Some ERC20", "RSZT", 18, whitelistContract.address);
+      let token2sig = await SeniToken.new(whitelistContract.address);
       let validatorContractWith2Signatures = await BridgeValidators.new()
       let authoritiesTwoAccs = [accounts[2], accounts[3], accounts[4]];
       let ownerOfValidators = accounts[0]
@@ -474,7 +474,7 @@ contract('HomeBridge_ERC20_to_ERC20', async (accounts) => {
     })
 
     it('doesnt allow to deposit if requiredSignatures has changed', async () => {
-      let token2sig = await SeniToken.new("Some ERC20", "RSZT", 18, whitelistContract.address);
+      let token2sig = await SeniToken.new(whitelistContract.address);
       let validatorContractWith2Signatures = await BridgeValidators.new()
       let authoritiesTwoAccs = [accounts[1], accounts[2], accounts[3]];
       let ownerOfValidators = accounts[0]
@@ -521,7 +521,7 @@ contract('HomeBridge_ERC20_to_ERC20', async (accounts) => {
       let ownerOfValidators = accounts[0]
       const validatorContractWith3Signatures = await BridgeValidators.new()
       await validatorContractWith3Signatures.initialize(3, authoritiesFiveAccs, ownerOfValidators)
-      const token = await SeniToken.new("Some ERC20", "RSZT", 18, whitelistContract.address);
+      const token = await SeniToken.new(whitelistContract.address);
 
       const homeBridgeWithThreeSigs = await HomeBridge.new();
       let tollContractTwoSigs = await TollBox.new(20, token.address, homeBridgeWithThreeSigs.address)
@@ -598,7 +598,7 @@ contract('HomeBridge_ERC20_to_ERC20', async (accounts) => {
     it('should not allow execute affirmation over daily foreign limit', async () => {
       homeBridge = await HomeBridge.new();
       whitelistContract = await Whitelist.new(owner);
-      token = await SeniToken.new("Some ERC20", "RSZT", 18, whitelistContract.address);
+      token = await SeniToken.new(whitelistContract.address);
       tollContract = await TollBox.new(20, token.address, homeBridge.address)
       await homeBridge.initialize(
         validatorContract.address,
@@ -695,7 +695,7 @@ contract('HomeBridge_ERC20_to_ERC20', async (accounts) => {
     let validatorContractWith2Signatures, authoritiesTwoAccs, ownerOfValidators, homeBridgeWithTwoSigs, tollContractWithTwoSigs
 
     beforeEach(async () => {
-      let token2sig = await SeniToken.new("Some ERC20", "RSZT", 18, whitelistContract.address);
+      let token2sig = await SeniToken.new(whitelistContract.address);
       validatorContractWith2Signatures = await BridgeValidators.new()
       authoritiesTwoAccs = [accounts[1], accounts[2], accounts[3]];
       ownerOfValidators = accounts[0]
@@ -766,7 +766,7 @@ contract('HomeBridge_ERC20_to_ERC20', async (accounts) => {
       const authoritiesFiveAccs = [accounts[1], accounts[2], accounts[3], accounts[4], accounts[5]]
       const validatorContractWith3Signatures = await BridgeValidators.new()
       await validatorContractWith3Signatures.initialize(3, authoritiesFiveAccs, ownerOfValidators)
-      const token = await SeniToken.new("Some ERC20", "RSZT", 18, whitelistContract.address);
+      const token = await SeniToken.new(whitelistContract.address);
 
       const homeBridgeWithThreeSigs = await HomeBridge.new();
       const tollContractWithThreeSigs = await TollBox.new(20, token.address, homeBridgeWithThreeSigs.address)
@@ -847,7 +847,7 @@ contract('HomeBridge_ERC20_to_ERC20', async (accounts) => {
 
     beforeEach(async () => {
       amount = web3.toBigNumber(web3.toWei(15, "ether"));
-      token = await SeniToken.new("Some ERC20", "RSZT", 18, whitelistContract.address);
+      token = await SeniToken.new(whitelistContract.address);
       validatorContract = await BridgeValidators.new()
       await validatorContract.initialize(1, authorities, owner)
       homeContract = await HomeBridge.new();

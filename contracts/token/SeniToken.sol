@@ -6,13 +6,15 @@ import "openzeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol";
 import "../shared/ERC677/IBurnableMintableERC677Token.sol";
 import "../shared/ERC677/ERC677Receiver.sol";
 import "../shared/IWhitelist.sol";
+import "./SeniTokenConfig.sol";
 
 
 contract SeniToken is
     IBurnableMintableERC677Token,
     DetailedERC20,
     BurnableToken,
-    MintableToken {
+    MintableToken,
+    SeniTokenConfig {
 
     address public bridgeContract;
     IWhitelist public whitelist;
@@ -30,12 +32,10 @@ contract SeniToken is
         _;
     }
 
-    constructor(
-        string _name,
-        string _symbol,
-        uint8 _decimals,
-        IWhitelist _whitelistContract
-    ) public DetailedERC20(_name, _symbol, _decimals) {
+    constructor(IWhitelist _whitelistContract)
+        public
+        DetailedERC20(NAME, SYMBOL, DECIMALS)
+    {
         require(_whitelistContract != address(0));
         whitelist = _whitelistContract;
     }
