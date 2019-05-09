@@ -1,10 +1,11 @@
 pragma solidity 0.4.24;
 
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
+import "../shared/Operatable.sol";
 import "./IValidatorSet.sol";
 
 
-contract ValidatorSet is Ownable, IValidatorSet {
+contract ValidatorSet is IValidatorSet, Operatable {
 
     struct AddressStatus {
         bool isValidator;
@@ -43,7 +44,7 @@ contract ValidatorSet is Ownable, IValidatorSet {
      */
     function addValidator(address _newValidator)
         external
-        onlyOwner
+        onlyOperator
     {
         require(
             !_isValidator(_newValidator), "The address is already a validator"
@@ -60,7 +61,7 @@ contract ValidatorSet is Ownable, IValidatorSet {
      */
     function removeValidator(address _oldValidator)
         external
-        onlyOwner
+        onlyOperator
     {
         require(_isValidator(_oldValidator), "The address must be a validator");
         require(
@@ -83,8 +84,8 @@ contract ValidatorSet is Ownable, IValidatorSet {
 
     function finalizeChange() external {
         require(
-            msg.sender == systemAddress || msg.sender == owner,
-            "Only the engine or the owner can execute this function"
+            msg.sender == systemAddress,
+            "Only the engine can execute this function"
         );
         require(!finalized, "The state must be not finalized");
         validatorArr = pendingArr;

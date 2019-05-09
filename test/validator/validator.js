@@ -1,7 +1,7 @@
 const { ERROR_MSG } = require('../setup');
 const TestValidatorSet = artifacts.require("TestValidatorSet.sol");
 
-contract('Exchange', async (accounts) => {
+contract('Validator', async (accounts) => {
     const OWNER = accounts[0];
     const OTHER_USER = accounts[4];
     const SYSTEM = accounts[5];
@@ -9,11 +9,13 @@ contract('Exchange', async (accounts) => {
     const NON_VALIDATOR = accounts[7];
     const OLD_VALIDATOR = accounts[2];
     const INITIAL_VALIDATORS = [accounts[1], accounts[2], accounts[3]];
+    const OPERATOR = accounts[8];
     let validator;
 
     beforeEach(async () => {
         if (!validator) {
             validator = await TestValidatorSet.new(SYSTEM, INITIAL_VALIDATORS, OWNER);
+            await validator.addOperator(OPERATOR, { from: OWNER });
         }
     })
 
@@ -51,14 +53,14 @@ contract('Exchange', async (accounts) => {
         await validator.finalizeChange({ from: SYSTEM }).should.be.rejectedWith(ERROR_MSG);
     });
 
-    it("should allow the owner to add new validators and finalize changes", async () => {
+    it("should allow owner or operator to add new validators and finalize changes", async () => {
         const watcher = validator.InitiateChange();
 
         // only the owner can add new validators
         await validator.addValidator(NEW_VALIDATOR, { from: OTHER_USER }).should.be.rejectedWith(ERROR_MSG);
 
         // we successfully add a new validator
-        await validator.addValidator(NEW_VALIDATOR, { from: OWNER }).should.be.fulfilled;
+        await validator.addValidator(NEW_VALIDATOR, { from: OPERATOR }).should.be.fulfilled;
 
         // a `InitiateChange` event should be emitted
         const events = await watcher.get();
@@ -85,7 +87,7 @@ contract('Exchange', async (accounts) => {
         assert.equal(index, 3);
 
         // we successfully finalize the change
-        await validator.finalizeChange({ from: OWNER });
+        await validator.finalizeChange({ from: SYSTEM });
 
         // the validator set should be updated
         assert.deepEqual(await validator.getValidators(), newSet);
@@ -99,7 +101,7 @@ contract('Exchange', async (accounts) => {
         await validator.addValidator(NEW_VALIDATOR, { from: OWNER }).should.be.rejectedWith(ERROR_MSG);
     });
 
-    it("should allow the owner to remove a validator", async () => {
+    it("should allow owner or operator to remove a validator", async () => {
         const watcher = validator.InitiateChange();
 
         // only the owner can remove validators
@@ -151,7 +153,7 @@ contract('Exchange', async (accounts) => {
         await validator.removeValidator(OLD_VALIDATOR, { from: OWNER }).should.be.rejectedWith(ERROR_MSG);
         await validator.finalizeChange({ from: SYSTEM });
         // after finalizing it should work successfully
-        await validator.removeValidator(NEW_VALIDATOR, { from: OWNER }).should.be.fulfilled;
+        await validator.removeValidator(NEW_VALIDATOR, { from: OPERATOR }).should.be.fulfilled;
         assert.deepEqual(await validator.getPendings(), INITIAL_VALIDATORS);
     });
 
