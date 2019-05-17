@@ -3,8 +3,12 @@
   "engine": {
     "authorityRound": {
       "params": {
-        "stepDuration": "5",
-        "blockReward": "0",
+        "blockReward": 0,
+        "stepDuration": 5,
+        "maximumEmptySteps": 60,
+        "emptyStepsTransition": 0,
+        "maximumUncleCountTransition": 0,
+        "maximumUncleCount": 0,
         "validators": {
           "multi": {
             "0": {
@@ -25,10 +29,13 @@
     "maximumExtraDataSize": "0x20",
     "minGasLimit": "0x1388",
     "networkID": "0x1E61",
-    "eip140Transition": "1",
-    "eip211Transition": "2",
-    "eip214Transition": "3",
-    "eip658Transition": "4"
+    "eip140Transition": 0,
+    "eip211Transition": 0,
+    "eip214Transition": 0,
+    "eip658Transition": 0,
+    "eip145Transition": 0,
+    "eip1014Transition": 0,
+    "eip1052Transition": 0
   },
   "genesis": {
     "seal": {
