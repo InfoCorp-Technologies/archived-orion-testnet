@@ -80,7 +80,7 @@ contract ERC677Bridge is BasicBridge, Whitelistable {
     {
         uint256 number;
         for (uint i=0; i < b.length; i++) {
-            number = number + uint(b[i])*(2**(8*(b.length-(i+1))));
+            number = (number << 8)+ uint(b[i]);
         }
         return address(number);
     }
