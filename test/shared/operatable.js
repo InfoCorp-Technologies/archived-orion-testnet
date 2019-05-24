@@ -1,5 +1,5 @@
 const { ERROR_MSG } = require('../setup');
-const OperatableContract = artifacts.require('OperatableContract.sol');
+const OperatableContract = artifacts.require('OperatableTest.sol');
 
 contract('Operatable', async (accounts) => {
     let operatable;

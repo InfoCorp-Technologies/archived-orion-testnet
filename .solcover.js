@@ -4,12 +4,11 @@ module.exports = {
     compileCommand: 'node --max-old-space-size=4096 ./node_modules/.bin/truffle compile --network coverage',
     skipFiles: [
         'Migrations.sol',
-        'ERC677ReceiverTest.sol',
-        'ForeignBridgeV2.sol',
-        'RevertFallback.sol',
-        'SENCTest.sol',
-        'TestValidatorSet.sol',
-        'test.sol'
+        'test/ERC677ReceiverTest.sol',
+        'test/ForeignBridgeTest.sol',
+        'test/RevertFallback.sol',
+        'test/SENCTest.sol',
+        'test/ValidatorSetTest.sol'
     ],
-    copyNodeModules: true
+    copyPackages: true
 }

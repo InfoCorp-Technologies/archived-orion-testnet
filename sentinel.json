@@ -5,8 +5,6 @@
       "params": {
         "blockReward": 0,
         "stepDuration": 5,
-        "maximumEmptySteps": 60,
-        "emptyStepsTransition": 0,
         "maximumUncleCountTransition": 0,
         "maximumUncleCount": 0,
         "validators": {

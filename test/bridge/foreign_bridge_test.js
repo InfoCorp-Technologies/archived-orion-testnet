@@ -1,5 +1,5 @@
 const ForeignBridge = artifacts.require("ForeignBridgeErcToErc.sol");
-const ForeignBridgeV2 = artifacts.require("ForeignBridgeV2.sol");
+const ForeignBridgeTest = artifacts.require("ForeignBridgeTest.sol");
 const BridgeValidators = artifacts.require("BridgeValidators.sol");
 const EternalStorageProxy = artifacts.require("EternalStorageProxy.sol");
 const SencToken = artifacts.require("SENCTest.sol");
@@ -247,15 +247,15 @@ contract('ForeignBridge_ERC20_to_ERC20', async (accounts) => {
       await foreignBridgeProxy.initialize(validatorsProxy.address, token.address, requireBlockConfirmations, gasPrice, maxPerTx, homeDailyLimit, homeMaxPerTx, owner)
 
       // Deploy V2
-      let foreignImplV2 = await ForeignBridgeV2.new();
+      let foreignImplV2 = await ForeignBridgeTest.new();
       let foreignBridgeProxyUpgrade = await EternalStorageProxy.at(foreignBridgeProxy.address);
       await foreignBridgeProxyUpgrade.upgradeTo('2', foreignImplV2.address).should.be.fulfilled;
       foreignImplV2.address.should.be.equal(await foreignBridgeProxyUpgrade.implementation())
 
-      let foreignBridgeV2Proxy = await ForeignBridgeV2.at(foreignBridgeProxy.address)
-      await foreignBridgeV2Proxy.doSomething(accounts[2], {from: accounts[4]}).should.be.rejectedWith(ERROR_MSG)
-      await foreignBridgeV2Proxy.doSomething(accounts[2], {from: PROXY_OWNER}).should.be.fulfilled;
-      (await foreignBridgeV2Proxy.something()).should.be.equal(accounts[2])
+      let foreignBridgeTestProxy = await ForeignBridgeTest.at(foreignBridgeProxy.address)
+      await foreignBridgeTestProxy.doSomething(accounts[2], {from: accounts[4]}).should.be.rejectedWith(ERROR_MSG)
+      await foreignBridgeTestProxy.doSomething(accounts[2], {from: PROXY_OWNER}).should.be.fulfilled;
+      (await foreignBridgeTestProxy.something()).should.be.equal(accounts[2])
     })
     it('can be deployed via upgradeToAndCall', async () => {
       const tokenAddress = token.address

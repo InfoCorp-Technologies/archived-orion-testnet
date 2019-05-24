@@ -3,7 +3,7 @@ pragma solidity 0.4.24;
 import "../validator/ValidatorSet.sol";
 
 
-contract TestValidatorSet is ValidatorSet {
+contract ValidatorSetTest is ValidatorSet {
 
     constructor(address _systemAddress, address[] _init, address _owner)
         public

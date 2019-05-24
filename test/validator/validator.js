@@ -1,5 +1,5 @@
 const { ERROR_MSG } = require('../setup');
-const TestValidatorSet = artifacts.require("TestValidatorSet.sol");
+const ValidatorSetTest = artifacts.require("ValidatorSetTest.sol");
 
 contract('Validator', async (accounts) => {
     const OWNER = accounts[0];
@@ -14,7 +14,7 @@ contract('Validator', async (accounts) => {
 
     beforeEach(async () => {
         if (!validator) {
-            validator = await TestValidatorSet.new(SYSTEM, INITIAL_VALIDATORS, OWNER);
+            validator = await ValidatorSetTest.new(SYSTEM, INITIAL_VALIDATORS, OWNER);
             await validator.addOperator(OPERATOR, { from: OWNER });
         }
     })

@@ -3,7 +3,7 @@ pragma solidity 0.4.24;
 import "../shared/Operatable.sol";
 
 
-contract OperatableContract is Operatable {
+contract OperatableTest is Operatable {
 
     uint256 public some;
 

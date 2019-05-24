@@ -8,7 +8,7 @@ interface OwnableToken {
 }
 
 
-contract ForeignBridgeV2 is ForeignBridgeErcToErc {
+contract ForeignBridgeTest is ForeignBridgeErcToErc {
     // used for testing
     address public something;
 
