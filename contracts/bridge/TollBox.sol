@@ -10,7 +10,7 @@ contract TollBox is Operatable, ERC677Receiver {
     ERC677 public token;
     address public homeContract;
     uint8 public dailyLimitRate;
-    mapping(uint256 => bool) public dailyWhitdraw;
+    mapping(uint256 => bool) public dailyWhithdraw;
     mapping(address => bool) public creditors;
 
     event LogAddedCreditor(address indexed creditor);
@@ -59,7 +59,7 @@ contract TollBox is Operatable, ERC677Receiver {
         require(_amount > 0);
         require(_isCreditor(msg.sender));
         require(_canWithdraw(_amount));
-        dailyWhitdraw[_currentDay()] = true;
+        dailyWhithdraw[_currentDay()] = true;
         token.transfer(msg.sender, _amount);
         emit LogWithdraw(msg.sender, _amount);
     }
@@ -88,7 +88,7 @@ contract TollBox is Operatable, ERC677Receiver {
     }
 
     function _canWithdraw(uint256 _amount) internal view returns(bool) {
-        return !dailyWhitdraw[_currentDay()] && _amount <= getDailyLimitAmount();
+        return !dailyWhithdraw[_currentDay()] && _amount <= getDailyLimitAmount();
     }
 
     function _toBytes(address _a) internal pure returns (bytes memory b) {

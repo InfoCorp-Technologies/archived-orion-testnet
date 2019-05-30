@@ -1,17 +1,18 @@
 {
-  "name": "orion-testnet-private",
+  "name": "orion-testnet",
   "version": "0.3.0",
-  "description": "![Sentinel Chain](https://cryptoindex.co/coinlogo/sentinel-chain.png \"Sentinel Chain\")",
-  "main": "index.js",
+  "description": "![Sentinel Chain](https://s2.coinmarketcap.com/static/img/coins/64x64/2624.png \"Sentinel Chain\")",
+  "main": "truffle.js",
+  "license": "GNU",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/InfoCorp-Technologies/orion-testnet.git"
+  },
   "scripts": {
     "test": "sh scripts/test.sh",
     "coverage": "sh scripts/coverage.sh",
     "flatten": "sh scripts/flatten.sh",
     "compile": "node_modules/.bin/truffle compile"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/InfoCorp-Technologies/sentinel-chain-network.git"
   },
   "author": "InfoCorp",
   "dependencies": {
@@ -28,9 +29,8 @@
     "chai-as-promised": "^7.1.1",
     "chai-bignumber": "^2.0.2",
     "eth-gas-reporter": "^0.2.0",
-    "truffle": "^4.1.14"
+    "truffle": "4.1.14"
   },
-  "license": "ISC",
   "bugs": {
     "url": "https://github.com/InfoCorp-Technologies/orion-testnet/issues"
   },
