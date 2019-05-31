@@ -1,4 +1,6 @@
-﻿![Sentinel Chain](https://github.com/InfoCorp-Technologies/orion-testnet/blob/master/doc/img/sentinel-chain-arch.png "Sentinel Chain")
+﻿<div style="text-align:center">
+  <img alt="Sentinel Chain" src="https://github.com/InfoCorp-Technologies/orion-testnet/blob/master/doc/img/sentinel-chain-arch.png" />
+</div>
 
 # The Orion testnet
 
@@ -17,7 +19,7 @@
 
 * **Sentinel Chain Bridge**
 Sentinel Chain was designed to bring to the users a certain number of services related to cattle and incentive the social inclusion of the farmers. However, in order to do this, SENC will be required as fuel for accessing the Sentinel Chain ecosystem. The Sentinel Chain Bridge simply serves as a method of convert SENC ERC20 tokens from Ethereum Mainnet to SENI ERC20 tokens in Sentinel Chain and vice versa, in a quick and cost-efficient manner. Sentinel Chain makes use of a SENC-pegged cryptocurrency called SENI (Sentinel Chain Internal Token) as transaction payments within Sentinel Chain itself.
-  
+
 * **Sentinel Chain Block Explorer**
 Allows users to retrieves all information of the Sentinel Chain Blockchain like blocks, transactions, accounts, contracts and bridge information (required signatures, balances of contracts, deposits and withdraws).
 
@@ -44,7 +46,10 @@ It's an ERC677 token that is used as a fuel to pay for services of the Sentinel 
 This contract is in charge to mint or burn SENI tokens when the users starts cross-chain transactions from Sentinel Chain.
 
 * **Bridge Validators**
-In this contract are stored the addresses of the Bridge Binaries that are able to sign the cross-chain transactions. 
+In this contract are stored the addresses of the Bridge Binaries that are able to sign the cross-chain transactions.
+
+* **Toll Box**
+This contract will be used to collect the tolls for the use of the Sentinel Chain Bridge. The toll value is settled down to 10 SENI per cross-chain transaction. The fund accumulated in the Box can be withdrawal by the Creditors once per day and the amount must be below the limit established.
 
 ### Ethereum Mainnet
 
