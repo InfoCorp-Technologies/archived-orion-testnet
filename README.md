@@ -1,5 +1,5 @@
 ﻿<div style="text-align:center">
-  <img alt="Sentinel Chain" src="https://github.com/InfoCorp-Technologies/orion-testnet/blob/master/doc/img/sentinel-chain-arch.png" />
+  <img alt="Sentinel Chain" src="https://github.com/InfoCorp-Technologies/sentinel-chain-network-private/blob/develop/doc/img/sentinel-chain-arch.png" />
 </div>
 
 # The Orion testnet
