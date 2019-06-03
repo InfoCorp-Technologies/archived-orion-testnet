@@ -14,7 +14,7 @@
     "flatten": "sh scripts/flatten.sh",
     "compile": "node_modules/.bin/truffle compile"
   },
-  "author": "InfoCorp",
+  "author": "Sentinel Chain <support@sentinel-chain.org>",
   "dependencies": {
     "ethereumjs-testrpc-sc": "^6.1.6",
     "ganache-cli": "^6.1.0",
