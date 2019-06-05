@@ -18,7 +18,7 @@ async function doDeployForeign() {
     foreignBridge.deployedBlockNumber
     }`
   )
-  console.log(`[ Foreign ] ERC20 Token: ${SENC_TOKEN_ADDRESS}`)
+  console.log(`[ Foreign ] SENC ERC20 Token: ${SENC_TOKEN_ADDRESS}`)
   fs.writeFileSync(
     foreignDeployResultsPath,
     JSON.stringify(
@@ -42,7 +42,7 @@ async function doDeployHome() {
   console.log(
     `[   Home  ] HomeBridge: ${homeBridge.address} at block ${homeBridge.deployedBlockNumber}`
   )
-  console.log(`[   Home  ] ERC677 Bridgeable Token: ${erc677.address}`)
+  console.log(`[   Home  ] SENI ERC677 Token: ${erc677.address}`)
   console.log(`[   Home  ] TollBox Contract: ${tollBox.address}`)
   fs.writeFileSync(
     homeDeployResultsPath,
