@@ -1,8 +1,8 @@
 ﻿<div style="text-align:center">
-  <img alt="Sentinel Chain" src="https://github.com/InfoCorp-Technologies/sentinel-chain-network-private/blob/develop/doc/img/sentinel-chain-arch.png" />
+  <img alt="Sentinel Chain" src="doc/img/sentinel-chain-arch.png" />
 </div>
 
-# The Orion testnet
+# The Sentinel Chain Network
 
 ## Nodes
 
@@ -58,3 +58,13 @@ This contract is in charge to lock and unlock SENC tokens when the users starts 
 
 * **Bridge Validators**
 In this contract are stored the addresses of the Bridge Binaries that are able to sign the cross-chain transactions.
+
+## Contributing
+
+See the [CONTRIBUTING](CONTRIBUTING.md) document for contribution, testing and pull request protocol.
+
+## License
+
+[![License: GPL v3.0](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+
+This project is licensed under the GNU General Public License v3.0. See the [LICENSE](LICENSE) file for details.

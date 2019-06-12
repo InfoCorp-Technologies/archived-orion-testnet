@@ -1,12 +1,12 @@
 {
-  "name": "orion-testnet",
-  "version": "0.3.0",
+  "name": "sentinel-chain-network",
+  "version": "1.0.0",
   "description": "![Sentinel Chain](https://s2.coinmarketcap.com/static/img/coins/64x64/2624.png \"Sentinel Chain\")",
   "main": "truffle.js",
   "license": "GNU",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/InfoCorp-Technologies/orion-testnet.git"
+    "url": "git+https://github.com/InfoCorp-Technologies/sentinel-chain-network.git"
   },
   "scripts": {
     "test": "sh scripts/test.sh",
@@ -32,7 +32,7 @@
     "truffle": "4.1.14"
   },
   "bugs": {
-    "url": "https://github.com/InfoCorp-Technologies/orion-testnet/issues"
+    "url": "https://github.com/InfoCorp-Technologies/sentinel-chain-network/issues"
   },
-  "homepage": "https://github.com/InfoCorp-Technologies/orion-testnet#readme"
+  "homepage": "https://github.com/InfoCorp-Technologies/sentinel-chain-network#readme"
 }
