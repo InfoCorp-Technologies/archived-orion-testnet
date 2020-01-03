@@ -1,15 +1,17 @@
-# Installation guide
+# Sentinel Chain Network Installation Guide
 
-## Dependencies
+## Sentinel Chain Nodes
+
+### Dependencies
 - Paritt v1.11.11
 
-## 1) Install Parity
+### 1) How to install Parity
 
 Follow [this](parity_installation.md) guide to install Parity.
 
-## 2) Requirements
+### 2) Nodes installation
 
-### 2.1 Create the node accounts
+#### 2.1 Create the node accounts
 
 You need to create one accounts for each Authority node that you want to create. We recommend to use the following group of nodes:
 
@@ -19,7 +21,7 @@ You need to create one accounts for each Authority node that you want to create.
 
 **Note:** The accounts should be in Keystore V2 format and you can use the tool of your choice to create it.
 
-### 2.2 Create password file
+#### 2.2 Create password file
 
 Once you have created the keystore you need to save the password in a plain text file:
 
@@ -27,9 +29,9 @@ Once you have created the keystore you need to save the password in a plain text
 echo PASSWORD >> password.txt
 ```
 
-## 3) Run the nodes
+### 3) Run the nodes
 
-### 3.1 Authority node
+#### 3.1 Authority node
 
 First of all you need to run the Authority nodes, in this case we are going to create only one.
 
@@ -56,7 +58,7 @@ Once the Authority is running, copy the Authority `enode` and set it as env vari
 $ export $AUTH_ENODE='enode://6f8a...2a0@192.168.1.1:30303'
 ```
 
-### 3.2 Main node
+#### 3.2 Main node
 
 This node is created in order to use it to visualize the information of the block explorer and to achieve that we must set certain values that allow us trace transactions and enumerate all accounts and storage keys.
 
@@ -69,7 +71,7 @@ $ parity \
     --pruning='archive'
 ```
 
-### 3.3 RPC node
+#### 3.3 RPC node
 
 This node will be used to connect the Dapps or services to the blockchain.
 
@@ -84,3 +86,26 @@ $ parity \
     --ws-interface='all'
 ```
 
+## Sentinel Chain Block Explorer
+
+Blockchain explorer built with NodeJS, Express and Parity. It does not require an external database and retrieves all information on the fly from a backend Sentinel node.
+
+[Sentinel Chain Block Explorer installation guide](https://github.com/InfoCorp-Technologies/sentinel-chain-explorer)
+
+## Sentinel Chain Netstats
+
+In order to install netstats component you need to install the **server** and the **client**.
+
+The netstat server is a visual interface for tracking proof-of-authority network status. It uses WebSockets to receive stats from running nodes and output them through an angular interface.
+
+[Sentinel Chain Netstat Server installation guide](https://github.com/InfoCorp-Technologies/sentinel-chain-netstats-server)
+
+The client is the backend service which runs along with ethereum and tracks the network status, fetches information through JSON-RPC and connects through WebSockets to netstats-server to feed information.
+
+[Sentinel Chain Netstat Client installation guide](https://github.com/InfoCorp-Technologies/sentinel-chain-netstats-client)
+
+## Sentinel Chain Bridge
+
+Oracle responsible for listening to bridge related events and authorizing asset transfers.
+
+[Sentinel Chain Bridge installation guide](../../services/bridge-oracle/README.md)

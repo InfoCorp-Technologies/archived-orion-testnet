@@ -59,6 +59,9 @@ This contract is in charge to lock and unlock SENC tokens when the users starts 
 * **Bridge Validators**
 In this contract are stored the addresses of the Bridge Binaries that are able to sign the cross-chain transactions.
 
+## Installation guide
+A complete guide to install all the components of the network can be found [here](doc/install/README.md).
+
 ## Contributing
 
 See the [CONTRIBUTING](CONTRIBUTING.md) document for contribution, testing and pull request protocol.
